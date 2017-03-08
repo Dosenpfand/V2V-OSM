@@ -22,6 +22,10 @@ def count_cons_orth_streets(reps, lam_v, lam_s, road_len, com_ranges):
             while counts_veh[i_street] == 0:
                 counts_veh[i_street] = np.random.poisson(lam_s * road_len, 1)
 
+        count_veh_all = np.sum(counts_veh)
+        coords_veh_all = np.zeros((count_veh_all, 2))
+
+        i_count_total = 0
         for i_count, count_veh in np.ndenumerate(counts_veh):
             coords_veh_street = np.zeros((count_veh, 2))
             coords_veh_street[:, 0] = coords_streets[i_count]
@@ -32,10 +36,14 @@ def count_cons_orth_streets(reps, lam_v, lam_s, road_len, com_ranges):
                 count_range = np.count_nonzero(distances < com_range)
                 counts_range[i_com_range, rep] += count_range
 
+            # Save for plotting
+            coords_veh_all[i_count_total:i_count_total+count_veh, :] = coords_veh_street
+            i_count_total += count_veh
+
     mean_cons = np.mean(counts_range, 1)
 
     # Analytical result
-    mean_cons_ana = com_ranges**2*lam_v*lam_s*np.pi/4
+    mean_cons_ana = com_ranges**2 * lam_v * lam_s * np.pi / 4
 
     # Plot error
     # TODO: results do not match yet!
@@ -45,10 +53,9 @@ def count_cons_orth_streets(reps, lam_v, lam_s, road_len, com_ranges):
     plt.ylabel('Error')
     plt.grid(True)
 
-    # Plot last realization of last street
-    # TODO: !
+    # Plot last realization
     plt.figure()
-    plt.scatter(coords_veh_street[:,0], coords_veh_street[:,1])
+    plt.scatter(coords_veh_all[:, 0], coords_veh_all[:, 1])
     plt.scatter(coords_own[0], coords_own[1])
 
     # Plot connected vehicles vs. sensing range
@@ -62,6 +69,7 @@ def count_cons_orth_streets(reps, lam_v, lam_s, road_len, com_ranges):
 
     # Show all plots
     plt.show()
+
 
 def count_cons_own_street(reps, lam_v, road_len, com_ranges):
     """Calculates the number of connections on the street the vehicle is itself on"""
@@ -112,11 +120,11 @@ def count_cons_own_street(reps, lam_v, road_len, com_ranges):
     plt.show()
 
 if __name__ == '__main__':
-    REPS = 1000  # Monte Carlo runs
+    REPS = 100  # Monte Carlo runs
     LAM_V = 1e-2  # (Relative) vehicle rate
-    LAM_S = 1e-3  # (Relative) street rate
+    LAM_S = 1e-2  # (Relative) street rate
     ROAD_LEN = 5000  # length of roads
     COM_RANGES = np.arange(1, 1000, 10)  # range of communication
 
-    count_cons_own_street(REPS, LAM_V, ROAD_LEN, COM_RANGES)
+    # count_cons_own_street(REPS, LAM_V, ROAD_LEN, COM_RANGES)
     count_cons_orth_streets(REPS, LAM_V, LAM_S, ROAD_LEN, COM_RANGES)
