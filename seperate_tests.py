@@ -37,16 +37,23 @@ def count_cons_orth_streets(reps, lam_v, lam_s, road_len, com_ranges):
                 counts_range[i_com_range, rep] += count_range
 
             # Save for plotting
-            coords_veh_all[i_count_total:i_count_total+count_veh, :] = coords_veh_street
+            coords_veh_all[i_count_total:i_count_total +
+                           count_veh, :] = coords_veh_street
             i_count_total += count_veh
 
     mean_cons = np.mean(counts_range, 1)
 
     # Analytical result
+    # TODO: results do not match yet!
     mean_cons_ana = com_ranges**2 * lam_v * lam_s * np.pi / 4
 
+    return mean_cons, mean_cons_ana, coords_veh_all, coords_own
+
+
+def plot_results(mean_cons, mean_cons_ana, com_ranges, coords_veh_all, coords_own):
+    """Plots the results returned by other functions of the package"""
+
     # Plot error
-    # TODO: results do not match yet!
     plt.figure()
     plt.plot(com_ranges, mean_cons_ana - mean_cons)
     plt.xlabel('Sensing range [m]')
@@ -95,36 +102,27 @@ def count_cons_own_street(reps, lam_v, road_len, com_ranges):
     # Analytical result
     mean_cons_ana = 2 * lam_v * com_ranges
 
-    # Plot error
-    plt.figure()
-    plt.plot(com_ranges, mean_cons_ana - mean_cons)
-    plt.xlabel('Sensing range [m]')
-    plt.ylabel('Error')
-    plt.grid(True)
-
-    # Plot last realization
-    plt.figure()
-    plt.scatter(coords_veh, np.zeros_like(coords_veh))
-    plt.scatter(coords_veh_center, 0)
-
-    # Plot connected vehicles vs. sensing range
-    plt.figure()
-    plt.plot(com_ranges, mean_cons, label='Numerical')
-    plt.plot(com_ranges, mean_cons_ana, label='Analytical')
-    plt.xlabel('Sensing range [m]')
-    plt.ylabel('Mean connected vehicles')
-    plt.legend(loc='best')
-    plt.grid(True)
-
-    # Show all plots
-    plt.show()
+    return mean_cons, mean_cons_ana, coords_veh, coords_veh_center
 
 if __name__ == '__main__':
     REPS = 100  # Monte Carlo runs
     LAM_V = 1e-2  # (Relative) vehicle rate
-    LAM_S = 1e-2  # (Relative) street rate
+    LAM_S = 1e-3  # (Relative) street rate
     ROAD_LEN = 5000  # length of roads
     COM_RANGES = np.arange(1, 1000, 10)  # range of communication
 
-    # count_cons_own_street(REPS, LAM_V, ROAD_LEN, COM_RANGES)
-    count_cons_orth_streets(REPS, LAM_V, LAM_S, ROAD_LEN, COM_RANGES)
+    # Own street
+    OWN_MEAN_CONS, OWN_MEAN_CONS_ANA, OWN_COORDS_VEH, OWN_COORDS_VEH_OWN = \
+        count_cons_own_street(REPS, LAM_V, ROAD_LEN, COM_RANGES)
+    OWN_COORDS_VEH_OWN = np.hstack((OWN_COORDS_VEH_OWN, 0))
+    OWN_COORDS_VEH = np.vstack((OWN_COORDS_VEH, np.zeros_like(OWN_COORDS_VEH))).T
+    plot_results(OWN_MEAN_CONS, OWN_MEAN_CONS_ANA, COM_RANGES, OWN_COORDS_VEH, OWN_COORDS_VEH_OWN)
+
+    # Orthogonal streets
+    ORTH_MEAN_CONS, ORTH_MEAN_CONS_ANA, ORTH_COORDS_VEH, ORTH_COORDS_VEH_OWN = \
+        count_cons_orth_streets(REPS, LAM_V, LAM_S, ROAD_LEN, COM_RANGES)
+    plot_results(ORTH_MEAN_CONS, ORTH_MEAN_CONS_ANA, COM_RANGES,
+                 ORTH_COORDS_VEH, ORTH_COORDS_VEH_OWN)
+
+    # Parallel streets
+    # TODO: !
