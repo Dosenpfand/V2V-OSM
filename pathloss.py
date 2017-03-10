@@ -14,7 +14,6 @@ def pathloss_nlos(dist_rx, dist_tx, width_rx_street, dist_tx_wall, is_sub_urban=
 
     sf_loss = np.random.normal(0, standard_dev, 1) # TODO: missing in equation?
 
-    wavelength = 0.05084745762711865 # corresponds to 5.9 GHz
     if dist_rx < dist_break:
         pathloss = 3.75 + is_sub_urban*2.94 + 10*np.log10((dist_tx^0.957 * 4 * np.pi * dist_rx / \
          (dist_tx_wall*width_rx_street)^0.81 / wavelength)^pathloss_exp) + sf_loss

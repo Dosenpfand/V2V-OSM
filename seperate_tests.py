@@ -30,8 +30,6 @@ def count_cons_par_streets(reps, lam_v, lam_s, road_len, com_ranges):
 
     for rep in np.arange(reps):
         print(rep)
-        # # Set own position at middle of map
-        # coords_own = np.array([road_len / 2, road_len / 2])
         # Truncated poisson variable realization
         count_streets = 0
         while count_streets == 0:
@@ -76,8 +74,7 @@ def count_cons_par_streets(reps, lam_v, lam_s, road_len, com_ranges):
     # Analytical result
     # TODO: why factor 2 ???
     # mean_cons_ana = com_ranges**2 * lam_v * lam_s * np.pi / 4 * 2
-    mean_cons_ana = (2 * com_ranges * lam_s / (1 -
-                                               np.exp(-com_ranges * lam_s)) - 1) * np.pi / 2 * lam_v * com_ranges
+    mean_cons_ana = (2 * com_ranges * lam_s / (1 - np.exp(-com_ranges * lam_s)) - 1) * np.pi / 2 * lam_v * com_ranges
 
     return mean_cons, mean_cons_ana, coords_veh_all, coords_own
 
@@ -183,7 +180,7 @@ def plot_results(mean_cons, mean_cons_ana, com_ranges, coords_veh_all, coords_ow
 
 if __name__ == '__main__':
     DEBUG = True
-    REPS = 5000  # Monte Carlo runs
+    REPS = 10  # Monte Carlo runs
     LAM_V = 1e-2  # (Relative) vehicle rate
     LAM_S = 1e-3  # (Relative) street rate
     ROAD_LEN = 5000  # length of roads
@@ -200,8 +197,8 @@ if __name__ == '__main__':
     PAR_MEAN_CONS, PAR_MEAN_CONS_ANA, PAR_COORDS_VEH, PAR_COORDS_VEH_OWN = \
         count_cons_par_streets(REPS, LAM_V, LAM_S, ROAD_LEN, COM_RANGES)
     # Orthogonal streets
-    ORTH_MEAN_CONS, ORTH_MEAN_CONS_ANA, ORTH_COORDS_VEH, ORTH_COORDS_VEH_OWN = \
-        count_cons_orth_streets(REPS, LAM_V, LAM_S, ROAD_LEN, COM_RANGES)
+    # ORTH_MEAN_CONS, ORTH_MEAN_CONS_ANA, ORTH_COORDS_VEH, ORTH_COORDS_VEH_OWN = \
+    #     count_cons_orth_streets(REPS, LAM_V, LAM_S, ROAD_LEN, COM_RANGES)
 
     if DEBUG:
         time_diff = time.process_time() - time_start
@@ -213,9 +210,9 @@ if __name__ == '__main__':
     #     (OWN_COORDS_VEH, np.zeros_like(OWN_COORDS_VEH))).T
     # plot_results(OWN_MEAN_CONS, OWN_MEAN_CONS_ANA, COM_RANGES,
     #              OWN_COORDS_VEH, OWN_COORDS_VEH_OWN)
-    # plot_results(PAR_MEAN_CONS, PAR_MEAN_CONS_ANA, COM_RANGES,
-    #              PAR_COORDS_VEH, PAR_COORDS_VEH_OWN)
+    plot_results(PAR_MEAN_CONS, PAR_MEAN_CONS_ANA, COM_RANGES,
+                 PAR_COORDS_VEH, PAR_COORDS_VEH_OWN)
     # plot_results(ORTH_MEAN_CONS, ORTH_MEAN_CONS_ANA, COM_RANGES,
     #              ORTH_COORDS_VEH, ORTH_COORDS_VEH_OWN)
     # Show all plots
-    # plt.show()
+    plt.show()
