@@ -16,6 +16,14 @@ def count_connections(distances, com_ranges):
 fast_count_connections = numba.jit(nopython=True)(count_connections)
 
 
+def array_count_connections(distances, com_ranges):
+    """ Determines how many distances are smaller than the elements in com_ranges """
+    com_ranges_tiled = np.tile(com_ranges, (distances.size, 1)).T
+    distances_tiled = np.tile(distances, (com_ranges.size, 1))
+    counts_range = np.count_nonzero(distances_tiled < com_ranges_tiled, axis=1)
+    return counts_range
+
+
 def count_cons_par_streets(reps, lam_v, lam_s, road_len, com_ranges):
     """Calculates the number of connections on the parallel streets"""
     counts_range = np.zeros((np.size(com_ranges), reps))
@@ -59,7 +67,7 @@ def count_cons_par_streets(reps, lam_v, lam_s, road_len, com_ranges):
             i_count_total += count_veh
 
         distances = np.linalg.norm(coords_own - coords_veh_all, ord=2, axis=1)
-        counts_range[:, rep] = fast_count_connections(
+        counts_range[:, rep] = array_count_connections(
             distances, com_ranges)
 
     # Numerical result
@@ -68,7 +76,8 @@ def count_cons_par_streets(reps, lam_v, lam_s, road_len, com_ranges):
     # Analytical result
     # TODO: why factor 2 ???
     # mean_cons_ana = com_ranges**2 * lam_v * lam_s * np.pi / 4 * 2
-    mean_cons_ana = (2*com_ranges*lam_s/(1-np.exp(-com_ranges*lam_s))-1)*np.pi/2*lam_v*com_ranges
+    mean_cons_ana = (2 * com_ranges * lam_s / (1 -
+                                               np.exp(-com_ranges * lam_s)) - 1) * np.pi / 2 * lam_v * com_ranges
 
     return mean_cons, mean_cons_ana, coords_veh_all, coords_own
 
@@ -106,7 +115,7 @@ def count_cons_orth_streets(reps, lam_v, lam_s, road_len, com_ranges):
             i_count_total += count_veh
 
         distances = np.linalg.norm(coords_own - coords_veh_all, ord=2, axis=1)
-        counts_range[:, rep] = fast_count_connections(
+        counts_range[:, rep] = array_count_connections(
             distances, com_ranges)
 
     # Numerical result
@@ -135,6 +144,7 @@ def count_cons_own_street(reps, lam_v, road_len, com_ranges):
         median_index = np.floor_divide(np.size(coords_veh), 2)
         coords_veh_center = coords_veh[median_index]
         distances = np.abs(coords_veh - coords_veh_center)
+        # TODO: use fast function
         for i_com_range, com_range in np.ndenumerate(com_ranges):
             counts_range[i_com_range, rep] = np.count_nonzero(
                 distances < com_range) - 1
@@ -173,12 +183,12 @@ def plot_results(mean_cons, mean_cons_ana, com_ranges, coords_veh_all, coords_ow
 
 if __name__ == '__main__':
     DEBUG = True
-    REPS = 500  # Monte Carlo runs
-    LAM_V = 1e-3  # (Relative) vehicle rate
+    REPS = 5000  # Monte Carlo runs
+    LAM_V = 1e-2  # (Relative) vehicle rate
     LAM_S = 1e-3  # (Relative) street rate
     ROAD_LEN = 5000  # length of roads
     # range of communication
-    COM_RANGES = np.arange(1, 1000, 10)
+    COM_RANGES = np.arange(1, 1000, 1)
 
     if DEBUG:
         time_start = time.process_time()
@@ -190,8 +200,8 @@ if __name__ == '__main__':
     PAR_MEAN_CONS, PAR_MEAN_CONS_ANA, PAR_COORDS_VEH, PAR_COORDS_VEH_OWN = \
         count_cons_par_streets(REPS, LAM_V, LAM_S, ROAD_LEN, COM_RANGES)
     # Orthogonal streets
-    # ORTH_MEAN_CONS, ORTH_MEAN_CONS_ANA, ORTH_COORDS_VEH, ORTH_COORDS_VEH_OWN = \
-    #     count_cons_orth_streets(REPS, LAM_V, LAM_S, ROAD_LEN, COM_RANGES)
+    ORTH_MEAN_CONS, ORTH_MEAN_CONS_ANA, ORTH_COORDS_VEH, ORTH_COORDS_VEH_OWN = \
+        count_cons_orth_streets(REPS, LAM_V, LAM_S, ROAD_LEN, COM_RANGES)
 
     if DEBUG:
         time_diff = time.process_time() - time_start
@@ -203,9 +213,9 @@ if __name__ == '__main__':
     #     (OWN_COORDS_VEH, np.zeros_like(OWN_COORDS_VEH))).T
     # plot_results(OWN_MEAN_CONS, OWN_MEAN_CONS_ANA, COM_RANGES,
     #              OWN_COORDS_VEH, OWN_COORDS_VEH_OWN)
-    plot_results(PAR_MEAN_CONS, PAR_MEAN_CONS_ANA, COM_RANGES,
-                 PAR_COORDS_VEH, PAR_COORDS_VEH_OWN)
+    # plot_results(PAR_MEAN_CONS, PAR_MEAN_CONS_ANA, COM_RANGES,
+    #              PAR_COORDS_VEH, PAR_COORDS_VEH_OWN)
     # plot_results(ORTH_MEAN_CONS, ORTH_MEAN_CONS_ANA, COM_RANGES,
     #              ORTH_COORDS_VEH, ORTH_COORDS_VEH_OWN)
     # Show all plots
-    plt.show()
+    # plt.show()
