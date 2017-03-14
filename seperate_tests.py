@@ -45,12 +45,13 @@ def count_cons_par_streets(reps, lam_v, lam_s, road_len, com_ranges):
         count_streets -= 1
         coords_streets = np.delete(coords_streets, median_index)
 
-        counts_veh = np.zeros(count_streets, dtype=int)
-
         # Truncated poisson vector realization
-        for i_street in np.arange(0, count_streets - 1):
+        counts_veh = np.zeros(count_streets, dtype=int)
+        # TODO: was there a bug here! check result again!!!
+        for i_street in np.arange(count_streets):
             while counts_veh[i_street] == 0:
-                counts_veh[i_street] = np.random.poisson(lam_s * road_len, 1)
+                # TODO: There was a bug here too???
+                counts_veh[i_street] = np.random.poisson(lam_v * road_len, 1)
 
         count_veh_all = np.sum(counts_veh)
         coords_veh_all = np.zeros((count_veh_all, 2))
@@ -72,9 +73,10 @@ def count_cons_par_streets(reps, lam_v, lam_s, road_len, com_ranges):
     mean_cons = np.mean(counts_range, 1)
 
     # Analytical result
-    # TODO: why factor 2 ???
-    # mean_cons_ana = com_ranges**2 * lam_v * lam_s * np.pi / 4 * 2
-    mean_cons_ana = (2 * com_ranges * lam_s / (1 - np.exp(-com_ranges * lam_s)) - 1) * np.pi / 2 * lam_v * com_ranges
+    # TODO: not correct yet?
+    mean_cons_ana = com_ranges**2 * lam_v * lam_s * np.pi / 4
+    # mean_cons_ana = (2 * com_ranges * lam_s / (1 -
+    #                                            np.exp(-com_ranges * lam_s)) - 1) * np.pi / 2 * lam_v * com_ranges
 
     return mean_cons, mean_cons_ana, coords_veh_all, coords_own
 
@@ -95,9 +97,11 @@ def count_cons_orth_streets(reps, lam_v, lam_s, road_len, com_ranges):
         counts_veh = np.zeros(count_streets, dtype=int)
 
         # Truncated poisson vector realization
-        for i_street in np.arange(0, count_streets - 1):
+        # TODO: was there a bug here! check result again!!!
+        for i_street in np.arange(count_streets):
             while counts_veh[i_street] == 0:
-                counts_veh[i_street] = np.random.poisson(lam_s * road_len, 1)
+                # TODO: There was a bug here too???
+                counts_veh[i_street] = np.random.poisson(lam_v * road_len, 1)
 
         count_veh_all = np.sum(counts_veh)
         coords_veh_all = np.zeros((count_veh_all, 2))
@@ -119,7 +123,7 @@ def count_cons_orth_streets(reps, lam_v, lam_s, road_len, com_ranges):
     mean_cons = np.mean(counts_range, 1)
 
     # Analytical result
-    # TODO: why factor e ???
+    # TODO: not correct yet!
     mean_cons_ana = com_ranges**2 * lam_v * lam_s * np.pi / 4
 
     return mean_cons, mean_cons_ana, coords_veh_all, coords_own
@@ -141,10 +145,8 @@ def count_cons_own_street(reps, lam_v, road_len, com_ranges):
         median_index = np.floor_divide(np.size(coords_veh), 2)
         coords_veh_center = coords_veh[median_index]
         distances = np.abs(coords_veh - coords_veh_center)
-        # TODO: use fast function
-        for i_com_range, com_range in np.ndenumerate(com_ranges):
-            counts_range[i_com_range, rep] = np.count_nonzero(
-                distances < com_range) - 1
+        counts_range[:, rep] = array_count_connections(
+            distances, com_ranges) - 1
 
     mean_cons = np.mean(counts_range, 1)
 
@@ -180,7 +182,7 @@ def plot_results(mean_cons, mean_cons_ana, com_ranges, coords_veh_all, coords_ow
 
 if __name__ == '__main__':
     DEBUG = True
-    REPS = 10  # Monte Carlo runs
+    REPS = 1000  # Monte Carlo runs
     LAM_V = 1e-2  # (Relative) vehicle rate
     LAM_S = 1e-3  # (Relative) street rate
     ROAD_LEN = 5000  # length of roads
@@ -191,28 +193,28 @@ if __name__ == '__main__':
         time_start = time.process_time()
 
     # Own street
-    # OWN_MEAN_CONS, OWN_MEAN_CONS_ANA, OWN_COORDS_VEH, OWN_COORDS_VEH_OWN = \
-    #     count_cons_own_street(REPS, LAM_V, ROAD_LEN, COM_RANGES)
+    OWN_MEAN_CONS, OWN_MEAN_CONS_ANA, OWN_COORDS_VEH, OWN_COORDS_VEH_OWN = \
+        count_cons_own_street(REPS, LAM_V, ROAD_LEN, COM_RANGES)
     # Parallel streets
     PAR_MEAN_CONS, PAR_MEAN_CONS_ANA, PAR_COORDS_VEH, PAR_COORDS_VEH_OWN = \
         count_cons_par_streets(REPS, LAM_V, LAM_S, ROAD_LEN, COM_RANGES)
     # Orthogonal streets
-    # ORTH_MEAN_CONS, ORTH_MEAN_CONS_ANA, ORTH_COORDS_VEH, ORTH_COORDS_VEH_OWN = \
-    #     count_cons_orth_streets(REPS, LAM_V, LAM_S, ROAD_LEN, COM_RANGES)
+    ORTH_MEAN_CONS, ORTH_MEAN_CONS_ANA, ORTH_COORDS_VEH, ORTH_COORDS_VEH_OWN = \
+        count_cons_orth_streets(REPS, LAM_V, LAM_S, ROAD_LEN, COM_RANGES)
 
     if DEBUG:
         time_diff = time.process_time() - time_start
         print(time_diff)
 
     # Plot the results
-    # OWN_COORDS_VEH_OWN = np.hstack((OWN_COORDS_VEH_OWN, 0))
-    # OWN_COORDS_VEH = np.vstack(
-    #     (OWN_COORDS_VEH, np.zeros_like(OWN_COORDS_VEH))).T
-    # plot_results(OWN_MEAN_CONS, OWN_MEAN_CONS_ANA, COM_RANGES,
-    #              OWN_COORDS_VEH, OWN_COORDS_VEH_OWN)
+    OWN_COORDS_VEH_OWN = np.hstack((OWN_COORDS_VEH_OWN, 0))
+    OWN_COORDS_VEH = np.vstack(
+        (OWN_COORDS_VEH, np.zeros_like(OWN_COORDS_VEH))).T
+    plot_results(OWN_MEAN_CONS, OWN_MEAN_CONS_ANA, COM_RANGES,
+                 OWN_COORDS_VEH, OWN_COORDS_VEH_OWN)
     plot_results(PAR_MEAN_CONS, PAR_MEAN_CONS_ANA, COM_RANGES,
                  PAR_COORDS_VEH, PAR_COORDS_VEH_OWN)
-    # plot_results(ORTH_MEAN_CONS, ORTH_MEAN_CONS_ANA, COM_RANGES,
-    #              ORTH_COORDS_VEH, ORTH_COORDS_VEH_OWN)
+    plot_results(ORTH_MEAN_CONS, ORTH_MEAN_CONS_ANA, COM_RANGES,
+                 ORTH_COORDS_VEH, ORTH_COORDS_VEH_OWN)
     # Show all plots
     plt.show()
