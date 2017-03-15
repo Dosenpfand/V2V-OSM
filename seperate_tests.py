@@ -76,7 +76,7 @@ def count_cons_par_streets(reps, lam_v, lam_s, road_len, com_ranges):
     # TODO: not correct yet?
     mean_cons_ana = com_ranges**2 * lam_v * lam_s * np.pi / 4
     # mean_cons_ana = (2 * com_ranges * lam_s / (1 -
-    #                                            np.exp(-com_ranges * lam_s)) - 1) * np.pi / 2 * lam_v * com_ranges
+    # np.exp(-com_ranges * lam_s)) - 1) * np.pi / 2 * lam_v * com_ranges
 
     return mean_cons, mean_cons_ana, coords_veh_all, coords_own
 
