@@ -255,8 +255,8 @@ def main_sim():
     plot_cons_vs_max_pl(pl_thr_range, cons_mean)
     plot_scatter_range(coords_own, coords_in_range, coords_out_range, coords_streets_x,
                        coords_streets_y, road_len)
-    plot_scatter_range(coords_own, coords_in_range, coords_out_range, coords_streets_x,
-                       coords_streets_y, road_len)
+    plot_scatter_pathloss(coords_own, coords_veh, pathlosses, coords_streets_x, coords_streets_y, \
+                          road_len)
     plot_scatter_propagation_cond(coords_own, coords_los, coords_olos, coords_nlos,
                                   coords_very_high_pl, coords_streets_x, coords_streets_y,
                                   road_len)
