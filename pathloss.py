@@ -14,8 +14,8 @@ class Pathloss:
         if nlos_config is None:
             self.nlos_config = {
                 'wavelength': 0.050812281,
-                'width_rx_street': 7.5,
-                'dist_tx_wall': 3.75,
+                'width_rx_street': 10,
+                'dist_tx_wall': 5,
                 'is_sub_urban': False,
                 'pathloss_exp': 2.69,
                 'dist_break': 161, # TODO: check paper for value
