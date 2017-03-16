@@ -4,20 +4,37 @@ import numpy as np
 from matplotlib import pyplot as plt
 import pathloss
 
-def gen_streets_and_vehicles(lam_s, lam_v, road_len):
+def gen_streets_and_vehicles(lam_s, lam_v, road_len, is_truncated=False):
     """Generates streets and vehicles on it in 1 dimension"""
-    # Truncated poisson variable realization
-    count_streets = 0
-    while count_streets == 0:
+
+    if is_truncated:
+        # Truncated poisson variable realization
+        count_streets = 0
+        while count_streets == 0:
+            count_streets = np.random.poisson(lam_s * road_len, 1)
+    else:
+        # Poisson variable realization
         count_streets = np.random.poisson(lam_s * road_len, 1)
+        if count_streets == 0:
+            return None, None
+
     coords_streets = np.random.uniform(0, road_len, count_streets)
 
     # Truncated poisson vector realization
     counts_veh = np.zeros(count_streets, dtype=int)
-    for i_street in np.arange(count_streets):
-        while counts_veh[i_street] == 0:
+
+    if is_truncated:
+        for i_street in np.arange(count_streets):
+            while counts_veh[i_street] == 0:
+                counts_veh[i_street] = np.random.poisson(lam_v * road_len, 1)
+    else:
+        for i_street in np.arange(count_streets):
             counts_veh[i_street] = np.random.poisson(lam_v * road_len, 1)
+
     count_veh_all = np.sum(counts_veh)
+    if count_veh_all == 0:
+        return None, None
+
     coords_veh_x = np.random.uniform(0, road_len, count_veh_all)
     coords_veh_y = np.repeat(coords_streets, counts_veh)
     coords_veh = np.vstack((coords_veh_x, coords_veh_y)).T
@@ -47,13 +64,25 @@ def find_los_veh(coords_same_street, coords_own):
     dir_own = int(coords_own[2])
     ind_diff = 1-dir_own
     distances = coords_own[ind_diff] - coords_same_street[:, ind_diff]
+
+    # Positive direction
     ind_distances_pos = np.flatnonzero(distances > 0)
     distances_pos = distances[ind_distances_pos]
-    ind_los_pos = np.argmin(distances_pos)
+    if np.size(ind_distances_pos) > 0:
+        ind_los_pos = int(np.argmin(distances_pos))
+    else:
+        ind_los_pos = np.empty(0, dtype=int)
+
+    # Negative direction
     ind_distances_neg = np.flatnonzero(distances < 0)
     distances_neg = distances[ind_distances_neg]
-    ind_los_neg = np.argmax(distances_neg)
-    return ind_distances_pos[ind_los_pos], ind_distances_neg[ind_los_neg]
+    if np.size(distances_neg) > 0:
+        ind_los_neg = int(np.argmax(distances_neg))
+    else:
+        ind_los_neg = np.empty(0, dtype=int)
+
+    ind_los = np.append(ind_los_pos, ind_los_neg)
+    return ind_los
 
 def find_nlos_veh(coords_other_streets, coords_own):
     """Finds vehicles that have non line of sight to the own vehicle"""
@@ -179,35 +208,48 @@ def plot_scatter_propagation_cond(coords_own, coords_los, coords_olos, coords_nl
 def main_sim():
     """Main simulation function"""
     # configuration
-    lam_s = 3e-3
-    lam_v = 2e-2
-    road_len = 5e3
+    lam_s = 1e-2
+    lam_v = 5e-2
+    road_len = 1e3
     pl_thr_range = np.arange(50, 250, 2)
-    reps = int(1e3)
+    reps = int(1e2)
 
     cons = np.zeros((np.size(pl_thr_range), reps))
+    successfull_iter = False
 
     for i_rep in np.arange(reps):
         # Debug info
         print(i_rep)
 
         # Street and vehicle generation
-        coords_veh_x, coords_streets_x = gen_streets_and_vehicles(lam_s, lam_v, road_len)
+        coords_veh_x, coords_streets_x = gen_streets_and_vehicles(lam_s, lam_v, road_len, \
+                                                                  is_truncated=True)
         coords_veh_x = np.column_stack((coords_veh_x, np.ones(np.shape(coords_veh_x)[0])))
+
         coords_veh_y, coords_streets_y = gen_streets_and_vehicles(lam_s, lam_v, road_len)
-        coords_veh_y = np.fliplr(coords_veh_y)
-        coords_veh_y = np.column_stack((coords_veh_y, np.zeros(np.shape(coords_veh_y)[0])))
-        coords_veh = np.vstack((coords_veh_x, coords_veh_y))
+        if coords_veh_y != None:
+            coords_veh_y = np.fliplr(coords_veh_y)
+            coords_veh_y = np.column_stack((coords_veh_y, np.zeros(np.shape(coords_veh_y)[0])))
+            coords_veh = np.vstack((coords_veh_x, coords_veh_y))
+        else:
+            coords_veh = coords_veh_x
+
         ind_own = find_own_veh(road_len, coords_veh[:, 0:2])
         coords_own = coords_veh[ind_own, :]
         coords_veh = np.delete(coords_veh, ind_own, axis=0)
+
+        count_veh = np.shape(coords_veh)[0]
+        if count_veh == 0:
+            # TODO: or completely ingore?
+            cons[:, i_rep] = 0
+            continue
 
         # Determine LOS/OLOS/NLOS
         ind_same_street = find_same_street_veh(coords_veh, coords_own)
         ind_other_streets = np.setdiff1d(np.arange(np.shape(coords_veh)[0]), ind_same_street)
         coords_same_street = coords_veh[ind_same_street, :]
         coords_other_streets = coords_veh[ind_other_streets, :]
-        ind_los = np.asarray(find_los_veh(coords_same_street, coords_own))
+        ind_los = find_los_veh(coords_same_street, coords_own)
         ind_olos = np.setdiff1d(np.arange(np.shape(coords_same_street)[0]), ind_los)
         coords_los = coords_same_street[ind_los, :]
         coords_olos = coords_same_street[ind_olos, :]
@@ -242,6 +284,10 @@ def main_sim():
 
         # Count connections for all max pathlosses
         cons[:, i_rep] = count_connections(pathlosses, pl_thr_range)
+        successfull_iter = True
+
+    if not successfull_iter:
+        raise RuntimeError('No successfull iteration, nothing to plot')
 
     # Determine mean number of connections
     cons_mean = np.mean(cons, axis=1)
