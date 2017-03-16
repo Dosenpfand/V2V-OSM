@@ -68,6 +68,114 @@ def count_connections(distances, distances_max):
     counts_range = np.count_nonzero(distances_tiled < distances_max_tiled, axis=1)
     return counts_range
 
+def plot_cons_vs_max_pl(pl_thr_range, cons_mean):
+    """Plots connections vs pathloss threshold"""
+
+    # Plot
+    plt.figure()
+    plt.plot(pl_thr_range, cons_mean)
+    plt.grid(True)
+
+    # Add text
+    plt.title('Connections')
+    plt.xlabel('Max. pathloss [dB]')
+    plt.ylabel('Number of connections')
+
+
+def plot_scatter_range(coords_own, coords_in_range, coords_out_range, coords_streets_x,
+                       coords_streets_y, road_len):
+    """Scatter plot of the vehicles in and out of range"""
+
+    #Prepare
+    plt.figure()
+
+    # Plot streets
+    for coords_street_x in coords_streets_x:
+        plt.plot((0, road_len), (coords_street_x, coords_street_x), c='grey', linewidth=0.5, \
+            alpha=0.5)
+    for coords_street_y in coords_streets_y:
+        plt.plot((coords_street_y, coords_street_y), (0, road_len), c='grey', linewidth=0.5, \
+            alpha=0.5)
+
+    # Plot vehicles
+    plt.scatter(coords_in_range[:, 0], coords_in_range[:, 1], marker='x', label='In range')
+    plt.scatter(coords_out_range[:, 0], coords_out_range[:, 1], marker='x', label='Out of range')
+    plt.scatter(coords_own[0], coords_own[1], c='black', marker='o', label='Own vehicle')
+
+    # Add text
+    plt.title('Vehicle positions and range')
+    plt.xlabel('X coordinate [m]')
+    plt.ylabel('Y coordinate [m]')
+    plt.legend()
+
+def plot_scatter_pathloss(coords_own, coords_veh, pathlosses, coords_streets_x, coords_streets_y, \
+                          road_len):
+    """Scatter plot of the vehicles with color according to pathloss"""
+
+    # Prepare
+    fig, axi = plt.subplots()
+
+    # Plot streets
+    for coords_street_x in coords_streets_x:
+        plt.plot((0, road_len), (coords_street_x, coords_street_x), c='grey', linewidth=0.5, \
+            alpha=0.5)
+    for coords_street_y in coords_streets_y:
+        plt.plot((coords_street_y, coords_street_y), (0, road_len), c='grey', linewidth=0.5, \
+            alpha=0.5)
+
+    # Plot vehicles
+    plt.scatter(coords_own[0], coords_own[1], c='black', marker='o', label='Own vehicle')
+    cax = plt.scatter(coords_veh[:, 0], coords_veh[:, 1], marker='x', c=pathlosses, \
+        cmap=plt.cm.magma, label='Other vehicles')
+
+    # Add text to plot
+    axi.set_title('Vehicle positions and pathloss')
+    plt.xlabel('X coordinate [m]')
+    plt.ylabel('Y coordinate [m]')
+    plt.legend()
+
+    # Add colorbar for pathloss
+    pl_min = np.min(pathlosses)
+    pl_max = np.max(pathlosses)
+    pl_med = np.mean((pl_min, pl_max))
+    string_min = '{:.0f}'.format(pl_min)
+    string_med = '{:.0f}'.format(pl_med)
+    string_max = '{:.0f}'.format(pl_max)
+    cbar = fig.colorbar(cax, ticks=[pl_min, pl_med, pl_max], orientation='vertical')
+    cbar.ax.set_xticklabels([string_min, string_med, string_max])
+    cbar.ax.set_xlabel('Pathloss [dB]')
+
+
+def plot_scatter_propagation_cond(coords_own, coords_los, coords_olos, coords_nlos,
+                                  coords_very_high_pl, coords_streets_x, coords_streets_y, \
+                                  road_len):
+    """Scatter plot of the vehicles with colors according to the propagation condition"""
+
+    #Prepare
+    plt.figure()
+
+    # Plot streets
+    for coords_street_x in coords_streets_x:
+        plt.plot((0, road_len), (coords_street_x, coords_street_x), c='grey', linewidth=0.5, \
+            alpha=0.5)
+    for coords_street_y in coords_streets_y:
+        plt.plot((coords_street_y, coords_street_y), (0, road_len), c='grey', linewidth=0.5, \
+            alpha=0.5)
+
+    # Plot vehicles
+    plt.scatter(coords_very_high_pl[:, 0], coords_very_high_pl[:, 1], marker='x', \
+        label='Very high PL')
+    plt.scatter(coords_nlos[:, 0], coords_nlos[:, 1], marker='x', label='NLOS')
+    plt.scatter(coords_olos[:, 0], coords_olos[:, 1], marker='x', label='OLOS')
+    plt.scatter(coords_los[:, 0], coords_los[:, 1], marker='x', label='LOS')
+    plt.scatter(coords_own[0], coords_own[1], c='black', marker='o', label='Own vehicle')
+
+    # Add text
+    plt.title('Vehicle positions and propagation conditions')
+    plt.xlabel('X coordinate [m]')
+    plt.ylabel('Y coordinate [m]')
+    plt.legend()
+
 def main_sim():
     """Main simulation function"""
     # configuration
@@ -110,8 +218,8 @@ def main_sim():
 
         # Pathloss calculation
         # TODO optimize
-        distances_same_street = np.linalg.norm(coords_same_street[:, 0:2] - coords_own[0:2], ord=2, \
-            axis=1)
+        distances_same_street = np.linalg.norm(coords_same_street[:, 0:2] - coords_own[0:2],
+                                               ord=2, axis=1)
         # TODO: own vehicle assumed to be receiver
         dir_own = int(coords_own[2])
         distances_nlos_rx = np.abs(coords_nlos[:, 1-dir_own] - coords_own[1-dir_own])
@@ -143,97 +251,15 @@ def main_sim():
     coords_in_range = coords_veh[ind_in_range, :]
     coords_out_range = np.delete(coords_veh, ind_in_range, axis=0)
 
-    ## Connections vs range plot
-    plt.figure()
-    plt.plot(pl_thr_range, cons_mean)
-    plt.grid(True)
-
-    # Add text
-    plt.title('Connections')
-    plt.xlabel('Max. pathloss [dB]')
-    plt.ylabel('Number of connections')
-
-    ## Range plot
-    plt.figure()
-
-    # Plot streets
-    for coords_street_x in coords_streets_x:
-        plt.plot((0, road_len), (coords_street_x, coords_street_x), c='grey', linewidth=0.5, \
-            alpha=0.5)
-    for coords_street_y in coords_streets_y:
-        plt.plot((coords_street_y, coords_street_y), (0, road_len), c='grey', linewidth=0.5, \
-            alpha=0.5)
-
-    # Plot vehicles
-    plt.scatter(coords_in_range[:, 0], coords_in_range[:, 1], marker='x', label='In range')
-    plt.scatter(coords_out_range[:, 0], coords_out_range[:, 1], marker='x', label='Out of range')
-    plt.scatter(coords_own[0], coords_own[1], c='black', marker='o', label='Own vehicle')
-
-    # Add text
-    plt.title('Vehicle positions and range')
-    plt.xlabel('X coordinate [m]')
-    plt.ylabel('Y coordinate [m]')
-    plt.legend()
-
-    ## Pathloss plot
-    fig, ax = plt.subplots()
-
-    # Plot streets
-    for coords_street_x in coords_streets_x:
-        plt.plot((0, road_len), (coords_street_x, coords_street_x), c='grey', linewidth=0.5, \
-            alpha=0.5)
-    for coords_street_y in coords_streets_y:
-        plt.plot((coords_street_y, coords_street_y), (0, road_len), c='grey', linewidth=0.5, \
-            alpha=0.5)
-
-    # Plot vehicles
-    plt.scatter(coords_own[0], coords_own[1], c='black', marker='o', label='Own vehicle')
-    cax = plt.scatter(coords_veh[:, 0], coords_veh[:, 1], marker='x', c=pathlosses, \
-        cmap=plt.cm.magma, label='Other vehicles')
-
-    # Add text to plot
-    ax.set_title('Vehicle positions and pathloss')
-    plt.xlabel('X coordinate [m]')
-    plt.ylabel('Y coordinate [m]')
-    plt.legend()
-
-    # Add colorbar for pathloss
-    pl_min = np.min(pathlosses)
-    pl_max = np.max(pathlosses)
-    pl_med = np.mean((pl_min, pl_max))
-    string_min = '{:.0f}'.format(pl_min)
-    string_med = '{:.0f}'.format(pl_med)
-    string_max = '{:.0f}'.format(pl_max)
-    cbar = fig.colorbar(cax, ticks=[pl_min, pl_med, pl_max], orientation='vertical')
-    cbar.ax.set_xticklabels([string_min, string_med, string_max])
-    cbar.ax.set_xlabel('Pathloss [dB]')
-
-    ## Propagation condition plot
-    plt.figure()
-
-    # Plot streets
-    for coords_street_x in coords_streets_x:
-        plt.plot((0, road_len), (coords_street_x, coords_street_x), c='grey', linewidth=0.5, \
-            alpha=0.5)
-    for coords_street_y in coords_streets_y:
-        plt.plot((coords_street_y, coords_street_y), (0, road_len), c='grey', linewidth=0.5, \
-            alpha=0.5)
-
-    # Plot vehicles
-    plt.scatter(coords_very_high_pl[:, 0], coords_very_high_pl[:, 1], marker='x', \
-        label='Very high PL')
-    plt.scatter(coords_nlos[:, 0], coords_nlos[:, 1], marker='x', label='NLOS')
-    plt.scatter(coords_olos[:, 0], coords_olos[:, 1], marker='x', label='OLOS')
-    plt.scatter(coords_los[:, 0], coords_los[:, 1], marker='x', label='LOS')
-    plt.scatter(coords_own[0], coords_own[1], c='black', marker='o', label='Own vehicle')
-    
-    # Add text
-    plt.title('Vehicle positions and propagation conditions')
-    plt.xlabel('X coordinate [m]')
-    plt.ylabel('Y coordinate [m]')
-    plt.legend()
-
-    # Show plots
+    # Plots
+    plot_cons_vs_max_pl(pl_thr_range, cons_mean)
+    plot_scatter_range(coords_own, coords_in_range, coords_out_range, coords_streets_x,
+                       coords_streets_y, road_len)
+    plot_scatter_range(coords_own, coords_in_range, coords_out_range, coords_streets_x,
+                       coords_streets_y, road_len)
+    plot_scatter_propagation_cond(coords_own, coords_los, coords_olos, coords_nlos,
+                                  coords_very_high_pl, coords_streets_x, coords_streets_y,
+                                  road_len)
     plt.show()
 
 if __name__ == '__main__':
