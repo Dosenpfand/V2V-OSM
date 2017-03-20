@@ -1,5 +1,5 @@
 # Folder and file structure:
-## manhatten/
+## manhattan/
 simulations using the stochastic Manhattan grid
 - pathloss.py - pathloss functions for different propagation conditions
 - sim_con_pathloss.py - Simulates connections with pathloss as a metric
