@@ -1,21 +1,26 @@
 """ Generates streets, buildings and vehicles from OpenStreetMap data with osmnx"""
 
+import os.path
+import numpy as np
 import pickle
-# TODO: update osmnx and delte _git
+# TODO: update osmnx and delete _git
 import osmnx_git as ox
 import matplotlib.pyplot as plt
-import networkx as nx
+# import networkx as nx
 
+from shapely.geometry import LineString
 
-def plot_streets_and_buildings(streets, buildings=None, show=True, filename=None):
+# TODO: edge['geometry'].length and edge['length'] are not equal!
+
+def plot_streets_and_buildings(streets, buildings=None, show=True, filename=None, dpi=300):
     """ Plots streets and buildings"""
 
     # TODO: street width!
     # TODO: bug when plotting buildings, inner area not empty!
-    fig, axi = ox.plot_graph(streets, show=False, close=False, node_size=0)
+    fig, axi = ox.plot_graph(streets, show=False, close=False, node_size=0, dpi=dpi)
 
     if buildings is not None:
-        ox.plot_buildings(buildings, fig=fig, ax=axi, show=False, close=False)
+        ox.plot_buildings(buildings, fig=fig, ax=axi, show=False, close=False, dpi=dpi)
 
     if show:
         plt.show()
@@ -78,30 +83,118 @@ def setup_debug():
     ox.config(log_console=True, use_cache=True)
 
 
-# def get_street_coordinates(streets):
-#     """ Returns the coordinates of a street graph"""
-#     # TODO: rework, just 1st test version
-#     for edge_keys in nx.edges_iter(streets):
-#         for multi_key in streets[edge_keys[0]][edge_keys[1]]:
-#             edge = streets[edge_keys[0]][edge_keys[1]][multi_key]
-#             if 'geometry' in edge:
-#                 coords = edge['geometry'].xy
-#                 plt.plot(coords[0], coords[1], c='grey')
-#             else:
-#                 x1 = streets.node[edge_keys[0]]['x']
-#                 y1 = streets.node[edge_keys[0]]['y']
-#                 x2 = streets.node[edge_keys[1]]['x']
-#                 y2 = streets.node[edge_keys[1]]['y']
-#                 plt.plot((x1, x2), (y1, y2), c='grey')
+def get_street_coordinates(streets):
+    """ Returns the coordinates of the streets in a graph"""
+    # TODO: use streets.number_of_edges() ?
+    lines = []
+    for u, v, data in streets.edges(data=True):
+        if 'geometry' in data:
+            coord_xs, coord_ys = data['geometry'].xy
+            lines.append(list(zip(coord_xs, coord_ys)))
+        else:
+            coord_x1 = streets.node[u]['x']
+            coord_y1 = streets.node[u]['y']
+            coord_x2 = streets.node[v]['x']
+            coord_y2 = streets.node[v]['y']
+            line = [(coord_x1, coord_y1), (coord_x2, coord_y2)]
+            lines.append(line)
 
+    return lines
+
+def add_geometry(streets):
+    """ Adds geometry object to the edges of the graph where they are missing"""
+    for u, v, data in streets.edges(data=True):
+        if 'geometry' not in data:
+            coord_x1 = streets.node[u]['x']
+            coord_y1 = streets.node[u]['y']
+            coord_x2 = streets.node[v]['x']
+            coord_y2 = streets.node[v]['y']
+            data['geometry'] = LineString([(coord_x1, coord_x2), (coord_y1, coord_y2)])
+
+def check_geometry(streets):
+    """ Checks if all edges of the graph have a geometry object"""
+    complete = True
+    for u, v, data in streets.edges(data=True):
+        if 'geometry' not in data:
+            complete = False
+            break
+
+    return complete
+
+
+def line_intersects_streets(line, streets):
+    """ Checks a if a line intersects with any of the streets"""
+    # TODO: more efficiently? adjacency?
+    intersects = False
+    for u, v, data in streets.edges(data=True):
+        if line.intersects(data['geometry']):
+            intersects = True
+            break
+
+    return intersects
+
+def line_intersects_buildings(line, buildings):
+    # TODO: !
+    return False
+
+
+def get_street_lengths(streets):
+    """ Returns the lengths of the streets in a graph"""
+    # TODO: use streets.number_of_edges() ?
+    lengths = []
+    for u, v, data in streets.edges(data=True):
+        lengths.append(data['length'])
+    return lengths
+
+def choose_random_streets(lengths, count=1):
+    """ Chooses random streets with probabilities relative to their length"""
+    total_length = sum(lengths)
+    probs = lengths/total_length
+    count_streets = np.size(lengths)
+    indices = np.zeros(count, dtype=int)
+    indices = np.random.choice(count_streets, size=count, p=probs)
+    return indices
 
 def main_test(place, which_result=1):
     """ Test the functionality"""
     # TODO: temp, delete
     setup_debug()
-    filename = string_to_filename('images/{}.pdf'.format(place))
-    data = download_place(place, which_result=which_result)
-    plot_streets_and_buildings(data['streets'], data['buildings'], show=False, filename=filename)
+    print('RUNNING MAIN TEST')
+    
+    # Load data
+    file_prefix = 'data/{}'.format(string_to_filename(place))
+    filename_data_streets = 'data/{}_streets.pickle'.format(string_to_filename(place))
+    filename_data_buildings = 'data/{}_buildings.pickle'.format(string_to_filename(place))
+
+    if os.path.isfile(filename_data_streets) and os.path.isfile(filename_data_buildings):
+        print('LOADING FROM DISK')
+        data = load_place(file_prefix)
+    else:
+        print('DOWNLOADING')
+        data = download_place(place, which_result=which_result)
+
+    # Plot
+    filename_img = 'images/{}.pdf'.format(string_to_filename(place))
+    plot_streets_and_buildings(data['streets'], data['buildings'], show=False, dpi=300)
+        # filename=filename_img)
+
+    # Test intersection and random functions
+    streets = data['streets']
+    street_lengths = get_street_lengths(streets)
+    rand_index = choose_random_streets(street_lengths, 2)
+    line_street_1 = streets.edges(data=True)[rand_index[0]][2]['geometry']
+    line_street_2 = streets.edges(data=True)[rand_index[1]][2]['geometry']
+    plt.scatter(line_street_1.xy[0], line_street_1.xy[1])
+    plt.scatter(line_street_2.xy[0], line_street_2.xy[1])
+    
+    add_geometry(streets)
+    intersects_1 = line_intersects_streets(line_street_1, streets)
+    if intersects_1:
+        print('INTERSECT')
+    else:
+        print('NO INTERSECT')
+    
+    plt.show()
 
 if __name__ == '__main__':
-    main_test('vienna - austria', 2)
+    main_test('innere stadt - vienna - austria', 1)
