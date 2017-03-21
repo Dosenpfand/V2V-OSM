@@ -95,3 +95,9 @@ ENV/
 
 # Rope project settings
 .ropeproject
+
+# osmnx cache files
+osm/cache/*.json
+
+# Temporary new version of osmnx
+osm/osmnx_git/
