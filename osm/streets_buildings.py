@@ -8,7 +8,7 @@ import osmnx_git as ox
 import matplotlib.pyplot as plt
 # import networkx as nx
 
-from shapely.geometry import LineString
+import shapely.geometry as geom
 
 # TODO: edge['geometry'].length and edge['length'] are not equal!
 
@@ -109,7 +109,7 @@ def add_geometry(streets):
             coord_y1 = streets.node[u]['y']
             coord_x2 = streets.node[v]['x']
             coord_y2 = streets.node[v]['y']
-            data['geometry'] = LineString([(coord_x1, coord_x2), (coord_y1, coord_y2)])
+            data['geometry'] = geom.LineString([(coord_x1, coord_y1), (coord_x2, coord_y2)])
 
 def check_geometry(streets):
     """ Checks if all edges of the graph have a geometry object"""
@@ -134,9 +134,24 @@ def line_intersects_streets(line, streets):
     return intersects
 
 def line_intersects_buildings(line, buildings):
-    # TODO: !
-    return False
+    """ Checks if a line intersects with any of the buildings"""
+    intersects = False
+    for geometry in buildings['geometry']:
+        if line.intersects(geometry):
+            intersects = True
+            break
 
+    return intersects
+
+def line_intersects_points(line, points, margin=1):
+    """ Checks if a line intersects with any of the points within a margin """
+    intersects = False
+    for point in points:
+        if line.distance(point) < margin:
+            intersects = True
+            break
+
+    return intersects
 
 def get_street_lengths(streets):
     """ Returns the lengths of the streets in a graph"""
@@ -154,6 +169,27 @@ def choose_random_streets(lengths, count=1):
     indices = np.zeros(count, dtype=int)
     indices = np.random.choice(count_streets, size=count, p=probs)
     return indices
+
+def choose_random_point(street, count=1):
+    """Chooses random points along street """
+    distances = np.random.random(count)
+    # TODO: is not really zeros
+    points = np.zeros_like(distances, dtype=geom.Point)
+    for index, dist in np.ndenumerate(distances):
+        points[index] = street.interpolate(dist, normalized=True)
+
+    return points
+
+def extract_point_array(points):
+    """Extracts coordinates form a point array"""
+    coords_x = np.zeros_like(points)
+    coords_y = np.zeros_like(points)
+    
+    for index, point in np.ndenumerate(points):
+        coords_x[index] = point.x
+        coords_y[index] = point.y
+
+    return coords_x, coords_y
 
 def main_test(place, which_result=1):
     """ Test the functionality"""
@@ -175,24 +211,29 @@ def main_test(place, which_result=1):
 
     # Plot
     filename_img = 'images/{}.pdf'.format(string_to_filename(place))
+    # plot_streets_and_buildings(data['streets'], show=False, dpi=300)
     plot_streets_and_buildings(data['streets'], data['buildings'], show=False, dpi=300)
-        # filename=filename_img)
 
     # Test intersection and random functions
     streets = data['streets']
     street_lengths = get_street_lengths(streets)
-    rand_index = choose_random_streets(street_lengths, 2)
-    line_street_1 = streets.edges(data=True)[rand_index[0]][2]['geometry']
-    line_street_2 = streets.edges(data=True)[rand_index[1]][2]['geometry']
-    plt.scatter(line_street_1.xy[0], line_street_1.xy[1])
-    plt.scatter(line_street_2.xy[0], line_street_2.xy[1])
-    
+    rand_index = choose_random_streets(street_lengths, 1000)
     add_geometry(streets)
-    intersects_1 = line_intersects_streets(line_street_1, streets)
-    if intersects_1:
-        print('INTERSECT')
-    else:
-        print('NO INTERSECT')
+    points = []
+    for index in rand_index:
+        street_geom = streets.edges(data=True)[index][2]['geometry']
+        point = choose_random_point(street_geom)
+        points.append(point)
+
+    x_coords, y_coords = extract_point_array(points)
+    plt.scatter(x_coords, y_coords)
+
+    
+    # intersects_1 = line_intersects_streets(line_street_1, streets)
+    # if intersects_1:
+    #     print('INTERSECT')
+    # else:
+    #     print('NO INTERSECT')
     
     plt.show()
 
