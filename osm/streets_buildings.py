@@ -7,7 +7,8 @@ import pickle
 import osmnx_git as ox
 import matplotlib.pyplot as plt
 import ipdb
-# import networkx as nx
+import networkx as nx
+import argparse
 
 import shapely.geometry as geom
 
@@ -22,7 +23,6 @@ def plot_streets_and_buildings(streets, buildings=None, show=True, filename=None
         streets, show=False, close=False, node_size=0, dpi=dpi, edge_color='#333333')
 
     if buildings is not None:
-        
         ox.plot_buildings(buildings, fig=fig, ax=axi,
                           show=False, close=False, dpi=dpi, color='#999999')
 
@@ -151,6 +151,23 @@ def line_intersects_buildings(line, buildings):
 
     return intersects
 
+
+def line_intersects_points(line, points, margin=1):
+    """ Checks if a line intersects with any of the points within a margin """
+
+    intersects = False
+
+    for point in points:
+        proj = line.project(point)
+        point_in_roi = (proj > 0) and (proj < line.length)
+        distance_small = line.distance(point) < margin
+        if point_in_roi and distance_small:
+            intersects = True
+            break
+
+    return intersects
+
+
 def veh_cons_are_nlos(point_own, point_vehs, buildings):
     """ Determines for each connection if it is NLOS or not"""
 
@@ -162,16 +179,20 @@ def veh_cons_are_nlos(point_own, point_vehs, buildings):
 
     return is_nlos
 
+def veh_cons_are_olos(point_own, point_vehs, margin=1):
+    """ Determines for each LOS/OLOS connection if it is OLOS """
 
-def line_intersects_points(line, points, margin=1):
-    """ Checks if a line intersects with any of the points within a margin """
-    intersects = False
-    for point in points:
-        if line.distance(point) < margin:
-            intersects = True
-            break
+    #TODO: Also use NLOS vehicles!
 
-    return intersects
+    is_olos = np.zeros(np.size(point_vehs), dtype=bool)
+
+    for index, point in np.ndenumerate(point_vehs):
+        line = geom.LineString([point_own, point])
+        indices_other = np.ones(np.size(point_vehs), dtype=bool)
+        indices_other[index] = False
+        is_olos[index] = line_intersects_points(line, point_vehs[indices_other], margin=margin)
+
+    return is_olos
 
 
 def get_street_lengths(streets):
@@ -236,9 +257,10 @@ def main_test(place, which_result=1, count_veh=100):
 
     # Setup
     setup_debug()
-    print('RUNNING MAIN TEST')
+    print('Running main test')
 
     # Load data
+    print('Loading data')
     file_prefix = 'data/{}'.format(string_to_filename(place))
     filename_data_streets = 'data/{}_streets.pickle'.format(
         string_to_filename(place))
@@ -258,6 +280,7 @@ def main_test(place, which_result=1, count_veh=100):
     plot_streets_and_buildings(data['streets'], data['buildings'], show=False, dpi=300)
 
     # Choose random streets and position on streets
+    print('Choosing random vehicle positions')
     streets = data['streets']
     add_geometry(streets)
     street_lengths = get_street_lengths(streets)
@@ -270,6 +293,7 @@ def main_test(place, which_result=1, count_veh=100):
     x_coords, y_coords = extract_point_array(points)
 
     # Find center vehicle and plot
+    print('Finding center vehicle')
     index_center_veh = find_center_veh(x_coords, y_coords)
     index_other_vehs = np.ones(len(points), dtype=bool)
     index_other_vehs[index_center_veh] = False
@@ -277,25 +301,46 @@ def main_test(place, which_result=1, count_veh=100):
     y_coord_center_veh = y_coords[index_center_veh]
     x_coord_other_vehs = x_coords[index_other_vehs]
     y_coord_other_vehs = y_coords[index_other_vehs]
+    point_center_veh = points[index_center_veh]
+    points_other_veh = points[index_other_vehs]
     plt.scatter(x_coord_center_veh, y_coord_center_veh, label='Own', zorder=10)
 
-    # Determine propagation condition (NLOS/OLOS/LOS/Very high PL) and plot
+    # Determine NLOS and OLOS/LOS
+    print('Determining propagation condition')
     buildings = data['buildings']
-    is_nlos = veh_cons_are_nlos(points[index_center_veh], points[index_other_vehs], buildings)
+    is_nlos = veh_cons_are_nlos(point_center_veh, points_other_veh, buildings)
     x_coord_nlos_vehs = x_coord_other_vehs[is_nlos]
     y_coord_nlos_vehs = y_coord_other_vehs[is_nlos]
-    plt.scatter(x_coord_nlos_vehs, y_coord_nlos_vehs, label='NLOS', zorder=9, alpha=0.5)
+    plt.scatter(x_coord_nlos_vehs, y_coord_nlos_vehs, label='NLOS', zorder=5, alpha=0.5)
 
-    # TODO: temp
+    # Determine OLOS and LOS
     is_olos_los = np.invert(is_nlos)
     x_coord_olos_los_vehs = x_coord_other_vehs[is_olos_los]
     y_coord_olos_los_vehs = y_coord_other_vehs[is_olos_los]
-    plt.scatter(x_coord_olos_los_vehs, y_coord_olos_los_vehs, label='LOS/OLOS', zorder=8)
+    points_olos_los = points_other_veh[is_olos_los]
+    # TODO: choose margin wisely
+    is_olos = veh_cons_are_olos(point_center_veh, points_olos_los, margin=1.5)
+    is_los = np.invert(is_olos)
+    x_coord_olos_vehs = x_coord_olos_los_vehs[is_olos]
+    y_coord_olos_vehs = y_coord_olos_los_vehs[is_olos]
+    x_coord_los_vehs = x_coord_olos_los_vehs[is_los]
+    y_coord_los_vehs = y_coord_olos_los_vehs[is_los]
+    plt.scatter(x_coord_olos_vehs, y_coord_olos_vehs, label='OLOS', zorder=8, alpha=0.75)
+    plt.scatter(x_coord_los_vehs, y_coord_los_vehs, label='LOS', zorder=8, alpha=0.75)
 
     # Show the plots
+    print('Showing plot')
     plt.legend()
     plt.show()
 
+def parse_arguments():
+    """Parses the command line arguments and returns them """
+    parser = argparse.ArgumentParser(description='Simulate connections on map.')
+    parser.add_argument('-p', type=str, default='neubau - vienna - austria', help='place')
+    parser.add_argument('-c', type=int, default=1000, help='number of vehicles')
+    arguments = parser.parse_args()
+    return arguments
+
 if __name__ == '__main__':
-    main_test('neubau - vienna - austria',
-              which_result=1, count_veh=1000)
+    args = parse_arguments()
+    main_test(args.p, which_result=1, count_veh=args.c)
