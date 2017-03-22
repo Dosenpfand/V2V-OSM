@@ -6,6 +6,7 @@ import pickle
 # TODO: update osmnx and delete _git
 import osmnx_git as ox
 import matplotlib.pyplot as plt
+import ipdb
 # import networkx as nx
 
 import shapely.geometry as geom
@@ -17,10 +18,13 @@ def plot_streets_and_buildings(streets, buildings=None, show=True, filename=None
 
     # TODO: street width!
     # TODO: bug when plotting buildings, inner area not empty!
-    fig, axi = ox.plot_graph(streets, show=False, close=False, node_size=0, dpi=dpi)
+    fig, axi = ox.plot_graph(
+        streets, show=False, close=False, node_size=0, dpi=dpi, edge_color='#333333')
 
     if buildings is not None:
-        ox.plot_buildings(buildings, fig=fig, ax=axi, show=False, close=False, dpi=dpi)
+        
+        ox.plot_buildings(buildings, fig=fig, ax=axi,
+                          show=False, close=False, dpi=dpi, color='#999999')
 
     if show:
         plt.show()
@@ -101,6 +105,7 @@ def get_street_coordinates(streets):
 
     return lines
 
+
 def add_geometry(streets):
     """ Adds geometry object to the edges of the graph where they are missing"""
     for u, v, data in streets.edges(data=True):
@@ -109,7 +114,9 @@ def add_geometry(streets):
             coord_y1 = streets.node[u]['y']
             coord_x2 = streets.node[v]['x']
             coord_y2 = streets.node[v]['y']
-            data['geometry'] = geom.LineString([(coord_x1, coord_y1), (coord_x2, coord_y2)])
+            data['geometry'] = geom.LineString(
+                [(coord_x1, coord_y1), (coord_x2, coord_y2)])
+
 
 def check_geometry(streets):
     """ Checks if all edges of the graph have a geometry object"""
@@ -133,6 +140,7 @@ def line_intersects_streets(line, streets):
 
     return intersects
 
+
 def line_intersects_buildings(line, buildings):
     """ Checks if a line intersects with any of the buildings"""
     intersects = False
@@ -142,6 +150,18 @@ def line_intersects_buildings(line, buildings):
             break
 
     return intersects
+
+def veh_cons_are_nlos(point_own, point_vehs, buildings):
+    """ Determines for each connection if it is NLOS or not"""
+
+    is_nlos = np.zeros(np.size(point_vehs), dtype=bool)
+
+    for index, point in np.ndenumerate(point_vehs):
+        line = geom.LineString([point_own, point])
+        is_nlos[index] = line_intersects_buildings(line, buildings)
+
+    return is_nlos
+
 
 def line_intersects_points(line, points, margin=1):
     """ Checks if a line intersects with any of the points within a margin """
@@ -153,6 +173,7 @@ def line_intersects_points(line, points, margin=1):
 
     return intersects
 
+
 def get_street_lengths(streets):
     """ Returns the lengths of the streets in a graph"""
     # TODO: use streets.number_of_edges() ?
@@ -161,81 +182,120 @@ def get_street_lengths(streets):
         lengths.append(data['length'])
     return lengths
 
+
 def choose_random_streets(lengths, count=1):
     """ Chooses random streets with probabilities relative to their length"""
     total_length = sum(lengths)
-    probs = lengths/total_length
+    probs = lengths / total_length
     count_streets = np.size(lengths)
     indices = np.zeros(count, dtype=int)
     indices = np.random.choice(count_streets, size=count, p=probs)
     return indices
 
+
 def choose_random_point(street, count=1):
     """Chooses random points along street """
     distances = np.random.random(count)
-    # TODO: is not really zeros
     points = np.zeros_like(distances, dtype=geom.Point)
     for index, dist in np.ndenumerate(distances):
         points[index] = street.interpolate(dist, normalized=True)
 
     return points
 
+
 def extract_point_array(points):
-    """Extracts coordinates form a point array"""
-    coords_x = np.zeros_like(points)
-    coords_y = np.zeros_like(points)
-    
+    """Extracts coordinates form a point array """
+    coords_x = np.zeros(np.size(points), dtype=float)
+    coords_y = np.zeros(np.size(points), dtype=float)
+
     for index, point in np.ndenumerate(points):
         coords_x[index] = point.x
         coords_y[index] = point.y
 
     return coords_x, coords_y
 
-def main_test(place, which_result=1):
-    """ Test the functionality"""
-    # TODO: temp, delete
+
+def find_center_veh(coords_x, coords_y):
+    """Finds the index of the vehicle at the center of the map """
+    min_x = np.amin(coords_x)
+    max_x = np.amax(coords_x)
+    min_y = np.amin(coords_y)
+    max_y = np.amax(coords_y)
+    mean_x = (min_x + max_x) / 2
+    mean_y = (min_y + max_y) / 2
+    coords_center = np.array((mean_x, mean_y))
+    coords_veh = np.vstack((coords_x, coords_y)).T
+    distances_center = np.linalg.norm(
+        coords_center - coords_veh, ord=2, axis=1)
+    index_center_veh = np.argmin(distances_center)
+    return index_center_veh
+
+
+def main_test(place, which_result=1, count_veh=100):
+    """ Test the whole functionality"""
+
+    # Setup
     setup_debug()
     print('RUNNING MAIN TEST')
-    
+
     # Load data
     file_prefix = 'data/{}'.format(string_to_filename(place))
-    filename_data_streets = 'data/{}_streets.pickle'.format(string_to_filename(place))
-    filename_data_buildings = 'data/{}_buildings.pickle'.format(string_to_filename(place))
+    filename_data_streets = 'data/{}_streets.pickle'.format(
+        string_to_filename(place))
+    filename_data_buildings = 'data/{}_buildings.pickle'.format(
+        string_to_filename(place))
 
     if os.path.isfile(filename_data_streets) and os.path.isfile(filename_data_buildings):
+        # Load from file
         print('LOADING FROM DISK')
         data = load_place(file_prefix)
     else:
+        # Load from internet
         print('DOWNLOADING')
         data = download_place(place, which_result=which_result)
 
-    # Plot
-    filename_img = 'images/{}.pdf'.format(string_to_filename(place))
-    # plot_streets_and_buildings(data['streets'], show=False, dpi=300)
+    # Plot streets and buildings
     plot_streets_and_buildings(data['streets'], data['buildings'], show=False, dpi=300)
 
-    # Test intersection and random functions
+    # Choose random streets and position on streets
     streets = data['streets']
-    street_lengths = get_street_lengths(streets)
-    rand_index = choose_random_streets(street_lengths, 1000)
     add_geometry(streets)
-    points = []
+    street_lengths = get_street_lengths(streets)
+    rand_index = choose_random_streets(street_lengths, count_veh)
+    points = np.zeros(0, dtype=geom.Point)
     for index in rand_index:
         street_geom = streets.edges(data=True)[index][2]['geometry']
         point = choose_random_point(street_geom)
-        points.append(point)
-
+        points = np.append(points, point)
     x_coords, y_coords = extract_point_array(points)
-    plt.scatter(x_coords, y_coords)
 
-    
-    # intersects_1 = line_intersects_streets(line_street_1, streets)
-    # if intersects_1:
-    #     print('INTERSECT')
-    # else:
-    #     print('NO INTERSECT')
-    
+    # Find center vehicle and plot
+    index_center_veh = find_center_veh(x_coords, y_coords)
+    index_other_vehs = np.ones(len(points), dtype=bool)
+    index_other_vehs[index_center_veh] = False
+    x_coord_center_veh = x_coords[index_center_veh]
+    y_coord_center_veh = y_coords[index_center_veh]
+    x_coord_other_vehs = x_coords[index_other_vehs]
+    y_coord_other_vehs = y_coords[index_other_vehs]
+    plt.scatter(x_coord_center_veh, y_coord_center_veh, label='Own', zorder=10)
+
+    # Determine propagation condition (NLOS/OLOS/LOS/Very high PL) and plot
+    buildings = data['buildings']
+    is_nlos = veh_cons_are_nlos(points[index_center_veh], points[index_other_vehs], buildings)
+    x_coord_nlos_vehs = x_coord_other_vehs[is_nlos]
+    y_coord_nlos_vehs = y_coord_other_vehs[is_nlos]
+    plt.scatter(x_coord_nlos_vehs, y_coord_nlos_vehs, label='NLOS', zorder=9, alpha=0.5)
+
+    # TODO: temp
+    is_olos_los = np.invert(is_nlos)
+    x_coord_olos_los_vehs = x_coord_other_vehs[is_olos_los]
+    y_coord_olos_los_vehs = y_coord_other_vehs[is_olos_los]
+    plt.scatter(x_coord_olos_los_vehs, y_coord_olos_los_vehs, label='LOS/OLOS', zorder=8)
+
+    # Show the plots
+    plt.legend()
     plt.show()
 
 if __name__ == '__main__':
-    main_test('innere stadt - vienna - austria', 1)
+    main_test('neubau - vienna - austria',
+              which_result=1, count_veh=1000)
