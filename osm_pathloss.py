@@ -1,16 +1,18 @@
 """ Generates streets, buildings and vehicles from OpenStreetMap data with osmnx"""
 
+# Standard imports
+import argparse
 import os.path
-import numpy as np
 import pickle
-# TODO: update osmnx and delete _git
-import osmnx_git as ox
+# Extension imports
+import numpy as np
+import osmnx_git as ox # TODO: update osmnx and delete _git
 import matplotlib.pyplot as plt
 import ipdb
 import networkx as nx
-import argparse
-
 import shapely.geometry as geom
+# Local imports
+import pathloss
 
 # TODO: edge['geometry'].length and edge['length'] are not equal!
 
@@ -91,15 +93,15 @@ def get_street_coordinates(streets):
     """ Returns the coordinates of the streets in a graph"""
     # TODO: use streets.number_of_edges() ?
     lines = []
-    for u, v, data in streets.edges(data=True):
+    for u_node, v_node, data in streets.edges(data=True):
         if 'geometry' in data:
             coord_xs, coord_ys = data['geometry'].xy
             lines.append(list(zip(coord_xs, coord_ys)))
         else:
-            coord_x1 = streets.node[u]['x']
-            coord_y1 = streets.node[u]['y']
-            coord_x2 = streets.node[v]['x']
-            coord_y2 = streets.node[v]['y']
+            coord_x1 = streets.node[u_node]['x']
+            coord_y1 = streets.node[u_node]['y']
+            coord_x2 = streets.node[v_node]['x']
+            coord_y2 = streets.node[v_node]['y']
             line = [(coord_x1, coord_y1), (coord_x2, coord_y2)]
             lines.append(line)
 
@@ -108,12 +110,12 @@ def get_street_coordinates(streets):
 
 def add_geometry(streets):
     """ Adds geometry object to the edges of the graph where they are missing"""
-    for u, v, data in streets.edges(data=True):
+    for u_node, v_node, data in streets.edges(data=True):
         if 'geometry' not in data:
-            coord_x1 = streets.node[u]['x']
-            coord_y1 = streets.node[u]['y']
-            coord_x2 = streets.node[v]['x']
-            coord_y2 = streets.node[v]['y']
+            coord_x1 = streets.node[u_node]['x']
+            coord_y1 = streets.node[u_node]['y']
+            coord_x2 = streets.node[v_node]['x']
+            coord_y2 = streets.node[v_node]['y']
             data['geometry'] = geom.LineString(
                 [(coord_x1, coord_y1), (coord_x2, coord_y2)])
 
@@ -121,7 +123,7 @@ def add_geometry(streets):
 def check_geometry(streets):
     """ Checks if all edges of the graph have a geometry object"""
     complete = True
-    for u, v, data in streets.edges(data=True):
+    for _, _, data in streets.edges(data=True):
         if 'geometry' not in data:
             complete = False
             break
@@ -133,7 +135,7 @@ def line_intersects_streets(line, streets):
     """ Checks a if a line intersects with any of the streets"""
     # TODO: more efficiently? adjacency?
     intersects = False
-    for u, v, data in streets.edges(data=True):
+    for _, _, data in streets.edges(data=True):
         if line.intersects(data['geometry']):
             intersects = True
             break
@@ -182,7 +184,8 @@ def veh_cons_are_nlos(point_own, point_vehs, buildings):
 def veh_cons_are_olos(point_own, point_vehs, margin=1):
     """ Determines for each LOS/OLOS connection if it is OLOS """
 
-    #TODO: Also use NLOS vehicles!
+    # TODO: Also use NLOS vehicles!
+    # TODO: working properly? still too many LOS vehicles?
 
     is_olos = np.zeros(np.size(point_vehs), dtype=bool)
 
@@ -199,7 +202,7 @@ def get_street_lengths(streets):
     """ Returns the lengths of the streets in a graph"""
     # TODO: use streets.number_of_edges() ?
     lengths = []
-    for u, v, data in streets.edges(data=True):
+    for _, _, data in streets.edges(data=True):
         lengths.append(data['length'])
     return lengths
 
@@ -250,6 +253,15 @@ def find_center_veh(coords_x, coords_y):
         coords_center - coords_veh, ord=2, axis=1)
     index_center_veh = np.argmin(distances_center)
     return index_center_veh
+
+# def very_simple_distance(point1, point2, graph):
+#     """Determines a very simple distance between 2 points """
+#     # TODO: convert graph to undirected (electromagnetic waves do not respect driving directions)
+#     coord_1 = point1.xy
+#     coord_2 = point2.xy
+#     node_1 = ox.get_nearest_node(coord_1)
+#     node_2 = ox.get_nearest_node(coord_2)
+#     route = nx.)
 
 
 def main_test(place, which_result=1, count_veh=100):
@@ -311,6 +323,7 @@ def main_test(place, which_result=1, count_veh=100):
     is_nlos = veh_cons_are_nlos(point_center_veh, points_other_veh, buildings)
     x_coord_nlos_vehs = x_coord_other_vehs[is_nlos]
     y_coord_nlos_vehs = y_coord_other_vehs[is_nlos]
+    points_nlos_veh = points_other_veh[is_nlos]
     plt.scatter(x_coord_nlos_vehs, y_coord_nlos_vehs, label='NLOS', zorder=5, alpha=0.5)
 
     # Determine OLOS and LOS
@@ -319,7 +332,7 @@ def main_test(place, which_result=1, count_veh=100):
     y_coord_olos_los_vehs = y_coord_other_vehs[is_olos_los]
     points_olos_los = points_other_veh[is_olos_los]
     # TODO: choose margin wisely
-    is_olos = veh_cons_are_olos(point_center_veh, points_olos_los, margin=1.5)
+    is_olos = veh_cons_are_olos(point_center_veh, points_olos_los, margin=2)
     is_los = np.invert(is_olos)
     x_coord_olos_vehs = x_coord_olos_los_vehs[is_olos]
     y_coord_olos_vehs = y_coord_olos_los_vehs[is_olos]
@@ -335,12 +348,13 @@ def main_test(place, which_result=1, count_veh=100):
 
 def parse_arguments():
     """Parses the command line arguments and returns them """
-    parser = argparse.ArgumentParser(description='Simulate connections on map.')
+    parser = argparse.ArgumentParser(description='Simulate vehicle connections on map')
     parser.add_argument('-p', type=str, default='neubau - vienna - austria', help='place')
     parser.add_argument('-c', type=int, default=1000, help='number of vehicles')
+    parser.add_argument('-w', type=int, default=1, help='which result')
     arguments = parser.parse_args()
     return arguments
 
 if __name__ == '__main__':
     args = parse_arguments()
-    main_test(args.p, which_result=1, count_veh=args.c)
+    main_test(args.p, which_result=args.w, count_veh=args.c)
