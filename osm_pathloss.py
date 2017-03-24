@@ -263,9 +263,15 @@ def split_line_at_point(line, point):
     """Splits a line at the point on the line """
     if line.distance(point) > 1e-8:
         raise ValueError('Point not on line')
-    line_before = geom.LineString([line.coords[0], point.coords[:][0]])
-    line_after = geom.LineString([point.coords[:][0], line.coords[-1]])
+
+    # Hack to get around floating point precision
+    circle = point.buffer(1e-8)
+    line_split = ops.split(line, circle)
+    line_before = line_split[0]
+    line_after = line_split[2]
+
     return line_before, line_after
+
 
 def add_edges_if_los(graph, buildings, max_distance=50):
     """Adds edges to the streets graph if there is none between 2 nodes if there is none, the have
@@ -304,8 +310,7 @@ def add_edges_if_los(graph, buildings, max_distance=50):
 
             edge_attr = {'length': distance, 'geometry': line}
             graph.add_edge(node_u, node_v, attr_dict=edge_attr)
-            print('node_added')
-
+            
 
 def main_test(place, which_result=1, count_veh=100):
     """ Test the whole functionality"""
