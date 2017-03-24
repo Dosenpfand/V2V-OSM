@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 import ipdb
 import networkx as nx
 import shapely.geometry as geom
+import shapely.ops as ops
 # Local imports
 import pathloss
 
@@ -98,6 +99,7 @@ def get_street_coordinates(streets):
             coord_xs, coord_ys = data['geometry'].xy
             lines.append(list(zip(coord_xs, coord_ys)))
         else:
+            # TODO: eliminate this case and just call generate_geometry before?
             coord_x1 = streets.node[u_node]['x']
             coord_y1 = streets.node[u_node]['y']
             coord_x2 = streets.node[v_node]['x']
@@ -129,18 +131,6 @@ def check_geometry(streets):
             break
 
     return complete
-
-
-def line_intersects_streets(line, streets):
-    """ Checks a if a line intersects with any of the streets"""
-    # TODO: more efficiently? adjacency?
-    intersects = False
-    for _, _, data in streets.edges(data=True):
-        if line.intersects(data['geometry']):
-            intersects = True
-            break
-
-    return intersects
 
 
 def line_intersects_buildings(line, buildings):
@@ -254,14 +244,67 @@ def find_center_veh(coords_x, coords_y):
     index_center_veh = np.argmin(distances_center)
     return index_center_veh
 
-# def very_simple_distance(point1, point2, graph):
-#     """Determines a very simple distance between 2 points """
-#     # TODO: convert graph to undirected (electromagnetic waves do not respect driving directions)
-#     coord_1 = point1.xy
-#     coord_2 = point2.xy
-#     node_1 = ox.get_nearest_node(coord_1)
-#     node_2 = ox.get_nearest_node(coord_2)
-#     route = nx.)
+def line_route_between_nodes(node_from, node_to, graph):
+    """Determines the line representing the shortest path between two nodes"""
+
+    route = nx.shortest_path(graph, node_from, node_to)
+    edge_nodes = list(zip(route[:-1], route[1:]))
+    lines = []
+    for u_node, v_node in edge_nodes:
+        # If there are parallel edges, select the shortest in length
+        data = min([data for data in graph.edge[u_node][v_node].values()], \
+                   key=lambda x: x['length'])
+        lines.append(data['geometry'])
+
+    line = ops.linemerge(lines)
+    return line
+
+def split_line_at_point(line, point):
+    """Splits a line at the point on the line """
+    if line.distance(point) > 1e-8:
+        raise ValueError('Point not on line')
+    line_before = geom.LineString([line.coords[0], point.coords[:][0]])
+    line_after = geom.LineString([point.coords[:][0], line.coords[-1]])
+    return line_before, line_after
+
+def add_edges_if_los(graph, buildings, max_distance=50):
+    """Adds edges to the streets graph if there is none between 2 nodes if there is none, the have
+    no buildings in between and are only a certain distance apart"""
+
+    for index, node_u in enumerate(graph.nodes()):
+        # Check if node is vehicle
+        # TODO: or do not exclude vehicles? e.g. look at josefstadt, nearly at the center
+        if isinstance(node_u, str) and (node_u[0] == 'v'):
+            print('got vehicle as u')
+            continue
+
+        coords_u = np.array((graph.node[node_u]['x'], graph.node[node_u]['y']))
+        for node_v in graph.nodes()[index + 1:]:
+            # Check if node is vehicle
+            if isinstance(node_v, str) and (node_v[0] == 'v'):
+                print('got vehicle as v')
+                continue
+
+            # Check if nodes are already connected
+            if graph.has_edge(node_u, node_v):
+                continue
+            coords_v = np.array(
+                (graph.node[node_v]['x'], graph.node[node_v]['y']))
+            distance = np.linalg.norm(coords_u - coords_v, ord=2)
+
+            # Check if the nodes are further apart than the max distance
+            if distance > max_distance:
+                continue
+
+            # Check if there are buildings between the nodes
+            line = geom.asLineString(
+                ((coords_u[0], coords_u[1]), (coords_v[0], coords_v[1])))
+            if line_intersects_buildings(line, buildings):
+                continue
+
+            edge_attr = {'length': distance, 'geometry': line}
+            graph.add_edge(node_u, node_v, attr_dict=edge_attr)
+            print('node_added')
 
 
 def main_test(place, which_result=1, count_veh=100):
@@ -294,14 +337,35 @@ def main_test(place, which_result=1, count_veh=100):
     # Choose random streets and position on streets
     print('Choosing random vehicle positions')
     streets = data['streets']
+    buildings = data['buildings']
+    # Vehicles are placed in a undirected version of the graph because electromagnetic
+    # waves do not respect driving directions
     add_geometry(streets)
+    # TODO: wrong function!!! still unidirectional streets present?
+    # TODO: connect nodes that are LOS and are only x apart
+    streets_w_vehs_wave = streets.to_undirected()
+    add_edges_if_los(streets_w_vehs_wave, buildings)
     street_lengths = get_street_lengths(streets)
     rand_index = choose_random_streets(street_lengths, count_veh)
     points = np.zeros(0, dtype=geom.Point)
-    for index in rand_index:
-        street_geom = streets.edges(data=True)[index][2]['geometry']
+    
+    for iter, index in enumerate(rand_index):
+        street = streets.edges(data=True)[index]
+        street_geom = street[2]['geometry']
         point = choose_random_point(street_geom)
         points = np.append(points, point)
+        # TODO: better way? if modified also needs adaptation in add_edges_if_los()
+        node = 'v' + str(iter)
+        # Add vehicle and edges to graph
+        node_attr = {'geometry': point[0], 'x' : point[0].x, 'y' : point[0].y}
+        streets_w_vehs_wave.add_node(node, attr_dict=node_attr)
+        street_before, street_after = split_line_at_point(street_geom, point[0])
+        # TODO: correct index of split_street? or switched!!!!!!!!!!!
+        edge_attr = {'geometry': street_before, 'length': street_before.length}
+        streets_w_vehs_wave.add_edge(node, street[0], attr_dict=edge_attr)
+        edge_attr = {'geometry': street_after, 'length': street_after.length}
+        streets_w_vehs_wave.add_edge(node, street[1], attr_dict=edge_attr)
+    
     x_coords, y_coords = extract_point_array(points)
 
     # Find center vehicle and plot
@@ -319,7 +383,6 @@ def main_test(place, which_result=1, count_veh=100):
 
     # Determine NLOS and OLOS/LOS
     print('Determining propagation condition')
-    buildings = data['buildings']
     is_nlos = veh_cons_are_nlos(point_center_veh, points_other_veh, buildings)
     x_coord_nlos_vehs = x_coord_other_vehs[is_nlos]
     y_coord_nlos_vehs = y_coord_other_vehs[is_nlos]
@@ -341,9 +404,17 @@ def main_test(place, which_result=1, count_veh=100):
     plt.scatter(x_coord_olos_vehs, y_coord_olos_vehs, label='OLOS', zorder=8, alpha=0.75)
     plt.scatter(x_coord_los_vehs, y_coord_los_vehs, label='LOS', zorder=8, alpha=0.75)
 
+    # Determine orthogonal/parallel
+    line_route = line_route_between_nodes('v1', 'v2', streets_w_vehs_wave)
+    xs, ys = line_route.xy
+    plt.plot(xs, ys, zorder=100, linewidth=4)
+
     # Show the plots
     print('Showing plot')
     plt.legend()
+
+    ox.plot_graph(streets_w_vehs_wave, show=False, close=False, edge_color='#333333')
+
     plt.show()
 
 def parse_arguments():
@@ -358,3 +429,10 @@ def parse_arguments():
 if __name__ == '__main__':
     args = parse_arguments()
     main_test(args.p, which_result=args.w, count_veh=args.c)
+
+    # place = 'neubau - vienna - austria'
+    # file_prefix = 'data/{}'.format(string_to_filename(place))
+    # data = load_place(file_prefix)
+    # streets = data['streets']
+    # streets_w_vehs = streets.copy()
+
