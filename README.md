@@ -1,12 +1,23 @@
 # Code repository for diploma thesis
-## Installation
+## Quickstart
+1. Clone the repository and cd into it
+
+2. Create a virtual environment
+    
+    virtualenv venv
+
+3. Activate the virtual environment
+
+    source venv/bin/activate
+
+4. Install dependencies
+
     pip install -r requirements.txt
 
-## Running
-For a typical execution:
-    
+5. Run an exemplary simulation
+
     python3 osm_pathloss.py
 
-To get help about additional options:
-    
+6. Get help
+
     python3 osm_pathloss.py -h
