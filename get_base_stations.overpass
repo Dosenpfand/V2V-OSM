@@ -1,0 +1,20 @@
+[out:json][timeout:25];
+// gather results
+(
+  node["communication:mobile_phone"="yes"]({{bbox}});
+  way["communication:mobile_phone"="yes"]({{bbox}});
+  relation["communication:mobile_phone"="yes"]({{bbox}});
+  node["amenity"="bts"]({{bbox}});
+  way["amenity"="bts"]({{bbox}});
+  relation["amenity"="bts"]({{bbox}});
+  node["man_made"="mast"]({{bbox}});
+  way["man_made"="mast"]({{bbox}});
+  relation["tower:type"="communication"]({{bbox}});
+  node["tower:type"="communication"]({{bbox}});
+  way["tower:type"="communication"]({{bbox}});
+  relation["tower:type"="communication"]({{bbox}});
+);
+// print results
+out body;
+>;
+out skel qt;

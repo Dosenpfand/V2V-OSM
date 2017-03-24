@@ -12,7 +12,6 @@ import ipdb
 import networkx as nx
 import shapely.geometry as geom
 import shapely.ops as ops
-import shapely.affinity as aff
 # Local imports
 import pathloss
 
@@ -260,10 +259,10 @@ def line_route_between_nodes(node_from, node_to, graph):
     line = ops.linemerge(lines)
     return line
 
-def check_if_cons_orthogonal(streets_w_vehs_wave, node_own, max_angle=2*np.pi):
+def check_if_cons_orthogonal(streets_w_vehs_wave, node_own, max_angle=np.pi):
     """Determines if the condition is NLOS on an orthogonal street for every possible connection to
     one node """
-    
+
     is_orthogonal = []
     for node_u in streets_w_vehs_wave.nodes():
         if not (isinstance(node_u, str) and (node_u[0] == 'v')):
@@ -330,14 +329,12 @@ def add_edges_if_los(graph, buildings, max_distance=50):
         # TODO: or do not exclude vehicles? e.g. look at josefstadt, nearly at the center.
         # TODO: if changed, also change position of calling, atm called before adding vehicles
         if isinstance(node_u, str) and (node_u[0] == 'v'):
-            print('got vehicle as u')
             continue
 
         coords_u = np.array((graph.node[node_u]['x'], graph.node[node_u]['y']))
         for node_v in graph.nodes()[index + 1:]:
             # Check if node is vehicle
             if isinstance(node_v, str) and (node_v[0] == 'v'):
-                print('got vehicle as v')
                 continue
 
             # Check if nodes are already connected
@@ -401,7 +398,7 @@ def main_test(place, which_result=1, count_veh=100):
     street_lengths = get_street_lengths(streets)
     rand_index = choose_random_streets(street_lengths, count_veh)
     points = np.zeros(0, dtype=geom.Point)
-    
+
     print('Expanding graph with vehicles')
     for iter, index in enumerate(rand_index):
         street = streets.edges(data=True)[index]
@@ -415,7 +412,8 @@ def main_test(place, which_result=1, count_veh=100):
         streets_w_vehs_wave.add_node(node, attr_dict=node_attr)
         street_before, street_after = split_line_at_point(street_geom, point[0])
         # TODO: correct index of split_street? or switched?
-        # TODO: ugly hack. add penalty so edges will not be used for routing, or use additional attribute to delete edges before routing
+        # TODO: ugly hack. add penalty so edges will not be used for routing, or use additional 
+        # attribute to delete edges before routing
         street_length = street_before.length*10
         edge_attr = {'geometry': street_before, 'length': street_length, 'is_veh_edge': True}
         streets_w_vehs_wave.add_edge(node, street[0], attr_dict=edge_attr)
@@ -444,7 +442,6 @@ def main_test(place, which_result=1, count_veh=100):
     x_coord_nlos_vehs = x_coord_other_vehs[is_nlos]
     y_coord_nlos_vehs = y_coord_other_vehs[is_nlos]
     points_nlos_veh = points_other_veh[is_nlos]
-    plt.scatter(x_coord_nlos_vehs, y_coord_nlos_vehs, label='NLOS', zorder=5, alpha=0.5)
 
     # Determine OLOS and LOS
     print('Determining OLOS and LOS')
@@ -459,14 +456,22 @@ def main_test(place, which_result=1, count_veh=100):
     y_coord_olos_vehs = y_coord_olos_los_vehs[is_olos]
     x_coord_los_vehs = x_coord_olos_los_vehs[is_los]
     y_coord_los_vehs = y_coord_olos_los_vehs[is_los]
-    plt.scatter(x_coord_olos_vehs, y_coord_olos_vehs, label='OLOS', zorder=8, alpha=0.75)
     plt.scatter(x_coord_los_vehs, y_coord_los_vehs, label='LOS', zorder=8, alpha=0.75)
+    plt.scatter(x_coord_olos_vehs, y_coord_olos_vehs, label='OLOS', zorder=8, alpha=0.75)
 
     # Determine orthogonal and parallel
     print('Determining orthogonal and parallel')
     node_center = 'v' + str(index_center_veh) # TODO: FIX!
     # TODO: only use nodes that are NLOS!
-    is_orthogonal = check_if_cons_orthogonal(streets_w_vehs_wave, node_center)
+    is_orthogonal = check_if_cons_orthogonal(streets_w_vehs_wave, node_center, max_angle=1.25*np.pi)
+    is_paralell = np.invert(is_orthogonal)
+    x_coord_orth_vehs = x_coord_other_vehs[is_orthogonal]
+    y_coord_orth_vehs = y_coord_other_vehs[is_orthogonal]
+    x_coord_par_vehs = x_coord_other_vehs[is_paralell]
+    y_coord_par_vehs = y_coord_other_vehs[is_paralell]
+
+    plt.scatter(x_coord_orth_vehs, y_coord_orth_vehs, label='NLOS orth', zorder=5, alpha=0.5)
+    plt.scatter(x_coord_par_vehs, y_coord_par_vehs, label='NLOS par', zorder=5, alpha=0.5)
 
     # ox.plot_graph(streets_w_vehs_wave, show=False, close=False, edge_color='#333333')
 
