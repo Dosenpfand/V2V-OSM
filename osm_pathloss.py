@@ -12,6 +12,7 @@ import ipdb
 import networkx as nx
 import shapely.geometry as geom
 import shapely.ops as ops
+import shapely.affinity as aff
 # Local imports
 import pathloss
 
@@ -259,12 +260,35 @@ def line_route_between_nodes(node_from, node_to, graph):
     line = ops.linemerge(lines)
     return line
 
+def check_if_cons_orthogonal(streets_w_vehs_wave, node_own, max_angle=2*np.pi):
+    """Determines if the condition is NLOS on an orthogonal street for every possible connection to
+    one node """
+    
+    is_orthogonal = []
+    for node_u in streets_w_vehs_wave.nodes():
+        if not (isinstance(node_u, str) and (node_u[0] == 'v')):
+            continue
+        if node_u == node_own:
+            continue
+        route = line_route_between_nodes(node_own, node_u, streets_w_vehs_wave)
+        angles = angles_along_line(route)
+        angles_wrapped = np.pi - np.abs(wrap_to_pi(angles))
+        sum_angles = sum(angles_wrapped)
+        if sum_angles < max_angle:
+            is_orthogonal.append(True)
+        else:
+            is_orthogonal.append(False)
+
+    return is_orthogonal
+
+
 def split_line_at_point(line, point):
     """Splits a line at the point on the line """
     if line.distance(point) > 1e-8:
         raise ValueError('Point not on line')
 
     # Hack to get around floating point precision
+    # TODO: do not use split, write own function
     circle = point.buffer(1e-8)
     line_split = ops.split(line, circle)
     line_before = line_split[0]
@@ -273,13 +297,38 @@ def split_line_at_point(line, point):
     return line_before, line_after
 
 
+def angles_along_line(line):
+    """Determines the the angles along a line"""
+
+    coord_prev = []
+    coords = line.coords
+    angles = np.zeros(len(coords) - 2)
+
+    for index, coord in enumerate(coords[1:]):
+        coord_prev = coords[index]
+        angle_temp = np.arctan2(coord[0] - coord_prev[0], coord[1] - coord_prev[1])
+        if index != 0:
+            if angle_temp - angle_temp_prev < np.pi:
+                angles[index-1] = angle_temp - angle_temp_prev + np.pi
+            else:
+                angles[index-1] = angle_temp - angle_temp_prev - np.pi
+        angle_temp_prev = angle_temp
+
+    return angles
+
+def wrap_to_pi(angle):
+    """ Limits angle from -pi to +pi"""
+    return (angle + np.pi) % (2*np.pi) - np.pi
+
+
 def add_edges_if_los(graph, buildings, max_distance=50):
     """Adds edges to the streets graph if there is none between 2 nodes if there is none, the have
     no buildings in between and are only a certain distance apart"""
 
     for index, node_u in enumerate(graph.nodes()):
         # Check if node is vehicle
-        # TODO: or do not exclude vehicles? e.g. look at josefstadt, nearly at the center
+        # TODO: or do not exclude vehicles? e.g. look at josefstadt, nearly at the center.
+        # TODO: if changed, also change position of calling, atm called before adding vehicles
         if isinstance(node_u, str) and (node_u[0] == 'v'):
             print('got vehicle as u')
             continue
@@ -310,7 +359,6 @@ def add_edges_if_los(graph, buildings, max_distance=50):
 
             edge_attr = {'length': distance, 'geometry': line}
             graph.add_edge(node_u, node_v, attr_dict=edge_attr)
-            
 
 def main_test(place, which_result=1, count_veh=100):
     """ Test the whole functionality"""
@@ -346,7 +394,7 @@ def main_test(place, which_result=1, count_veh=100):
     # Vehicles are placed in a undirected version of the graph because electromagnetic
     # waves do not respect driving directions
     add_geometry(streets)
-    # TODO: wrong function!!! still unidirectional streets present?
+    # TODO: wrong function!!! still unidirectional streets present? (e.g. look at routing)
     # TODO: connect nodes that are LOS and are only x apart
     streets_w_vehs_wave = streets.to_undirected()
     add_edges_if_los(streets_w_vehs_wave, buildings)
@@ -354,6 +402,7 @@ def main_test(place, which_result=1, count_veh=100):
     rand_index = choose_random_streets(street_lengths, count_veh)
     points = np.zeros(0, dtype=geom.Point)
     
+    print('Expanding graph with vehicles')
     for iter, index in enumerate(rand_index):
         street = streets.edges(data=True)[index]
         street_geom = street[2]['geometry']
@@ -365,12 +414,15 @@ def main_test(place, which_result=1, count_veh=100):
         node_attr = {'geometry': point[0], 'x' : point[0].x, 'y' : point[0].y}
         streets_w_vehs_wave.add_node(node, attr_dict=node_attr)
         street_before, street_after = split_line_at_point(street_geom, point[0])
-        # TODO: correct index of split_street? or switched!!!!!!!!!!!
-        edge_attr = {'geometry': street_before, 'length': street_before.length}
+        # TODO: correct index of split_street? or switched?
+        # TODO: ugly hack. add penalty so edges will not be used for routing, or use additional attribute to delete edges before routing
+        street_length = street_before.length*10
+        edge_attr = {'geometry': street_before, 'length': street_length, 'is_veh_edge': True}
         streets_w_vehs_wave.add_edge(node, street[0], attr_dict=edge_attr)
-        edge_attr = {'geometry': street_after, 'length': street_after.length}
+        street_length = street_after.length*10
+        edge_attr = {'geometry': street_after, 'length': street_length, 'is_veh_edge': True}
         streets_w_vehs_wave.add_edge(node, street[1], attr_dict=edge_attr)
-    
+
     x_coords, y_coords = extract_point_array(points)
 
     # Find center vehicle and plot
@@ -395,6 +447,7 @@ def main_test(place, which_result=1, count_veh=100):
     plt.scatter(x_coord_nlos_vehs, y_coord_nlos_vehs, label='NLOS', zorder=5, alpha=0.5)
 
     # Determine OLOS and LOS
+    print('Determining OLOS and LOS')
     is_olos_los = np.invert(is_nlos)
     x_coord_olos_los_vehs = x_coord_other_vehs[is_olos_los]
     y_coord_olos_los_vehs = y_coord_other_vehs[is_olos_los]
@@ -409,18 +462,19 @@ def main_test(place, which_result=1, count_veh=100):
     plt.scatter(x_coord_olos_vehs, y_coord_olos_vehs, label='OLOS', zorder=8, alpha=0.75)
     plt.scatter(x_coord_los_vehs, y_coord_los_vehs, label='LOS', zorder=8, alpha=0.75)
 
-    # Determine orthogonal/parallel
-    line_route = line_route_between_nodes('v1', 'v2', streets_w_vehs_wave)
-    xs, ys = line_route.xy
-    plt.plot(xs, ys, zorder=100, linewidth=4)
+    # Determine orthogonal and parallel
+    print('Determining orthogonal and parallel')
+    node_center = 'v' + str(index_center_veh) # TODO: FIX!
+    # TODO: only use nodes that are NLOS!
+    is_orthogonal = check_if_cons_orthogonal(streets_w_vehs_wave, node_center)
+
+    # ox.plot_graph(streets_w_vehs_wave, show=False, close=False, edge_color='#333333')
 
     # Show the plots
     print('Showing plot')
     plt.legend()
-
-    ox.plot_graph(streets_w_vehs_wave, show=False, close=False, edge_color='#333333')
-
     plt.show()
+    ipdb.set_trace()
 
 def parse_arguments():
     """Parses the command line arguments and returns them """
@@ -434,10 +488,3 @@ def parse_arguments():
 if __name__ == '__main__':
     args = parse_arguments()
     main_test(args.p, which_result=args.w, count_veh=args.c)
-
-    # place = 'neubau - vienna - austria'
-    # file_prefix = 'data/{}'.format(string_to_filename(place))
-    # data = load_place(file_prefix)
-    # streets = data['streets']
-    # streets_w_vehs = streets.copy()
-
