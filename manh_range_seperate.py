@@ -2,8 +2,6 @@
 import time
 import numpy as np
 from matplotlib import pyplot as plt
-import numba
-
 
 def count_connections(distances, com_ranges):
     """ Determines how many distances are smaller than the elements in com_ranges """
@@ -12,9 +10,6 @@ def count_connections(distances, com_ranges):
         nonzero_elements = np.nonzero(distances < com_range)
         counts_range[i_com_range] = nonzero_elements[0].size
     return counts_range
-
-fast_count_connections = numba.jit(nopython=True)(count_connections)
-
 
 def array_count_connections(distances, com_ranges):
     """ Determines how many distances are smaller than the elements in com_ranges """

@@ -3,7 +3,6 @@ geopandas==0.2.1
 ipdb==0.10.2
 matplotlib==2.0.0
 networkx==1.11
-numba==0.31.0
 numpy==1.12.1
 pandas==0.19.2
 requests==2.13.0
