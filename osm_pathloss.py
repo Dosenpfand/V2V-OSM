@@ -479,7 +479,6 @@ def main_test(place, which_result=1, count_veh=100):
     print('Showing plot')
     plt.legend()
     plt.show()
-    ipdb.set_trace()
 
 def parse_arguments():
     """Parses the command line arguments and returns them """
