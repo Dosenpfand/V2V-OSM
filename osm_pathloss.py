@@ -462,21 +462,21 @@ def main_test(place, which_result=1, count_veh=100, debug=False):
         # TODO: better way? if modified also needs adaptation in add_edges_if_los()
         node = 'v' + str(iter)
         # Add vehicle, needed intersections and edges to graph
-        g = nx.MultiGraph()
+        graph_iter = nx.MultiGraph()
         node_attr = {'geometry': point[0], 'x' : point[0].x, 'y' : point[0].y}
-        g.add_node(node, attr_dict=node_attr)
-        g.add_nodes_from(street[0:1])
+        graph_iter.add_node(node, attr_dict=node_attr)
+        graph_iter.add_nodes_from(street[0:1])
 
         street_before, street_after = split_line_at_point(street_geom, point[0])
         # TODO: correct index of split_street? or switched?
         street_length = street_before.length
         edge_attr = {'geometry': street_before, 'length': street_length, 'is_veh_edge': True}
-        g.add_edge(node, street[0], attr_dict=edge_attr)
+        graph_iter.add_edge(node, street[0], attr_dict=edge_attr)
         street_length = street_after.length
         edge_attr = {'geometry': street_after, 'length': street_length, 'is_veh_edge': True}
-        g.add_edge(node, street[1], attr_dict=edge_attr)
-        
-        graphs_veh[iter] = g.copy()
+        graph_iter.add_edge(node, street[1], attr_dict=edge_attr)
+
+        graphs_veh[iter] = graph_iter.copy()
 
     x_coords, y_coords = extract_point_array(points)
 
@@ -497,7 +497,8 @@ def main_test(place, which_result=1, count_veh=100, debug=False):
     y_coord_other_vehs = y_coords[index_other_vehs]
     point_center_veh = points[index_center_veh]
     points_other_veh = points[index_other_vehs]
-    plt.scatter(x_coord_center_veh, y_coord_center_veh, label='Own', marker='x', zorder=10, s=2*plt.rcParams['lines.markersize']**2)
+    plt.scatter(x_coord_center_veh, y_coord_center_veh, label='Own', marker='x', zorder=10, \
+                s=2 * plt.rcParams['lines.markersize']**2)
 
     if debug:
         time_diff = time.process_time() - time_start
@@ -543,8 +544,9 @@ def main_test(place, which_result=1, count_veh=100, debug=False):
         time_start = time.process_time()
         print_nnl('Determining orthogonal and parallel:')
     # TODO: only use nodes that are NLOS!
-    is_orthogonal, coords_intersections = check_if_cons_orthogonal(streets_wave, graphs_veh, index_center_veh, \
-                                             max_angle=np.pi)
+    is_orthogonal, coords_intersections = check_if_cons_orthogonal(streets_wave, graphs_veh, \
+                                                                   index_center_veh, \
+                                                                   max_angle=np.pi)
     is_paralell = np.invert(is_orthogonal)
     x_coord_orth_vehs = x_coord_other_vehs[is_orthogonal]
     y_coord_orth_vehs = y_coord_other_vehs[is_orthogonal]
@@ -568,13 +570,13 @@ def main_test(place, which_result=1, count_veh=100, debug=False):
         time_start = time.process_time()
         print_nnl('Determining pathlosses for LOS and OLOS:')
 
-    pl = pathloss.Pathloss()
+    p_loss = pathloss.Pathloss()
     distances_olos_los = np.sqrt( \
         (x_coord_olos_los_vehs - x_coord_center_veh)**2 + \
         (y_coord_olos_los_vehs - y_coord_center_veh)**2)
 
-    pathlosses_olos = pl.pathloss_olos(distances_olos_los[is_olos])
-    pathlosses_los = pl.pathloss_los(distances_olos_los[is_los])
+    pathlosses_olos = p_loss.pathloss_olos(distances_olos_los[is_olos])
+    pathlosses_los = p_loss.pathloss_los(distances_olos_los[is_los])
 
     pathlosses_olos_los = np.zeros(np.size(distances_olos_los))
     pathlosses_olos_los[is_olos] = pathlosses_olos
@@ -594,7 +596,7 @@ def main_test(place, which_result=1, count_veh=100, debug=False):
         (x_coord_center_veh - coords_intersections[is_orthogonal, 0])**2 +
         (y_coord_center_veh - coords_intersections[is_orthogonal, 1])**2)
 
-    pathlosses_orth = pl.pathloss_nlos(distances_orth_rx, distances_orth_tx)
+    pathlosses_orth = p_loss.pathloss_nlos(distances_orth_rx, distances_orth_tx)
     pathlosses = np.Infinity*np.ones(count_veh-1)
     pathlosses[is_orthogonal] = pathlosses_orth
     # TODO: why - ?
@@ -612,9 +614,10 @@ def main_test(place, which_result=1, count_veh=100, debug=False):
     # Plot pathlosses
     index_wo_inf = pathlosses != np.Infinity
     index_inf = np.invert(index_wo_inf)
-    plt.scatter(x_coord_center_veh, y_coord_center_veh, c='black', marker='x', label='Own', s=2*plt.rcParams['lines.markersize']**2)
-    cax = plt.scatter(x_coord_other_vehs[index_wo_inf], y_coord_other_vehs[index_wo_inf], marker='o', \
-                      c=pathlosses[index_wo_inf], cmap=plt.cm.magma, label='Finite PL')
+    plt.scatter(x_coord_center_veh, y_coord_center_veh, c='black', marker='x', label='Own', \
+                s=2 * plt.rcParams['lines.markersize']**2)
+    cax = plt.scatter(x_coord_other_vehs[index_wo_inf], y_coord_other_vehs[index_wo_inf], \
+                      marker='o', c=pathlosses[index_wo_inf], cmap=plt.cm.magma, label='Finite PL')
     plt.scatter(x_coord_other_vehs[index_inf], y_coord_other_vehs[index_inf], marker='.', c='y', \
                       label='Infinite PL', alpha=0.5)
     axi.set_title('Vehicle positions and pathloss')
