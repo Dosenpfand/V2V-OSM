@@ -537,19 +537,6 @@ def main_test(place, which_result=1, count_veh=100, debug=False):
         time_diff = time.process_time() - time_start
         print_nnl(' {:.3f} seconds\n'.format(time_diff))
 
-    # # Show a few random route
-    # route = line_route_between_nodes(node_center, 'v0', streets_wave)
-    # xs, ys = route.xy
-    # plt.plot(xs, ys, zorder=100, linewidth=4, alpha=0.5)
-
-    # route = line_route_between_nodes(node_center, 'v1', streets_wave)
-    # xs, ys = route.xy
-    # plt.plot(xs, ys, zorder=100, linewidth=4, alpha=0.5)
-
-    # route = line_route_between_nodes(node_center, 'v2', streets_wave)
-    # xs, ys = route.xy
-    # plt.plot(xs, ys, zorder=100, linewidth=4, alpha=0.5)
-
     # Show the plots
     if debug:
         print('Showing plot')
