@@ -4,8 +4,8 @@ Abbas, Taimoor, et al.
 International Journal of Antennas and Propagation 2015 (2015).
 """
 
-import numpy as np
 import warnings
+import numpy as np
 
 class Pathloss:
     """ Class providing the pathloss functions for NLOS, OLOS and LOS propagation"""
