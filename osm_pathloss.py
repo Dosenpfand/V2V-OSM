@@ -412,16 +412,21 @@ def main_test(place, which_result=1, count_veh=100, debug=False):
 
     # Choose random streets and position on streets
     if debug:
-        print_nnl('Choosing random vehicle positions:')
+        print_nnl('Building graph for wave propagation:')
     streets = data['streets']
     buildings = data['buildings']
     # Vehicles are placed in a undirected version of the graph because electromagnetic
     # waves do not respect driving directions
     add_geometry(streets)
     # TODO: wrong function!!! still unidirectional streets present? (e.g. look at routing)
-    # TODO: connect nodes that are LOS and are only x apart
     streets_wave = streets.to_undirected()
     add_edges_if_los(streets_wave, buildings)
+    if debug:
+        time_diff = time.process_time() - time_start
+        print_nnl(' {:.3f} seconds\n'.format(time_diff))
+    
+    if debug:
+        print_nnl('Choosing random vehicle positions:')    
     street_lengths = get_street_lengths(streets)
     rand_index = choose_random_streets(street_lengths, count_veh)
     points = np.zeros(count_veh, dtype=geom.Point)
