@@ -1,6 +1,7 @@
 """ Generates streets, buildings and vehicles from OpenStreetMap data with osmnx"""
 
 # Standard imports
+import time
 import argparse
 import os.path
 import pickle
@@ -85,9 +86,12 @@ def string_to_filename(string):
     return filename
 
 
-def setup_debug():
-    """ Sets osmnx up for a debugging session"""
-    ox.config(log_console=True, use_cache=True)
+def setup(debug=False):
+    """ Sets osmnx up"""
+    if debug:
+        ox.config(log_console=True, use_cache=True)
+    else:
+        ox.config(log_console=False, use_cache=False)
 
 
 def get_street_coordinates(streets):
@@ -247,7 +251,7 @@ def find_center_veh(coords_x, coords_y):
 def line_route_between_nodes(node_from, node_to, graph):
     """Determines the line representing the shortest path between two nodes"""
 
-    route = nx.shortest_path(graph, node_from, node_to)
+    route = nx.shortest_path(graph, node_from, node_to, weight='length')
     edge_nodes = list(zip(route[:-1], route[1:]))
     lines = []
     for u_node, v_node in edge_nodes:
@@ -259,17 +263,26 @@ def line_route_between_nodes(node_from, node_to, graph):
     line = ops.linemerge(lines)
     return line
 
-def check_if_cons_orthogonal(streets_w_vehs_wave, node_own, max_angle=np.pi):
+def check_if_cons_orthogonal(streets_wave, graphs_veh, index_own, max_angle=np.pi):
     """Determines if the condition is NLOS on an orthogonal street for every possible connection to
     one node """
 
+    # TODO: really 2 copies (_local and _local_iter) needed?
+
+    node_own = 'v' + str(index_own)
+    streets_wave_local = nx.compose(graphs_veh[index_own], streets_wave)
+
     is_orthogonal = []
-    for node_u in streets_w_vehs_wave.nodes():
-        if not (isinstance(node_u, str) and (node_u[0] == 'v')):
+    for index, graph in enumerate(graphs_veh):
+
+        if index == index_own:
             continue
-        if node_u == node_own:
-            continue
-        route = line_route_between_nodes(node_own, node_u, streets_w_vehs_wave)
+
+        node_v = 'v' + str(index)
+        streets_wave_local_iter = nx.compose(graph, streets_wave_local)
+
+        # TODO: somehow use angles as weight and not length?
+        route = line_route_between_nodes(node_own, node_v, streets_wave_local_iter)
         angles = angles_along_line(route)
         angles_wrapped = np.pi - np.abs(wrap_to_pi(angles))
         sum_angles = sum(angles_wrapped)
@@ -357,15 +370,22 @@ def add_edges_if_los(graph, buildings, max_distance=50):
             edge_attr = {'length': distance, 'geometry': line}
             graph.add_edge(node_u, node_v, attr_dict=edge_attr)
 
-def main_test(place, which_result=1, count_veh=100):
+def print_nnl(text):
+    """Print without adding a new line """
+    print(text, end='', flush=True)
+
+def main_test(place, which_result=1, count_veh=100, debug=False):
     """ Test the whole functionality"""
 
     # Setup
-    setup_debug()
-    print('Running main test')
+    setup(debug)
+    if debug:
+        print('RUNNING MAIN SIMULATION')
 
     # Load data
-    print('Loading data')
+    if debug:
+        time_start = time.process_time()
+        print_nnl('Loading data')
     file_prefix = 'data/{}'.format(string_to_filename(place))
     filename_data_streets = 'data/{}_streets.pickle'.format(
         string_to_filename(place))
@@ -374,18 +394,25 @@ def main_test(place, which_result=1, count_veh=100):
 
     if os.path.isfile(filename_data_streets) and os.path.isfile(filename_data_buildings):
         # Load from file
-        print('LOADING FROM DISK')
+        if debug:
+            print_nnl('from disk:')
         data = load_place(file_prefix)
     else:
         # Load from internet
-        print('DOWNLOADING')
+        if debug:
+            print_nnl('from the internet:')
         data = download_place(place, which_result=which_result)
+
+    if debug:
+        time_diff = time.process_time() - time_start
+        print_nnl(' {:.3f} seconds\n'.format(time_diff))
 
     # Plot streets and buildings
     plot_streets_and_buildings(data['streets'], data['buildings'], show=False, dpi=300)
 
     # Choose random streets and position on streets
-    print('Choosing random vehicle positions')
+    if debug:
+        print_nnl('Choosing random vehicle positions:')
     streets = data['streets']
     buildings = data['buildings']
     # Vehicles are placed in a undirected version of the graph because electromagnetic
@@ -393,38 +420,54 @@ def main_test(place, which_result=1, count_veh=100):
     add_geometry(streets)
     # TODO: wrong function!!! still unidirectional streets present? (e.g. look at routing)
     # TODO: connect nodes that are LOS and are only x apart
-    streets_w_vehs_wave = streets.to_undirected()
-    add_edges_if_los(streets_w_vehs_wave, buildings)
+    streets_wave = streets.to_undirected()
+    add_edges_if_los(streets_wave, buildings)
     street_lengths = get_street_lengths(streets)
     rand_index = choose_random_streets(street_lengths, count_veh)
-    points = np.zeros(0, dtype=geom.Point)
+    points = np.zeros(count_veh, dtype=geom.Point)
 
-    print('Expanding graph with vehicles')
+    if debug:
+        time_diff = time.process_time() - time_start
+        print_nnl(' {:.3f} seconds\n'.format(time_diff))
+
+    if debug:
+        time_start = time.process_time()
+        print_nnl('Creating graphs for vehicles:')
+    graphs_veh = np.zeros(count_veh, dtype=nx.MultiGraph)
     for iter, index in enumerate(rand_index):
         street = streets.edges(data=True)[index]
         street_geom = street[2]['geometry']
         point = choose_random_point(street_geom)
-        points = np.append(points, point)
+        points[iter] = point[0]
         # TODO: better way? if modified also needs adaptation in add_edges_if_los()
         node = 'v' + str(iter)
-        # Add vehicle and edges to graph
+        # Add vehicle, needed intersections and edges to graph
+        g = nx.MultiGraph()
         node_attr = {'geometry': point[0], 'x' : point[0].x, 'y' : point[0].y}
-        streets_w_vehs_wave.add_node(node, attr_dict=node_attr)
+        g.add_node(node, attr_dict=node_attr)
+        g.add_nodes_from(street[0:1])
+
         street_before, street_after = split_line_at_point(street_geom, point[0])
         # TODO: correct index of split_street? or switched?
-        # TODO: ugly hack. add penalty so edges will not be used for routing, or use additional 
-        # attribute to delete edges before routing
-        street_length = street_before.length*10
+        street_length = street_before.length
         edge_attr = {'geometry': street_before, 'length': street_length, 'is_veh_edge': True}
-        streets_w_vehs_wave.add_edge(node, street[0], attr_dict=edge_attr)
-        street_length = street_after.length*10
+        g.add_edge(node, street[0], attr_dict=edge_attr)
+        street_length = street_after.length
         edge_attr = {'geometry': street_after, 'length': street_length, 'is_veh_edge': True}
-        streets_w_vehs_wave.add_edge(node, street[1], attr_dict=edge_attr)
+        g.add_edge(node, street[1], attr_dict=edge_attr)
+        
+        graphs_veh[iter] = g.copy()
 
     x_coords, y_coords = extract_point_array(points)
 
+    if debug:
+        time_diff = time.process_time() - time_start
+        print_nnl(' {:.3f} seconds\n'.format(time_diff))
+
     # Find center vehicle and plot
-    print('Finding center vehicle')
+    if debug:
+        time_start = time.process_time()
+        print_nnl('Finding center vehicle:')
     index_center_veh = find_center_veh(x_coords, y_coords)
     index_other_vehs = np.ones(len(points), dtype=bool)
     index_other_vehs[index_center_veh] = False
@@ -436,15 +479,27 @@ def main_test(place, which_result=1, count_veh=100):
     points_other_veh = points[index_other_vehs]
     plt.scatter(x_coord_center_veh, y_coord_center_veh, label='Own', zorder=10)
 
+    if debug:
+        time_diff = time.process_time() - time_start
+        print_nnl(' {:.3f} seconds\n'.format(time_diff))
+
     # Determine NLOS and OLOS/LOS
-    print('Determining propagation condition')
+    if debug:
+        time_start = time.process_time()
+        print_nnl('Determining propagation condition:')
     is_nlos = veh_cons_are_nlos(point_center_veh, points_other_veh, buildings)
     x_coord_nlos_vehs = x_coord_other_vehs[is_nlos]
     y_coord_nlos_vehs = y_coord_other_vehs[is_nlos]
     points_nlos_veh = points_other_veh[is_nlos]
 
+    if debug:
+        time_diff = time.process_time() - time_start
+        print_nnl(' {:.3f} seconds\n'.format(time_diff))
+
     # Determine OLOS and LOS
-    print('Determining OLOS and LOS')
+    if debug:
+        print_nnl('Determining OLOS and LOS:')
+        time_start = time.process_time()
     is_olos_los = np.invert(is_nlos)
     x_coord_olos_los_vehs = x_coord_other_vehs[is_olos_los]
     y_coord_olos_los_vehs = y_coord_other_vehs[is_olos_los]
@@ -459,11 +514,16 @@ def main_test(place, which_result=1, count_veh=100):
     plt.scatter(x_coord_los_vehs, y_coord_los_vehs, label='LOS', zorder=8, alpha=0.75)
     plt.scatter(x_coord_olos_vehs, y_coord_olos_vehs, label='OLOS', zorder=8, alpha=0.75)
 
+    if debug:
+        time_diff = time.process_time() - time_start
+        print_nnl(' {:.3f} seconds\n'.format(time_diff))
+
     # Determine orthogonal and parallel
-    print('Determining orthogonal and parallel')
-    node_center = 'v' + str(index_center_veh) # TODO: FIX!
+    if debug:
+        time_start = time.process_time()
+        print_nnl('Determining orthogonal and parallel:')
     # TODO: only use nodes that are NLOS!
-    is_orthogonal = check_if_cons_orthogonal(streets_w_vehs_wave, node_center, max_angle=1.25*np.pi)
+    is_orthogonal = check_if_cons_orthogonal(streets_wave, graphs_veh, index_center_veh, max_angle=np.pi)
     is_paralell = np.invert(is_orthogonal)
     x_coord_orth_vehs = x_coord_other_vehs[is_orthogonal]
     y_coord_orth_vehs = y_coord_other_vehs[is_orthogonal]
@@ -473,10 +533,26 @@ def main_test(place, which_result=1, count_veh=100):
     plt.scatter(x_coord_orth_vehs, y_coord_orth_vehs, label='NLOS orth', zorder=5, alpha=0.5)
     plt.scatter(x_coord_par_vehs, y_coord_par_vehs, label='NLOS par', zorder=5, alpha=0.5)
 
-    # ox.plot_graph(streets_w_vehs_wave, show=False, close=False, edge_color='#333333')
+    if debug:
+        time_diff = time.process_time() - time_start
+        print_nnl(' {:.3f} seconds\n'.format(time_diff))
+
+    # # Show a few random route
+    # route = line_route_between_nodes(node_center, 'v0', streets_wave)
+    # xs, ys = route.xy
+    # plt.plot(xs, ys, zorder=100, linewidth=4, alpha=0.5)
+
+    # route = line_route_between_nodes(node_center, 'v1', streets_wave)
+    # xs, ys = route.xy
+    # plt.plot(xs, ys, zorder=100, linewidth=4, alpha=0.5)
+
+    # route = line_route_between_nodes(node_center, 'v2', streets_wave)
+    # xs, ys = route.xy
+    # plt.plot(xs, ys, zorder=100, linewidth=4, alpha=0.5)
 
     # Show the plots
-    print('Showing plot')
+    if debug:
+        print('Showing plot')
     plt.legend()
     plt.show()
 
@@ -491,4 +567,4 @@ def parse_arguments():
 
 if __name__ == '__main__':
     args = parse_arguments()
-    main_test(args.p, which_result=args.w, count_veh=args.c)
+    main_test(args.p, which_result=args.w, count_veh=args.c, debug=True)
