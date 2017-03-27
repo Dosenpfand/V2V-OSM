@@ -386,7 +386,7 @@ def print_nnl(text):
     """Print without adding a new line """
     print(text, end='', flush=True)
 
-def main_test(place, which_result=1, count_veh=100, debug=False):
+def main_test(place, which_result=1, count_veh=100, max_pl=100, debug=False):
     """ Test the whole functionality"""
 
     # Setup
@@ -498,7 +498,7 @@ def main_test(place, which_result=1, count_veh=100, debug=False):
     point_center_veh = points[index_center_veh]
     points_other_veh = points[index_other_vehs]
     plt.scatter(x_coord_center_veh, y_coord_center_veh, label='Own', marker='x', zorder=10, \
-                s=2 * plt.rcParams['lines.markersize']**2)
+                s=2 * plt.rcParams['lines.markersize']**2, c='black')
 
     if debug:
         time_diff = time.process_time() - time_start
@@ -604,11 +604,9 @@ def main_test(place, which_result=1, count_veh=100, debug=False):
 
     if debug:
         time_diff = time.process_time() - time_start
-        time_diff_tot = time.process_time() - time_start_tot
         print_nnl(' {:.3f} seconds\n'.format(time_diff))
-        print_nnl('TOTAL RUNNING TIME: {:.3f} seconds\n'.format(time_diff_tot))
 
-    # Plot streets
+    # Plot streets and buildings
     fig, axi = plot_streets_and_buildings(data['streets'], data['buildings'], show=False, dpi=300)
 
     # Plot pathlosses
@@ -635,6 +633,37 @@ def main_test(place, which_result=1, count_veh=100, debug=False):
     cbar.ax.set_xticklabels([string_min, string_med, string_max])
     cbar.ax.set_xlabel('Pathloss [dB]')
 
+    # Determine in range / out of range
+    # Determining pathlosses for NLOS orthogonal
+    if debug:
+        time_start = time.process_time()
+        print_nnl('Determining in range vehicles:')
+
+    index_in_range = pathlosses < max_pl
+    index_out_range = np.invert(index_in_range)
+
+    if debug:
+        time_diff = time.process_time() - time_start
+        time_diff_tot = time.process_time() - time_start_tot
+        print_nnl(' {:.3f} seconds\n'.format(time_diff))
+        print_nnl('TOTAL RUNNING TIME: {:.3f} seconds\n'.format(time_diff_tot))
+
+    # Plot streets and buildings
+    fig, axi = plot_streets_and_buildings(data['streets'], data['buildings'], show=False, dpi=300)
+
+    plt.scatter(x_coord_center_veh, y_coord_center_veh, c='black', marker='x', label='Own', \
+                s=2 * plt.rcParams['lines.markersize']**2, zorder=3)
+    plt.scatter(x_coord_other_vehs[index_in_range], y_coord_other_vehs[index_in_range], \
+                marker='o', label='In range', zorder=2)
+    plt.scatter(x_coord_other_vehs[index_out_range], y_coord_other_vehs[index_out_range], \
+                marker='o', label='Out of range', alpha=0.75, zorder=1)
+
+    plt.title('Vehicle positions and connectivity')
+    plt.xlabel('X coordinate [m]')
+    plt.ylabel('Y coordinate [m]')
+    plt.legend()
+
+
     # Show the plots
     if debug:
         print('Showing plot')
@@ -651,4 +680,4 @@ def parse_arguments():
 
 if __name__ == '__main__':
     args = parse_arguments()
-    main_test(args.p, which_result=args.w, count_veh=args.c, debug=True)
+    main_test(args.p, which_result=args.w, count_veh=args.c, max_pl=150, debug=True)
