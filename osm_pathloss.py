@@ -215,7 +215,7 @@ def choose_random_streets(lengths, count=1):
 def choose_random_point(street, count=1):
     """Chooses random points along street """
     distances = np.random.random(count)
-    points = np.zeros_like(distances, dtype=geom.Point)
+    points = np.zeros_like(distances, dtype=object)
     for index, dist in np.ndenumerate(distances):
         points[index] = street.interpolate(dist, normalized=True)
 
@@ -264,25 +264,21 @@ def line_route_between_nodes(node_from, node_to, graph):
     line = ops.linemerge(lines)
     return line
 
-def check_if_cons_orthogonal(streets_wave, graphs_veh, index_own, max_angle=np.pi):
+def check_if_cons_orthogonal(streets_wave, graph_veh_own, graphs_veh_other, max_angle=np.pi):
     """Determines if the condition is NLOS on an orthogonal street for every possible connection to
     one node """
 
     # TODO: really 2 copies (_local and _local_iter) needed?
 
-    node_own = 'v' + str(index_own)
-    streets_wave_local = nx.compose(graphs_veh[index_own], streets_wave)
-    count_veh_other = np.size(graphs_veh) - 1
+    node_own = graph_veh_own.graph['node_veh']
+    streets_wave_local = nx.compose(graph_veh_own, streets_wave)
+    count_veh_other = np.size(graphs_veh_other)
 
     is_orthogonal = np.zeros(count_veh_other, dtype=bool)
     coords_max_angle = np.zeros((count_veh_other, 2))
-    result_index = 0
-    for index, graph in enumerate(graphs_veh):
+    for index, graph in enumerate(graphs_veh_other):
 
-        if index == index_own:
-            continue
-
-        node_v = 'v' + str(index)
+        node_v = graph.graph['node_veh']
         streets_wave_local_iter = nx.compose(graph, streets_wave_local)
 
         # TODO: somehow use angles as weight and not length?
@@ -292,17 +288,15 @@ def check_if_cons_orthogonal(streets_wave, graphs_veh, index_own, max_angle=np.p
 
         sum_angles = sum(angles_wrapped)
         if sum_angles < max_angle:
-            is_orthogonal[result_index] = True
+            is_orthogonal[index] = True
         else:
-            is_orthogonal[result_index] = False
+            is_orthogonal[index] = False
 
         # Determine position of max angle
         index_angle = np.argmax(angles_wrapped)
         route_coords = np.array(route.xy)
         # TODO: or use/return 2 routes (so real route length and not airline can be used)?
-        coords_max_angle[result_index, :] = route_coords[:, index_angle+1]
-
-        result_index += 1
+        coords_max_angle[index, :] = route_coords[:, index_angle+1]
 
     return is_orthogonal, coords_max_angle
 
@@ -437,7 +431,7 @@ def main_test(place, which_result=1, count_veh=100, max_pl=100, debug=False):
         print_nnl('Choosing random vehicle positions:')
     street_lengths = get_street_lengths(streets)
     rand_index = choose_random_streets(street_lengths, count_veh)
-    points = np.zeros(count_veh, dtype=geom.Point)
+    points = np.zeros(count_veh, dtype=object)
 
     if debug:
         time_diff = time.process_time() - time_start
@@ -446,16 +440,16 @@ def main_test(place, which_result=1, count_veh=100, max_pl=100, debug=False):
     if debug:
         time_start = time.process_time()
         print_nnl('Creating graphs for vehicles:')
-    graphs_veh = np.zeros(count_veh, dtype=nx.MultiGraph)
+    graphs_veh = np.zeros(count_veh, dtype=object)
     for iteration, index in enumerate(rand_index):
         street = streets.edges(data=True)[index]
         street_geom = street[2]['geometry']
         point = choose_random_point(street_geom)
         points[iteration] = point[0]
-        # TODO: better way? if modified also needs adaptation in add_edges_if_los()
+        # TODO: better way to name nodes?
         node = 'v' + str(iteration)
         # Add vehicle, needed intersections and edges to graph
-        graph_iter = nx.MultiGraph()
+        graph_iter = nx.MultiGraph(node_veh=node)
         node_attr = {'geometry': point[0], 'x' : point[0].x, 'y' : point[0].y}
         graph_iter.add_node(node, attr_dict=node_attr)
         graph_iter.add_nodes_from(street[0:1])
@@ -502,6 +496,8 @@ def main_test(place, which_result=1, count_veh=100, max_pl=100, debug=False):
         time_start = time.process_time()
         print_nnl('Determining propagation condition:')
     is_nlos = veh_cons_are_nlos(point_center_veh, points_other_veh, buildings)
+    x_coord_nlos_vehs = x_coord_other_vehs[is_nlos]
+    y_coord_nlos_vehs = y_coord_other_vehs[is_nlos]
 
     if debug:
         time_diff = time.process_time() - time_start
@@ -522,7 +518,7 @@ def main_test(place, which_result=1, count_veh=100, max_pl=100, debug=False):
     y_coord_olos_vehs = y_coord_olos_los_vehs[is_olos]
     x_coord_los_vehs = x_coord_olos_los_vehs[is_los]
     y_coord_los_vehs = y_coord_olos_los_vehs[is_los]
-    plt.scatter(x_coord_los_vehs, y_coord_los_vehs, label='LOS', zorder=8, alpha=0.75)
+    plt.scatter(x_coord_los_vehs, y_coord_los_vehs, label='LOS', zorder=9, alpha=0.75)
     plt.scatter(x_coord_olos_vehs, y_coord_olos_vehs, label='OLOS', zorder=8, alpha=0.75)
 
     if debug:
@@ -533,15 +529,17 @@ def main_test(place, which_result=1, count_veh=100, max_pl=100, debug=False):
     if debug:
         time_start = time.process_time()
         print_nnl('Determining orthogonal and parallel:')
-    # TODO: only use nodes that are NLOS!
-    is_orthogonal, coords_intersections = check_if_cons_orthogonal(streets_wave, graphs_veh, \
-                                                                   index_center_veh, \
+
+    graphs_veh_nlos = graphs_veh[index_other_vehs][is_nlos]
+    graph_veh_own = graphs_veh[index_center_veh]
+    is_orthogonal, coords_intersections = check_if_cons_orthogonal(streets_wave, graph_veh_own, \
+                                                                   graphs_veh_nlos, \
                                                                    max_angle=np.pi)
     is_paralell = np.invert(is_orthogonal)
-    x_coord_orth_vehs = x_coord_other_vehs[is_orthogonal]
-    y_coord_orth_vehs = y_coord_other_vehs[is_orthogonal]
-    x_coord_par_vehs = x_coord_other_vehs[is_paralell]
-    y_coord_par_vehs = y_coord_other_vehs[is_paralell]
+    x_coord_orth_vehs = x_coord_nlos_vehs[is_orthogonal]
+    y_coord_orth_vehs = y_coord_nlos_vehs[is_orthogonal]
+    x_coord_par_vehs = x_coord_nlos_vehs[is_paralell]
+    y_coord_par_vehs = y_coord_nlos_vehs[is_paralell]
 
     if debug:
         time_diff = time.process_time() - time_start
@@ -575,7 +573,7 @@ def main_test(place, which_result=1, count_veh=100, max_pl=100, debug=False):
     # Determining pathlosses for NLOS orthogonal
     if debug:
         time_start = time.process_time()
-        print_nnl('Determining pathlosses for NLOS orhtogonal:')
+        print_nnl('Determining pathlosses for NLOS orthogonal:')
 
     # TODO: assumes own vehicle is Rx!
     distances_orth_tx = np.sqrt(
@@ -587,10 +585,16 @@ def main_test(place, which_result=1, count_veh=100, max_pl=100, debug=False):
         (y_coord_center_veh - coords_intersections[is_orthogonal, 1])**2)
 
     pathlosses_orth = p_loss.pathloss_nlos(distances_orth_rx, distances_orth_tx)
-    pathlosses = np.Infinity*np.ones(count_veh-1)
-    pathlosses[is_orthogonal] = pathlosses_orth
+
+    pathlosses_nlos = np.zeros(np.size(x_coord_nlos_vehs))
+    pathlosses_nlos[is_paralell] = np.Infinity*np.ones(np.sum(is_paralell))
+    pathlosses_nlos[is_orthogonal] = pathlosses_orth
+
+    # Build complete pathloss array
+    pathlosses = np.zeros(count_veh-1)
     # TODO: why - ?
     pathlosses[is_olos_los] = -pathlosses_olos_los
+    pathlosses[is_nlos] = pathlosses_nlos
 
     if debug:
         time_diff = time.process_time() - time_start
