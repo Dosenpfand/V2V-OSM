@@ -83,6 +83,7 @@ def string_to_filename(string):
     keepcharacters = ('_', '-')
     filename = ''.join(c for c in string if c.isalnum()
                        or c in keepcharacters).rstrip()
+    filename = filename.lower()
     return filename
 
 
@@ -350,17 +351,8 @@ def add_edges_if_los(graph, buildings, max_distance=50):
     no buildings in between and are only a certain distance apart"""
 
     for index, node_u in enumerate(graph.nodes()):
-        # Check if node is vehicle
-        # TODO: or do not exclude vehicles? e.g. look at josefstadt, nearly at the center.
-        # TODO: if changed, also change position of calling, atm called before adding vehicles
-        if isinstance(node_u, str) and (node_u[0] == 'v'):
-            continue
-
         coords_u = np.array((graph.node[node_u]['x'], graph.node[node_u]['y']))
         for node_v in graph.nodes()[index + 1:]:
-            # Check if node is vehicle
-            if isinstance(node_v, str) and (node_v[0] == 'v'):
-                continue
 
             # Check if nodes are already connected
             if graph.has_edge(node_u, node_v):
@@ -379,6 +371,7 @@ def add_edges_if_los(graph, buildings, max_distance=50):
             if line_intersects_buildings(line, buildings):
                 continue
 
+            # Add edge between nodes
             edge_attr = {'length': distance, 'geometry': line}
             graph.add_edge(node_u, node_v, attr_dict=edge_attr)
 
@@ -432,7 +425,7 @@ def main_test(place, which_result=1, count_veh=100, max_pl=100, debug=False):
     # Vehicles are placed in a undirected version of the graph because electromagnetic
     # waves do not respect driving directions
     add_geometry(streets)
-    # TODO: wrong function!!! still unidirectional streets present? (e.g. look at routing)
+    # TODO: still unidirectional streets present? (e.g. look at routing)
     streets_wave = streets.to_undirected()
     add_edges_if_los(streets_wave, buildings)
     if debug:
@@ -441,7 +434,7 @@ def main_test(place, which_result=1, count_veh=100, max_pl=100, debug=False):
 
     if debug:
         time_start = time.process_time()
-        print_nnl('Choosing random vehicle positions:')    
+        print_nnl('Choosing random vehicle positions:')
     street_lengths = get_street_lengths(streets)
     rand_index = choose_random_streets(street_lengths, count_veh)
     points = np.zeros(count_veh, dtype=geom.Point)
@@ -454,13 +447,13 @@ def main_test(place, which_result=1, count_veh=100, max_pl=100, debug=False):
         time_start = time.process_time()
         print_nnl('Creating graphs for vehicles:')
     graphs_veh = np.zeros(count_veh, dtype=nx.MultiGraph)
-    for iter, index in enumerate(rand_index):
+    for iteration, index in enumerate(rand_index):
         street = streets.edges(data=True)[index]
         street_geom = street[2]['geometry']
         point = choose_random_point(street_geom)
-        points[iter] = point[0]
+        points[iteration] = point[0]
         # TODO: better way? if modified also needs adaptation in add_edges_if_los()
-        node = 'v' + str(iter)
+        node = 'v' + str(iteration)
         # Add vehicle, needed intersections and edges to graph
         graph_iter = nx.MultiGraph()
         node_attr = {'geometry': point[0], 'x' : point[0].x, 'y' : point[0].y}
@@ -476,7 +469,7 @@ def main_test(place, which_result=1, count_veh=100, max_pl=100, debug=False):
         edge_attr = {'geometry': street_after, 'length': street_length, 'is_veh_edge': True}
         graph_iter.add_edge(node, street[1], attr_dict=edge_attr)
 
-        graphs_veh[iter] = graph_iter.copy()
+        graphs_veh[iteration] = graph_iter.copy()
 
     x_coords, y_coords = extract_point_array(points)
 
@@ -509,9 +502,6 @@ def main_test(place, which_result=1, count_veh=100, max_pl=100, debug=False):
         time_start = time.process_time()
         print_nnl('Determining propagation condition:')
     is_nlos = veh_cons_are_nlos(point_center_veh, points_other_veh, buildings)
-    x_coord_nlos_vehs = x_coord_other_vehs[is_nlos]
-    y_coord_nlos_vehs = y_coord_other_vehs[is_nlos]
-    points_nlos_veh = points_other_veh[is_nlos]
 
     if debug:
         time_diff = time.process_time() - time_start
@@ -559,11 +549,11 @@ def main_test(place, which_result=1, count_veh=100, max_pl=100, debug=False):
 
     plt.scatter(x_coord_orth_vehs, y_coord_orth_vehs, label='NLOS orth', zorder=5, alpha=0.5)
     plt.scatter(x_coord_par_vehs, y_coord_par_vehs, label='NLOS par', zorder=5, alpha=0.5)
-    
+
     plt.legend()
     plt.xlabel('X coordinate [m]')
     plt.ylabel('Y coordinate [m]')
-    plt.title('Vehicle positions and propagation conditions')
+    plt.title('Vehicle positions and propagation conditions ({})'.format(place))
 
     # Determining pathlosses for LOS and OLOS
     if debug:
@@ -618,7 +608,7 @@ def main_test(place, which_result=1, count_veh=100, max_pl=100, debug=False):
                       marker='o', c=pathlosses[index_wo_inf], cmap=plt.cm.magma, label='Finite PL')
     plt.scatter(x_coord_other_vehs[index_inf], y_coord_other_vehs[index_inf], marker='.', c='y', \
                       label='Infinite PL', alpha=0.5)
-    axi.set_title('Vehicle positions and pathloss')
+    axi.set_title('Vehicle positions and pathloss ({})'.format(place))
     plt.xlabel('X coordinate [m]')
     plt.ylabel('Y coordinate [m]')
     plt.legend()
@@ -658,7 +648,7 @@ def main_test(place, which_result=1, count_veh=100, max_pl=100, debug=False):
     plt.scatter(x_coord_other_vehs[index_out_range], y_coord_other_vehs[index_out_range], \
                 marker='o', label='Out of range', alpha=0.75, zorder=1)
 
-    plt.title('Vehicle positions and connectivity')
+    plt.title('Vehicle positions and connectivity ({})'.format(place))
     plt.xlabel('X coordinate [m]')
     plt.ylabel('Y coordinate [m]')
     plt.legend()
@@ -672,7 +662,7 @@ def main_test(place, which_result=1, count_veh=100, max_pl=100, debug=False):
 def parse_arguments():
     """Parses the command line arguments and returns them """
     parser = argparse.ArgumentParser(description='Simulate vehicle connections on map')
-    parser.add_argument('-p', type=str, default='neubau - vienna - austria', help='place')
+    parser.add_argument('-p', type=str, default='Neubau - Vienna - Austria', help='place')
     parser.add_argument('-c', type=int, default=1000, help='number of vehicles')
     parser.add_argument('-w', type=int, default=1, help='which result')
     arguments = parser.parse_args()
