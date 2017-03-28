@@ -101,3 +101,5 @@ cache/*.json
 
 # Temporary new version of osmnx
 osmnx_git/
+
+*.pickle
