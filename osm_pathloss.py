@@ -70,6 +70,7 @@ def download_place(place, network_type='drive', file_prefix=None, which_result=1
 
 def load_place(file_prefix):
     """ Loads previously downloaded street and building data of a place"""
+
     filename_buildings = '{}_buildings.pickle'.format(file_prefix)
     buildings = pickle.load(open(filename_buildings, 'rb'))
     filename_streets = '{}_streets.pickle'.format(file_prefix)
@@ -140,6 +141,8 @@ def check_geometry(streets):
 
 def line_intersects_buildings(line, buildings):
     """ Checks if a line intersects with any of the buildings"""
+    # TODO: check if it's faster to convert sequence of polygons into a multipolygon and use it
+
     intersects = False
     for geometry in buildings['geometry']:
         if line.intersects(geometry):
@@ -569,6 +572,10 @@ def main_test(place, which_result=1, count_veh=100, max_pl=100, debug=False):
     pathlosses_olos_los = np.zeros(np.size(distances_olos_los))
     pathlosses_olos_los[is_olos] = pathlosses_olos
     pathlosses_olos_los[is_los] = pathlosses_los
+
+    if debug:
+        time_diff = time.process_time() - time_start
+        print_nnl(' {:.3f} seconds\n'.format(time_diff))
 
     # Determining pathlosses for NLOS orthogonal
     if debug:
