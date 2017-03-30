@@ -16,8 +16,6 @@ import shapely.ops as ops
 # Local imports
 import pathloss
 
-# TODO: edge['geometry'].length and edge['length'] are not equal!
-
 def plot_streets_and_buildings(streets, buildings=None, show=True, filename=None, dpi=300):
     """ Plots streets and buildings"""
 
@@ -94,27 +92,6 @@ def setup(debug=False):
         ox.config(log_console=True, use_cache=True)
     else:
         ox.config(log_console=False, use_cache=False)
-
-
-def get_street_coordinates(streets):
-    """ Returns the coordinates of the streets in a graph"""
-    # TODO: use streets.number_of_edges() ?
-    lines = []
-    for u_node, v_node, data in streets.edges(data=True):
-        if 'geometry' in data:
-            coord_xs, coord_ys = data['geometry'].xy
-            lines.append(list(zip(coord_xs, coord_ys)))
-        else:
-            # TODO: eliminate this case and just call generate_geometry before?
-            coord_x1 = streets.node[u_node]['x']
-            coord_y1 = streets.node[u_node]['y']
-            coord_x2 = streets.node[v_node]['x']
-            coord_y2 = streets.node[v_node]['y']
-            line = [(coord_x1, coord_y1), (coord_x2, coord_y2)]
-            lines.append(line)
-
-    return lines
-
 
 def add_geometry(streets):
     """ Adds geometry object to the edges of the graph where they are missing"""
@@ -198,10 +175,12 @@ def veh_cons_are_olos(point_own, point_vehs, margin=1):
 
 def get_street_lengths(streets):
     """ Returns the lengths of the streets in a graph"""
-    # TODO: use streets.number_of_edges() ?
-    lengths = []
-    for _, _, data in streets.edges(data=True):
-        lengths.append(data['length'])
+
+    # NOTE: The are small differences in the values of data['geometry'].length
+    # and data['length']
+    lengths = np.zeros(streets.number_of_edges())
+    for index, street in enumerate(streets.edges_iter(data=True)):
+        lengths[index] = street[2]['length']
     return lengths
 
 
@@ -325,6 +304,7 @@ def angles_along_line(line):
     coord_prev = []
     coords = line.coords
     angles = np.zeros(len(coords) - 2)
+    angle_temp_prev = 0
 
     for index, coord in enumerate(coords[1:]):
         coord_prev = coords[index]
@@ -582,7 +562,7 @@ def main_test(place, which_result=1, count_veh=100, max_pl=100, debug=False):
         time_start = time.process_time()
         print_nnl('Determining pathlosses for NLOS orthogonal:')
 
-    # TODO: assumes own vehicle is Rx!
+    # NOTE: Assumes center vehicle is receiver
     distances_orth_tx = np.sqrt(
         (x_coord_orth_vehs - coords_intersections[is_orthogonal, 0])**2 +
         (y_coord_orth_vehs - coords_intersections[is_orthogonal, 1])**2)
