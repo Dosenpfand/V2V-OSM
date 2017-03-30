@@ -1,7 +1,6 @@
 """ Generates streets, buildings and vehicles from OpenStreetMap data with osmnx"""
 
 # Standard imports
-import time
 import argparse
 import os.path
 import ipdb
@@ -25,14 +24,8 @@ def main_sim(place, which_result=1, count_veh=100, max_pl=100, debug=False):
 
     # Setup
     ox_a.setup(debug)
-    if debug:
-        print('RUNNING MAIN SIMULATION')
 
     # Load data
-    if debug:
-        time_start = time.process_time()
-        time_start_tot = time_start
-        utils.print_nnl('Loading data')
     file_prefix = 'data/{}'.format(utils.string_to_filename(place))
     filename_data_streets = 'data/{}_streets.pickle'.format(
         utils.string_to_filename(place))
@@ -41,23 +34,18 @@ def main_sim(place, which_result=1, count_veh=100, max_pl=100, debug=False):
 
     if os.path.isfile(filename_data_streets) and os.path.isfile(filename_data_buildings):
         # Load from file
-        if debug:
-            utils.print_nnl('from disk:')
+        time_start = utils.debug(debug, None, 'Loading data from disk')
         data = ox_a.load_place(file_prefix)
     else:
         # Load from internet
-        if debug:
-            utils.print_nnl('from the internet:')
+        time_start = utils.debug(debug, True, 'Loading data from the internet')
         data = ox_a.download_place(place, which_result=which_result)
 
-    if debug:
-        time_diff = time.process_time() - time_start
-        utils.print_nnl(' {:.3f} seconds\n'.format(time_diff))
+    utils.debug(debug, time_start)
 
     # Choose random streets and position on streets
-    if debug:
-        time_start = time.process_time()
-        utils.print_nnl('Building graph for wave propagation:')
+    time_start = utils.debug(debug, None, 'Building graph for wave propagation')
+    
     streets = data['streets']
     buildings = data['buildings']
 
@@ -66,24 +54,16 @@ def main_sim(place, which_result=1, count_veh=100, max_pl=100, debug=False):
     ox_a.add_geometry(streets)
     streets_wave = streets.to_undirected()
     prop.add_edges_if_los(streets_wave, buildings)
-    if debug:
-        time_diff = time.process_time() - time_start
-        utils.print_nnl(' {:.3f} seconds\n'.format(time_diff))
-
-    if debug:
-        time_start = time.process_time()
-        utils.print_nnl('Choosing random vehicle positions:')
+    
+    utils.debug(debug, time_start)
+    time_start = utils.debug(debug, None, 'Choosing random vehicle positions')
+    
     street_lengths = geom_o.get_street_lengths(streets)
     rand_index = dist.choose_random_streets(street_lengths, count_veh)
     points = np.zeros(count_veh, dtype=object)
 
-    if debug:
-        time_diff = time.process_time() - time_start
-        utils.print_nnl(' {:.3f} seconds\n'.format(time_diff))
-
-    if debug:
-        time_start = time.process_time()
-        utils.print_nnl('Creating graphs for vehicles:')
+    utils.debug(debug, time_start)
+    time_start = utils.debug(debug, None, 'Creating graphs for vehicles')
 
     graphs_veh = np.zeros(count_veh, dtype=object)
     for iteration, index in enumerate(rand_index):
@@ -112,14 +92,10 @@ def main_sim(place, which_result=1, count_veh=100, max_pl=100, debug=False):
     coords_vehs = {}
     coords_vehs['all'] = geom_o.extract_point_array(points)
 
-    if debug:
-        time_diff = time.process_time() - time_start
-        utils.print_nnl(' {:.3f} seconds\n'.format(time_diff))
-
+    utils.debug(debug, time_start)
+    
     # Find center vehicle
-    if debug:
-        time_start = time.process_time()
-        utils.print_nnl('Finding center vehicle:')
+    time_start = utils.debug(debug, None, 'Finding center vehicle')
 
     index_center_veh = geom_o.find_center_veh(coords_vehs['all'])
     index_other_vehs = np.ones(len(points), dtype=bool)
@@ -129,25 +105,19 @@ def main_sim(place, which_result=1, count_veh=100, max_pl=100, debug=False):
     point_center_veh = points[index_center_veh]
     points_other_veh = points[index_other_vehs]
 
-    if debug:
-        time_diff = time.process_time() - time_start
-        utils.print_nnl(' {:.3f} seconds\n'.format(time_diff))
+    utils.debug(debug, time_start)
 
     # Determine NLOS and OLOS/LOS
-    if debug:
-        time_start = time.process_time()
-        utils.print_nnl('Determining propagation condition:')
+    time_start = utils.debug(debug, None, 'Determining propagation conditions')
+    
     is_nlos = prop.veh_cons_are_nlos(point_center_veh, points_other_veh, buildings)
     coords_vehs['nlos'] = coords_vehs['other'][is_nlos, :]
 
-    if debug:
-        time_diff = time.process_time() - time_start
-        utils.print_nnl(' {:.3f} seconds\n'.format(time_diff))
+    utils.debug(debug, time_start)
 
     # Determine OLOS and LOS
-    if debug:
-        utils.print_nnl('Determining OLOS and LOS:')
-        time_start = time.process_time()
+    time_start = utils.debug(debug, None, 'Determining OLOS and LOS')
+
     is_olos_los = np.invert(is_nlos)
     coords_vehs['olos_los'] = coords_vehs['other'][is_olos_los, :]
     points_olos_los = points_other_veh[is_olos_los]
@@ -157,14 +127,10 @@ def main_sim(place, which_result=1, count_veh=100, max_pl=100, debug=False):
     coords_vehs['olos'] = coords_vehs['olos_los'][is_olos, :]
     coords_vehs['los'] = coords_vehs['olos_los'][is_los, :]
 
-    if debug:
-        time_diff = time.process_time() - time_start
-        utils.print_nnl(' {:.3f} seconds\n'.format(time_diff))
+    utils.debug(debug, time_start)
 
     # Determine orthogonal and parallel
-    if debug:
-        time_start = time.process_time()
-        utils.print_nnl('Determining orthogonal and parallel:')
+    time_start = utils.debug(debug, None, 'Determining orthogonal and parallel')
 
     graphs_veh_nlos = graphs_veh[index_other_vehs][is_nlos]
     graph_veh_own = graphs_veh[index_center_veh]
@@ -176,16 +142,12 @@ def main_sim(place, which_result=1, count_veh=100, max_pl=100, debug=False):
     coords_vehs['orth'] = coords_vehs['nlos'][is_orthogonal, :]
     coords_vehs['par'] = coords_vehs['nlos'][is_paralell, :]
 
-    if debug:
-        time_diff = time.process_time() - time_start
-        utils.print_nnl(' {:.3f} seconds\n'.format(time_diff))
+    utils.debug(debug, time_start)
 
     plot.plot_prop_cond(streets, buildings, coords_vehs, show=False, place=place)
 
     # Determining pathlosses for LOS and OLOS
-    if debug:
-        time_start = time.process_time()
-        utils.print_nnl('Determining pathlosses for LOS and OLOS:')
+    time_start = utils.debug(debug, None, 'Calculating pathlosses for OLOS and LOS')
 
     p_loss = pathloss.Pathloss()
     distances_olos_los = np.sqrt( \
@@ -199,14 +161,10 @@ def main_sim(place, which_result=1, count_veh=100, max_pl=100, debug=False):
     pathlosses_olos_los[is_olos] = pathlosses_olos
     pathlosses_olos_los[is_los] = pathlosses_los
 
-    if debug:
-        time_diff = time.process_time() - time_start
-        utils.print_nnl(' {:.3f} seconds\n'.format(time_diff))
+    utils.debug(debug, time_start)
 
     # Determining pathlosses for NLOS orthogonal
-    if debug:
-        time_start = time.process_time()
-        utils.print_nnl('Determining pathlosses for NLOS orthogonal:')
+    time_start = utils.debug(debug, None, 'Calculating pathlosses for NLOS orthogonal')
 
     # NOTE: Assumes center vehicle is receiver
     # NOTE: Uses airline vehicle -> intersection -> vehicle and not street route
@@ -230,29 +188,19 @@ def main_sim(place, which_result=1, count_veh=100, max_pl=100, debug=False):
     pathlosses[is_olos_los] = -pathlosses_olos_los
     pathlosses[is_nlos] = pathlosses_nlos
 
-    if debug:
-        time_diff = time.process_time() - time_start
-        utils.print_nnl(' {:.3f} seconds\n'.format(time_diff))
+    utils.debug(debug, time_start)
 
     plot.plot_pathloss(streets, buildings, coords_vehs, pathlosses, show=False, place=place)
 
     # Determine in range / out of range
-    # Determining pathlosses for NLOS orthogonal
-    if debug:
-        time_start = time.process_time()
-        utils.print_nnl('Determining in range vehicles:')
+    time_start = utils.debug(debug, None, 'Determining in range vehicles')
 
     index_in_range = pathlosses < max_pl
     index_out_range = np.invert(index_in_range)
     coords_vehs['in_range'] = coords_vehs['other'][index_in_range, :]
     coords_vehs['out_range'] = coords_vehs['other'][index_out_range, :]
 
-    if debug:
-        time_diff = time.process_time() - time_start
-        time_diff_tot = time.process_time() - time_start_tot
-        utils.print_nnl(' {:.3f} seconds\n'.format(time_diff))
-        utils.print_nnl('TOTAL RUNNING TIME: {:.3f} seconds\n'.format(time_diff_tot))
-
+    utils.debug(debug, time_start)
     plot.plot_con_status(streets, buildings, coords_vehs, show=False, place=place)
 
     # Show the plots
