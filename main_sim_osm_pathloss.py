@@ -45,7 +45,7 @@ def main_sim(place, which_result=1, count_veh=100, max_pl=100, debug=False):
 
     # Choose random streets and position on streets
     time_start = utils.debug(debug, None, 'Building graph for wave propagation')
-    
+
     streets = data['streets']
     buildings = data['buildings']
 
@@ -54,10 +54,10 @@ def main_sim(place, which_result=1, count_veh=100, max_pl=100, debug=False):
     ox_a.add_geometry(streets)
     streets_wave = streets.to_undirected()
     prop.add_edges_if_los(streets_wave, buildings)
-    
+
     utils.debug(debug, time_start)
     time_start = utils.debug(debug, None, 'Choosing random vehicle positions')
-    
+
     street_lengths = geom_o.get_street_lengths(streets)
     rand_index = dist.choose_random_streets(street_lengths, count_veh)
     points = np.zeros(count_veh, dtype=object)
@@ -93,7 +93,7 @@ def main_sim(place, which_result=1, count_veh=100, max_pl=100, debug=False):
     coords_vehs['all'] = geom_o.extract_point_array(points)
 
     utils.debug(debug, time_start)
-    
+
     # Find center vehicle
     time_start = utils.debug(debug, None, 'Finding center vehicle')
 
@@ -109,7 +109,7 @@ def main_sim(place, which_result=1, count_veh=100, max_pl=100, debug=False):
 
     # Determine NLOS and OLOS/LOS
     time_start = utils.debug(debug, None, 'Determining propagation conditions')
-    
+
     is_nlos = prop.veh_cons_are_nlos(point_center_veh, points_other_veh, buildings)
     coords_vehs['nlos'] = coords_vehs['other'][is_nlos, :]
 
