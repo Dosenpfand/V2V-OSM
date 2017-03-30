@@ -249,9 +249,6 @@ def line_route_between_nodes(node_from, node_to, graph):
 def check_if_cons_orthogonal(streets_wave, graph_veh_own, graphs_veh_other, max_angle=np.pi):
     """Determines if the condition is NLOS on an orthogonal street for every possible connection to
     one node """
-
-    # TODO: really 2 copies (_local and _local_iter) needed?
-
     node_own = graph_veh_own.graph['node_veh']
     streets_wave_local = nx.compose(graph_veh_own, streets_wave)
     count_veh_other = np.size(graphs_veh_other)
@@ -263,7 +260,7 @@ def check_if_cons_orthogonal(streets_wave, graph_veh_own, graphs_veh_other, max_
         node_v = graph.graph['node_veh']
         streets_wave_local_iter = nx.compose(graph, streets_wave_local)
 
-        # TODO: somehow use angles as weight and not length?
+        # TODO: Use angles as weight and not length?
         route = line_route_between_nodes(node_own, node_v, streets_wave_local_iter)
         angles = angles_along_line(route)
         angles_wrapped = np.pi - np.abs(wrap_to_pi(angles))
@@ -277,7 +274,6 @@ def check_if_cons_orthogonal(streets_wave, graph_veh_own, graphs_veh_other, max_
         # Determine position of max angle
         index_angle = np.argmax(angles_wrapped)
         route_coords = np.array(route.xy)
-        # TODO: or use/return 2 routes (so real route length and not airline can be used)?
         coords_max_angle[index, :] = route_coords[:, index_angle+1]
 
     return is_orthogonal, coords_max_angle
@@ -288,8 +284,7 @@ def split_line_at_point(line, point):
     if line.distance(point) > 1e-8:
         raise ValueError('Point not on line')
 
-    # Hack to get around floating point precision
-    # TODO: do not use split, write own function
+    # NOTE: Use small circle instead of point to get around floating point precision
     circle = point.buffer(1e-8)
     line_split = ops.split(line, circle)
     line_before = line_split[0]
@@ -402,7 +397,6 @@ def main_test(place, which_result=1, count_veh=100, max_pl=100, debug=False):
     # Vehicles are placed in a undirected version of the graph because electromagnetic
     # waves do not respect driving directions
     add_geometry(streets)
-    # TODO: still unidirectional streets present? (e.g. look at routing)
     streets_wave = streets.to_undirected()
     add_edges_if_los(streets_wave, buildings)
     if debug:
@@ -429,7 +423,7 @@ def main_test(place, which_result=1, count_veh=100, max_pl=100, debug=False):
         street_geom = street[2]['geometry']
         point = choose_random_point(street_geom)
         points[iteration] = point[0]
-        # TODO: better way to name nodes?
+        # NOTE: All vehicle nodes get the prefix 'v'
         node = 'v' + str(iteration)
         # Add vehicle, needed intersections and edges to graph
         graph_iter = nx.MultiGraph(node_veh=node)
@@ -438,7 +432,6 @@ def main_test(place, which_result=1, count_veh=100, max_pl=100, debug=False):
         graph_iter.add_nodes_from(street[0:1])
 
         street_before, street_after = split_line_at_point(street_geom, point[0])
-        # TODO: correct index of split_street? or switched?
         street_length = street_before.length
         edge_attr = {'geometry': street_before, 'length': street_length, 'is_veh_edge': True}
         graph_iter.add_edge(node, street[0], attr_dict=edge_attr)
@@ -494,7 +487,7 @@ def main_test(place, which_result=1, count_veh=100, max_pl=100, debug=False):
     x_coord_olos_los_vehs = x_coord_other_vehs[is_olos_los]
     y_coord_olos_los_vehs = y_coord_other_vehs[is_olos_los]
     points_olos_los = points_other_veh[is_olos_los]
-    # TODO: choose margin wisely
+    # NOTE: A margin of 2, means round cars with radius 2 meters
     is_olos = veh_cons_are_olos(point_center_veh, points_olos_los, margin=2)
     is_los = np.invert(is_olos)
     x_coord_olos_vehs = x_coord_olos_los_vehs[is_olos]
@@ -563,6 +556,7 @@ def main_test(place, which_result=1, count_veh=100, max_pl=100, debug=False):
         print_nnl('Determining pathlosses for NLOS orthogonal:')
 
     # NOTE: Assumes center vehicle is receiver
+    # NOTE: Uses airline vehicle -> intersection -> vehicle and not street route
     distances_orth_tx = np.sqrt(
         (x_coord_orth_vehs - coords_intersections[is_orthogonal, 0])**2 +
         (y_coord_orth_vehs - coords_intersections[is_orthogonal, 1])**2)
@@ -579,7 +573,7 @@ def main_test(place, which_result=1, count_veh=100, max_pl=100, debug=False):
 
     # Build complete pathloss array
     pathlosses = np.zeros(count_veh-1)
-    # TODO: why - ?
+    # TODO: Why - ? Fix in pathloss.py
     pathlosses[is_olos_los] = -pathlosses_olos_los
     pathlosses[is_nlos] = pathlosses_nlos
 
