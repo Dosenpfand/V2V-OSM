@@ -46,34 +46,34 @@ def get_street_lengths(streets):
 
 def extract_point_array(points):
     """Extracts coordinates form a point array """
-    coords_x = np.zeros(np.size(points), dtype=float)
-    coords_y = np.zeros(np.size(points), dtype=float)
+
+    coords = np.zeros([np.size(points), 2], dtype=float)
 
     for index, point in np.ndenumerate(points):
-        coords_x[index] = point.x
-        coords_y[index] = point.y
+        coords[index, :] = np.transpose(point.xy)
 
-    return coords_x, coords_y
+    return coords
 
 
-def find_center_veh(coords_x, coords_y):
+def find_center_veh(coords):
     """Finds the index of the vehicle at the center of the map """
-    min_x = np.amin(coords_x)
-    max_x = np.amax(coords_x)
-    min_y = np.amin(coords_y)
-    max_y = np.amax(coords_y)
+
+    min_x = np.amin(coords[:, 0])
+    max_x = np.amax(coords[:, 0])
+    min_y = np.amin(coords[:, 1])
+    max_y = np.amax(coords[:, 1])
     mean_x = (min_x + max_x) / 2
     mean_y = (min_y + max_y) / 2
     coords_center = np.array((mean_x, mean_y))
-    coords_veh = np.vstack((coords_x, coords_y)).T
     distances_center = np.linalg.norm(
-        coords_center - coords_veh, ord=2, axis=1)
+        coords_center - coords, ord=2, axis=1)
     index_center_veh = np.argmin(distances_center)
     return index_center_veh
 
 
 def split_line_at_point(line, point):
     """Splits a line at the point on the line """
+
     if line.distance(point) > 1e-8:
         raise ValueError('Point not on line')
 
@@ -108,4 +108,5 @@ def angles_along_line(line):
 
 def wrap_to_pi(angle):
     """ Limits angle from -pi to +pi"""
+
     return (angle + np.pi) % (2*np.pi) - np.pi

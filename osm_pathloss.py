@@ -18,6 +18,8 @@ import geometry as geom_o
 import vehicle_distribution as dist
 import propagation as prop
 
+import ipdb
+
 
 def main_test(place, which_result=1, count_veh=100, max_pl=100, debug=False):
     """ Test the whole functionality"""
@@ -108,7 +110,8 @@ def main_test(place, which_result=1, count_veh=100, max_pl=100, debug=False):
 
         graphs_veh[iteration] = graph_iter.copy()
 
-    x_coords, y_coords = geom_o.extract_point_array(points)
+    coords_vehs = {}
+    coords_vehs['all'] = geom_o.extract_point_array(points)
 
     if debug:
         time_diff = time.process_time() - time_start
@@ -119,13 +122,11 @@ def main_test(place, which_result=1, count_veh=100, max_pl=100, debug=False):
         time_start = time.process_time()
         utils.print_nnl('Finding center vehicle:')
 
-    index_center_veh = geom_o.find_center_veh(x_coords, y_coords)
+    index_center_veh = geom_o.find_center_veh(coords_vehs['all'])
     index_other_vehs = np.ones(len(points), dtype=bool)
     index_other_vehs[index_center_veh] = False
-    x_coord_center_veh = x_coords[index_center_veh]
-    y_coord_center_veh = y_coords[index_center_veh]
-    x_coord_other_vehs = x_coords[index_other_vehs]
-    y_coord_other_vehs = y_coords[index_other_vehs]
+    coords_vehs['center'] = coords_vehs['all'][index_center_veh, :]
+    coords_vehs['other'] = coords_vehs['all'][index_other_vehs, :]
     point_center_veh = points[index_center_veh]
     points_other_veh = points[index_other_vehs]
 
@@ -138,8 +139,7 @@ def main_test(place, which_result=1, count_veh=100, max_pl=100, debug=False):
         time_start = time.process_time()
         utils.print_nnl('Determining propagation condition:')
     is_nlos = prop.veh_cons_are_nlos(point_center_veh, points_other_veh, buildings)
-    x_coord_nlos_vehs = x_coord_other_vehs[is_nlos]
-    y_coord_nlos_vehs = y_coord_other_vehs[is_nlos]
+    coords_vehs['nlos'] = coords_vehs['other'][is_nlos, :]
 
     if debug:
         time_diff = time.process_time() - time_start
@@ -150,16 +150,13 @@ def main_test(place, which_result=1, count_veh=100, max_pl=100, debug=False):
         utils.print_nnl('Determining OLOS and LOS:')
         time_start = time.process_time()
     is_olos_los = np.invert(is_nlos)
-    x_coord_olos_los_vehs = x_coord_other_vehs[is_olos_los]
-    y_coord_olos_los_vehs = y_coord_other_vehs[is_olos_los]
+    coords_vehs['olos_los'] = coords_vehs['other'][is_olos_los, :]
     points_olos_los = points_other_veh[is_olos_los]
     # NOTE: A margin of 2, means round cars with radius 2 meters
     is_olos = prop.veh_cons_are_olos(point_center_veh, points_olos_los, margin=2)
     is_los = np.invert(is_olos)
-    x_coord_olos_vehs = x_coord_olos_los_vehs[is_olos]
-    y_coord_olos_vehs = y_coord_olos_los_vehs[is_olos]
-    x_coord_los_vehs = x_coord_olos_los_vehs[is_los]
-    y_coord_los_vehs = y_coord_olos_los_vehs[is_los]
+    coords_vehs['olos'] = coords_vehs['olos_los'][is_olos, :]
+    coords_vehs['los'] = coords_vehs['olos_los'][is_los, :]
 
     if debug:
         time_diff = time.process_time() - time_start
@@ -177,16 +174,14 @@ def main_test(place, which_result=1, count_veh=100, max_pl=100, debug=False):
                                                                         graphs_veh_nlos,
                                                                         max_angle=np.pi)
     is_paralell = np.invert(is_orthogonal)
-    x_coord_orth_vehs = x_coord_nlos_vehs[is_orthogonal]
-    y_coord_orth_vehs = y_coord_nlos_vehs[is_orthogonal]
-    x_coord_par_vehs = x_coord_nlos_vehs[is_paralell]
-    y_coord_par_vehs = y_coord_nlos_vehs[is_paralell]
+    coords_vehs['orth'] = coords_vehs['nlos'][is_orthogonal, :]
+    coords_vehs['par'] = coords_vehs['nlos'][is_paralell, :]
 
     if debug:
         time_diff = time.process_time() - time_start
         utils.print_nnl(' {:.3f} seconds\n'.format(time_diff))
 
-    # TODO: add call of print function
+    plot.plot_prop_cond(streets, buildings, coords_vehs, show=False, place=place)
 
     # Determining pathlosses for LOS and OLOS
     if debug:
@@ -195,8 +190,8 @@ def main_test(place, which_result=1, count_veh=100, max_pl=100, debug=False):
 
     p_loss = pathloss.Pathloss()
     distances_olos_los = np.sqrt( \
-        (x_coord_olos_los_vehs - x_coord_center_veh)**2 + \
-        (y_coord_olos_los_vehs - y_coord_center_veh)**2)
+        (coords_vehs['olos_los'][:, 0] - coords_vehs['center'][0])**2 + \
+        (coords_vehs['olos_los'][:, 1] - coords_vehs['center'][1])**2)
 
     pathlosses_olos = p_loss.pathloss_olos(distances_olos_los[is_olos])
     pathlosses_los = p_loss.pathloss_los(distances_olos_los[is_los])
@@ -217,16 +212,16 @@ def main_test(place, which_result=1, count_veh=100, max_pl=100, debug=False):
     # NOTE: Assumes center vehicle is receiver
     # NOTE: Uses airline vehicle -> intersection -> vehicle and not street route
     distances_orth_tx = np.sqrt(
-        (x_coord_orth_vehs - coords_intersections[is_orthogonal, 0])**2 +
-        (y_coord_orth_vehs - coords_intersections[is_orthogonal, 1])**2)
+        (coords_vehs['orth'][:, 0] - coords_intersections[is_orthogonal, 0])**2 +
+        (coords_vehs['orth'][:, 1] - coords_intersections[is_orthogonal, 1])**2)
 
     distances_orth_rx = np.sqrt(
-        (x_coord_center_veh - coords_intersections[is_orthogonal, 0])**2 +
-        (y_coord_center_veh - coords_intersections[is_orthogonal, 1])**2)
+        (coords_vehs['center'][0] - coords_intersections[is_orthogonal, 0])**2 +
+        (coords_vehs['center'][1] - coords_intersections[is_orthogonal, 1])**2)
 
     pathlosses_orth = p_loss.pathloss_nlos(distances_orth_rx, distances_orth_tx)
 
-    pathlosses_nlos = np.zeros(np.size(x_coord_nlos_vehs))
+    pathlosses_nlos = np.zeros(np.shape(coords_vehs['nlos'])[0])
     pathlosses_nlos[is_paralell] = np.Infinity*np.ones(np.sum(is_paralell))
     pathlosses_nlos[is_orthogonal] = pathlosses_orth
 
@@ -240,7 +235,7 @@ def main_test(place, which_result=1, count_veh=100, max_pl=100, debug=False):
         time_diff = time.process_time() - time_start
         utils.print_nnl(' {:.3f} seconds\n'.format(time_diff))
 
-    # TODO: add call to plot function!
+    plot.plot_pathloss(streets, buildings, coords_vehs, pathlosses, show=False, place=place)
 
     # Determine in range / out of range
     # Determining pathlosses for NLOS orthogonal
@@ -250,6 +245,8 @@ def main_test(place, which_result=1, count_veh=100, max_pl=100, debug=False):
 
     index_in_range = pathlosses < max_pl
     index_out_range = np.invert(index_in_range)
+    coords_vehs['in_range'] = coords_vehs['other'][index_in_range, :]
+    coords_vehs['out_range'] = coords_vehs['other'][index_out_range, :]
 
     if debug:
         time_diff = time.process_time() - time_start
@@ -257,7 +254,7 @@ def main_test(place, which_result=1, count_veh=100, max_pl=100, debug=False):
         utils.print_nnl(' {:.3f} seconds\n'.format(time_diff))
         utils.print_nnl('TOTAL RUNNING TIME: {:.3f} seconds\n'.format(time_diff_tot))
 
-    # TODO: Add call to plot function
+    plot.plot_con_status(streets, buildings, coords_vehs, show=False, place=place)
 
     # Show the plots
     if debug:
