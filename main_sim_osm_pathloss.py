@@ -4,6 +4,8 @@
 import time
 import argparse
 import os.path
+import ipdb
+
 # Extension imports
 import numpy as np
 import matplotlib.pyplot as plt
@@ -18,10 +20,7 @@ import geometry as geom_o
 import vehicle_distribution as dist
 import propagation as prop
 
-import ipdb
-
-
-def main_test(place, which_result=1, count_veh=100, max_pl=100, debug=False):
+def main_sim(place, which_result=1, count_veh=100, max_pl=100, debug=False):
     """ Test the whole functionality"""
 
     # Setup
@@ -272,4 +271,4 @@ def parse_arguments():
 
 if __name__ == '__main__':
     args = parse_arguments()
-    main_test(args.p, which_result=args.w, count_veh=args.c, max_pl=150, debug=True)
+    main_sim(args.p, which_result=args.w, count_veh=args.c, max_pl=150, debug=True)

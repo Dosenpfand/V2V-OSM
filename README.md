@@ -16,8 +16,8 @@
 
 5. Run an exemplary simulation
 
-    python3 osm_pathloss.py
+    python3 main_sim_osm_pathloss.py
 
 6. Get help
 
-    python3 osm_pathloss.py -h
+    python3 main_sim_osm_pathloss.py -h
