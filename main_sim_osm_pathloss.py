@@ -71,18 +71,18 @@ def main_sim(place, which_result=1, density_veh=100, max_pl=150, density_type='a
 
     # Load data
     file_prefix = 'data/{}'.format(utils.string_to_filename(place))
-    filename_data_streets = 'data/{}_streets.pickle'.format(
-        utils.string_to_filename(place))
-    filename_data_buildings = 'data/{}_buildings.pickle'.format(
-        utils.string_to_filename(place))
+    filename_data_streets = 'data/{}_streets.pickle'.format(utils.string_to_filename(place))
+    filename_data_buildings = 'data/{}_buildings.pickle'.format(utils.string_to_filename(place))
+    filename_data_boundary = 'data/{}_boundary.pickle'.format(utils.string_to_filename(place))
 
-    if os.path.isfile(filename_data_streets) and os.path.isfile(filename_data_buildings):
+    if os.path.isfile(filename_data_streets) and os.path.isfile(filename_data_buildings) and \
+            os.path.isfile(filename_data_boundary):
         # Load from file
         time_start = utils.debug(debug, None, 'Loading data from disk')
         data = ox_a.load_place(file_prefix)
     else:
         # Load from internet
-        time_start = utils.debug(debug, True, 'Loading data from the internet')
+        time_start = utils.debug(debug, None, 'Loading data from the internet')
         data = ox_a.download_place(place, which_result=which_result)
 
     utils.debug(debug, time_start)
