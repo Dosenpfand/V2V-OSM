@@ -118,7 +118,7 @@ def main_sim(place, which_result=1, count_veh=100, max_pl=100, debug=False):
         graph_iter = nx.MultiGraph(node_veh=node)
         node_attr = {'geometry': point_veh[0], 'x' : point_veh[0].x, 'y' : point_veh[0].y}
         graph_iter.add_node(node, attr_dict=node_attr)
-        graph_iter.add_nodes_from(street[0:1])
+        graph_iter.add_nodes_from(street[0:2])
 
         street_before, street_after = geom_o.split_line_at_point(street_geom, point_veh[0])
         street_length = street_before.length
