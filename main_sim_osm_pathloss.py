@@ -19,6 +19,47 @@ import geometry as geom_o
 import vehicle_distribution as dist
 import propagation as prop
 
+class Vehicles:
+    def __init__(self, points, graphs=None):
+        self.points = points
+        self.coordinates = geom_o.extract_point_array(points)
+        self.graphs = graphs
+        self.pathlosses = np.zeros(np.size(points))
+        self.idxs = {}
+
+    def add_key(self, key, value):
+        self.idxs[key] = value
+
+    def get(self, key=None):
+        if key is None:
+            return self.coordinates
+        else:
+            return self.coordinates[self.idxs[key]]
+
+    def get_points(self, key=None):
+        if key is None:
+            return self.points
+        else:
+            return self.points[self.idxs[key]]
+
+    def get_graph(self, key=None):
+        if key is None:
+            return self.graphs
+        else:
+            return self.graphs[self.idxs[key]]
+
+    def get_idxs(self, key):
+        return self.idxs[key]
+
+    def set_pathlosses(self, key, values):
+        self.pathlosses[self.idxs[key]] = values
+
+    def get_pathlosses(self, key=None):
+        if key is None:
+            return self.pathlosses
+        else:
+            return self.pathlosses[self.idxs[key]]
+
 def main_sim(place, which_result=1, count_veh=100, max_pl=100, debug=False):
     """ Test the whole functionality"""
 
@@ -60,18 +101,17 @@ def main_sim(place, which_result=1, count_veh=100, max_pl=100, debug=False):
 
     street_lengths = geom_o.get_street_lengths(streets)
     rand_index = dist.choose_random_streets(street_lengths, count_veh)
-    points_vehs = {}
-    points_vehs['all'] = np.zeros(count_veh, dtype=object)
+    points_vehs = np.zeros(count_veh, dtype=object)
 
     utils.debug(debug, time_start)
     time_start = utils.debug(debug, None, 'Creating graphs for vehicles')
 
-    graphs_veh = np.zeros(count_veh, dtype=object)
+    graphs_vehs = np.zeros(count_veh, dtype=object)
     for iteration, index in enumerate(rand_index):
         street = streets.edges(data=True)[index]
         street_geom = street[2]['geometry']
         point_veh = dist.choose_random_point(street_geom)
-        points_vehs['all'][iteration] = point_veh[0]
+        points_vehs[iteration] = point_veh[0]
         # NOTE: All vehicle nodes get the prefix 'v'
         node = 'v' + str(iteration)
         # Add vehicle, needed intersections and edges to graph
@@ -88,31 +128,29 @@ def main_sim(place, which_result=1, count_veh=100, max_pl=100, debug=False):
         edge_attr = {'geometry': street_after, 'length': street_length, 'is_veh_edge': True}
         graph_iter.add_edge(node, street[1], attr_dict=edge_attr)
 
-        graphs_veh[iteration] = graph_iter.copy()
+        graphs_vehs[iteration] = graph_iter.copy()
 
-    coords_vehs = {}
-    coords_vehs['all'] = geom_o.extract_point_array(points_vehs['all'])
+    vehs = Vehicles(points_vehs, graphs_vehs)
 
     utils.debug(debug, time_start)
 
     # Find center vehicle
     time_start = utils.debug(debug, None, 'Finding center vehicle')
 
-    index_center_veh = geom_o.find_center_veh(coords_vehs['all'])
-    index_other_vehs = np.ones(len(points_vehs['all']), dtype=bool)
-    index_other_vehs[index_center_veh] = False
-    coords_vehs['center'] = coords_vehs['all'][index_center_veh, :]
-    coords_vehs['other'] = coords_vehs['all'][index_other_vehs, :]
-    points_vehs['center'] = points_vehs['all'][index_center_veh]
-    points_vehs['other'] = points_vehs['all'][index_other_vehs]
+    index_center_veh = geom_o.find_center_veh(vehs.get())
+    index_other_vehs = np.where(np.arange(count_veh) != index_center_veh)[0]
+    vehs.add_key('center', index_center_veh)
+    vehs.add_key('other', index_other_vehs)
 
     utils.debug(debug, time_start)
 
     # Determine NLOS and OLOS/LOS
     time_start = utils.debug(debug, None, 'Determining propagation conditions')
 
-    is_nlos = prop.veh_cons_are_nlos(points_vehs['center'], points_vehs['other'], buildings)
-    coords_vehs['nlos'] = coords_vehs['other'][is_nlos, :]
+    is_nlos = prop.veh_cons_are_nlos(vehs.get_points('center'),
+                                     vehs.get_points('other'), buildings)
+
+    vehs.add_key('nlos', index_other_vehs[is_nlos])
 
     utils.debug(debug, time_start)
 
@@ -120,47 +158,46 @@ def main_sim(place, which_result=1, count_veh=100, max_pl=100, debug=False):
     time_start = utils.debug(debug, None, 'Determining OLOS and LOS')
 
     is_olos_los = np.invert(is_nlos)
-    coords_vehs['olos_los'] = coords_vehs['other'][is_olos_los, :]
-    points_vehs['olos_los'] = points_vehs['other'][is_olos_los]
+    vehs.add_key('olos_los', index_other_vehs[is_olos_los])
     # NOTE: A margin of 2, means round cars with radius 2 meters
-    is_olos = prop.veh_cons_are_olos(points_vehs['center'], points_vehs['olos_los'], margin=2)
+    is_olos = prop.veh_cons_are_olos(vehs.get_points('center'),
+                                     vehs.get_points('olos_los'), margin=2)
     is_los = np.invert(is_olos)
-    coords_vehs['olos'] = coords_vehs['olos_los'][is_olos, :]
-    coords_vehs['los'] = coords_vehs['olos_los'][is_los, :]
+    vehs.add_key('olos', vehs.get_idxs('olos_los')[is_olos])
+    vehs.add_key('los', vehs.get_idxs('olos_los')[is_los])
 
     utils.debug(debug, time_start)
 
     # Determine orthogonal and parallel
     time_start = utils.debug(debug, None, 'Determining orthogonal and parallel')
 
-    graphs_veh_nlos = graphs_veh[index_other_vehs][is_nlos]
-    graph_veh_own = graphs_veh[index_center_veh]
-    is_orthogonal, coords_intersections = prop.check_if_cons_orthogonal(streets_wave,
-                                                                        graph_veh_own,
-                                                                        graphs_veh_nlos,
-                                                                        max_angle=np.pi)
+    is_orthogonal, coords_intersections = \
+        prop.check_if_cons_orthogonal(streets_wave,
+                                      vehs.get_graph('center'),
+                                      vehs.get_graph('nlos'),
+                                      max_angle=np.pi)
     is_paralell = np.invert(is_orthogonal)
-    coords_vehs['orth'] = coords_vehs['nlos'][is_orthogonal, :]
-    coords_vehs['par'] = coords_vehs['nlos'][is_paralell, :]
+    vehs.add_key('orth', vehs.get_idxs('nlos')[is_orthogonal])
+    vehs.add_key('par', vehs.get_idxs('nlos')[is_paralell])
 
     utils.debug(debug, time_start)
 
-    plot.plot_prop_cond(streets, buildings, coords_vehs, show=False, place=place)
+    plot.plot_prop_cond(streets, buildings, vehs, show=False, place=place)
 
     # Determining pathlosses for LOS and OLOS
     time_start = utils.debug(debug, None, 'Calculating pathlosses for OLOS and LOS')
 
     p_loss = pathloss.Pathloss()
     distances_olos_los = np.sqrt( \
-        (coords_vehs['olos_los'][:, 0] - coords_vehs['center'][0])**2 + \
-        (coords_vehs['olos_los'][:, 1] - coords_vehs['center'][1])**2)
+        (vehs.get('olos_los')[:, 0] - vehs.get('center')[0])**2 + \
+        (vehs.get('olos_los')[:, 1] - vehs.get('center')[1])**2)
 
-    pathlosses_olos = p_loss.pathloss_olos(distances_olos_los[is_olos])
-    pathlosses_los = p_loss.pathloss_los(distances_olos_los[is_los])
-
-    pathlosses_olos_los = np.zeros(np.size(distances_olos_los))
-    pathlosses_olos_los[is_olos] = pathlosses_olos
-    pathlosses_olos_los[is_los] = pathlosses_los
+    # TODO: why - ? fix in pathloss.py
+    pathlosses_olos = -p_loss.pathloss_olos(distances_olos_los[is_olos])
+    vehs.set_pathlosses('olos', pathlosses_olos)
+    # TODO: why - ? fix in pathloss.py
+    pathlosses_los = -p_loss.pathloss_los(distances_olos_los[is_los])
+    vehs.set_pathlosses('los', pathlosses_los)
 
     utils.debug(debug, time_start)
 
@@ -170,39 +207,32 @@ def main_sim(place, which_result=1, count_veh=100, max_pl=100, debug=False):
     # NOTE: Assumes center vehicle is receiver
     # NOTE: Uses airline vehicle -> intersection -> vehicle and not street route
     distances_orth_tx = np.sqrt(
-        (coords_vehs['orth'][:, 0] - coords_intersections[is_orthogonal, 0])**2 +
-        (coords_vehs['orth'][:, 1] - coords_intersections[is_orthogonal, 1])**2)
+        (vehs.get('orth')[:, 0] - coords_intersections[is_orthogonal, 0])**2 +
+        (vehs.get('orth')[:, 1] - coords_intersections[is_orthogonal, 1])**2)
 
     distances_orth_rx = np.sqrt(
-        (coords_vehs['center'][0] - coords_intersections[is_orthogonal, 0])**2 +
-        (coords_vehs['center'][1] - coords_intersections[is_orthogonal, 1])**2)
+        (vehs.get('center')[0] - coords_intersections[is_orthogonal, 0])**2 +
+        (vehs.get('center')[1] - coords_intersections[is_orthogonal, 1])**2)
 
     pathlosses_orth = p_loss.pathloss_nlos(distances_orth_rx, distances_orth_tx)
+    vehs.set_pathlosses('orth', pathlosses_orth)
+    pathlosses_par = np.Infinity*np.ones(np.sum(is_paralell))
+    vehs.set_pathlosses('par', pathlosses_par)
 
-    pathlosses_nlos = np.zeros(np.shape(coords_vehs['nlos'])[0])
-    pathlosses_nlos[is_paralell] = np.Infinity*np.ones(np.sum(is_paralell))
-    pathlosses_nlos[is_orthogonal] = pathlosses_orth
-
-    # Build complete pathloss array
-    pathlosses = np.zeros(count_veh-1)
-    # TODO: Why - ? Fix in pathloss.py
-    pathlosses[is_olos_los] = -pathlosses_olos_los
-    pathlosses[is_nlos] = pathlosses_nlos
-
+    # Plot pathlosses
     utils.debug(debug, time_start)
-
-    plot.plot_pathloss(streets, buildings, coords_vehs, pathlosses, show=False, place=place)
+    plot.plot_pathloss(streets, buildings, vehs, show=False, place=place)
 
     # Determine in range / out of range
     time_start = utils.debug(debug, None, 'Determining in range vehicles')
 
-    index_in_range = pathlosses < max_pl
+    index_in_range = vehs.get_pathlosses('other') < max_pl
     index_out_range = np.invert(index_in_range)
-    coords_vehs['in_range'] = coords_vehs['other'][index_in_range, :]
-    coords_vehs['out_range'] = coords_vehs['other'][index_out_range, :]
+    vehs.add_key('in_range', vehs.get_idxs('other')[index_in_range])
+    vehs.add_key('out_range', vehs.get_idxs('other')[index_out_range])
 
     utils.debug(debug, time_start)
-    plot.plot_con_status(streets, buildings, coords_vehs, show=False, place=place)
+    plot.plot_con_status(streets, buildings, vehs, show=False, place=place)
 
     # Show the plots
     plt.show()
