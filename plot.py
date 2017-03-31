@@ -39,16 +39,16 @@ def plot_prop_cond(streets, buildings, coordinates_vehs, show=True, place=None):
     fig, axi = plot_streets_and_buildings(streets, buildings, show=False, dpi=300)
 
     # Plot vehicles with propagation conditions
-    plt.scatter(coordinates_vehs['center'][0], coordinates_vehs['center'][1], label='Own',
+    plt.scatter(coordinates_vehs.get('center')[0], coordinates_vehs.get('center')[1], label='Own',
                 marker='x', zorder=10, s=2 * plt.rcParams['lines.markersize']**2, c='black')
-    plt.scatter(coordinates_vehs['los'][:, 0], coordinates_vehs['los'][:, 1], label='LOS',
+    plt.scatter(coordinates_vehs.get('los')[:, 0], coordinates_vehs.get('los')[:, 1], label='LOS',
                 zorder=9, alpha=0.75)
-    plt.scatter(coordinates_vehs['olos'][:, 0], coordinates_vehs['olos'][:, 1], label='OLOS',
-                zorder=8, alpha=0.75)
-    plt.scatter(coordinates_vehs['orth'][:, 0], coordinates_vehs['orth'][:, 1], label='NLOS orth',
-                zorder=5, alpha=0.5)
-    plt.scatter(coordinates_vehs['par'][:, 0], coordinates_vehs['par'][:, 1], label='NLOS par',
-                zorder=5, alpha=0.5)
+    plt.scatter(coordinates_vehs.get('olos')[:, 0], coordinates_vehs.get('olos')[:, 1],
+                label='OLOS', zorder=8, alpha=0.75)
+    plt.scatter(coordinates_vehs.get('orth')[:, 0], coordinates_vehs.get('orth')[:, 1],
+                label='NLOS orth', zorder=5, alpha=0.5)
+    plt.scatter(coordinates_vehs.get('par')[:, 0], coordinates_vehs.get('par')[:, 1],
+                label='NLOS par', zorder=5, alpha=0.5)
 
     # Add additional information to plot
     plt.legend()
@@ -65,22 +65,23 @@ def plot_prop_cond(streets, buildings, coordinates_vehs, show=True, place=None):
     return fig, axi
 
 
-def plot_pathloss(streets, buildings, coordinates_vehs, pathlosses, show=True, place=None):
+def plot_pathloss(streets, buildings, vehicles, show=True, place=None):
     """ Plots vehicles and their respecitive pathloss color coded"""
 
     # Plot streets and buildings
     fig, axi = plot_streets_and_buildings(streets, buildings, show=False, dpi=300)
 
     # Plot vehicles with pathlosses
+    pathlosses = vehicles.get_pathlosses('other')
     index_wo_inf = pathlosses != np.Infinity
     index_inf = np.invert(index_wo_inf)
-    plt.scatter(coordinates_vehs['center'][0], coordinates_vehs['center'][1], label='Own',
+    plt.scatter(vehicles.get('center')[0], vehicles.get('center')[1], label='Own',
                 c='black', marker='x', s=2 * plt.rcParams['lines.markersize']**2)
-    cax = plt.scatter(coordinates_vehs['other'][index_wo_inf][:, 0],
-                      coordinates_vehs['other'][index_wo_inf][:, 1], marker='o', \
+    cax = plt.scatter(vehicles.get('other')[index_wo_inf][:, 0],
+                      vehicles.get('other')[index_wo_inf][:, 1], marker='o', \
                       c=pathlosses[index_wo_inf], cmap=plt.cm.magma, label='Finite PL')
-    plt.scatter(coordinates_vehs['other'][index_inf][:, 0],
-                coordinates_vehs['other'][index_inf][:, 1], marker='.', c='y',
+    plt.scatter(vehicles.get('other')[index_inf][:, 0],
+                vehicles.get('other')[index_inf][:, 1], marker='.', c='y',
                 label='Infinite PL', alpha=0.5)
 
     # Add additional information to plot
@@ -117,11 +118,11 @@ def plot_con_status(streets, buildings, coordinates_vehs, show=True, place=None)
     fig, axi = plot_streets_and_buildings(streets, buildings, show=False, dpi=300)
 
     # Plot vehicles with connection status
-    plt.scatter(coordinates_vehs['center'][0], coordinates_vehs['center'][1], label='Own',
+    plt.scatter(coordinates_vehs.get('center')[0], coordinates_vehs.get('center')[1], label='Own',
                 c='black', marker='x', s=2 * plt.rcParams['lines.markersize']**2, zorder=3)
-    plt.scatter(coordinates_vehs['in_range'][:, 0], coordinates_vehs['in_range'][:, 1],
+    plt.scatter(coordinates_vehs.get('in_range')[:, 0], coordinates_vehs.get('in_range')[:, 1],
                 label='In range', marker='o', zorder=2)
-    plt.scatter(coordinates_vehs['out_range'][:, 0], coordinates_vehs['out_range'][:, 1],
+    plt.scatter(coordinates_vehs.get('out_range')[:, 0], coordinates_vehs.get('out_range')[:, 1],
                 label='Out of range', marker='o', alpha=0.75, zorder=1)
 
     # Add additional information to plot
