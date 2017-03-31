@@ -20,6 +20,8 @@ import vehicle_distribution as dist
 import propagation as prop
 
 class Vehicles:
+    # TODO: only points as attributes and get coordinates from points when requested?
+
     def __init__(self, points, graphs=None):
         self.points = points
         self.coordinates = geom_o.extract_point_array(points)
@@ -60,7 +62,8 @@ class Vehicles:
         else:
             return self.pathlosses[self.idxs[key]]
 
-def main_sim(place, which_result=1, count_veh=100, max_pl=100, debug=False):
+def main_sim(place, which_result=1, density_veh=100, max_pl=150, density_type='absolute',
+             debug=False):
     """ Test the whole functionality"""
 
     # Setup
@@ -87,28 +90,40 @@ def main_sim(place, which_result=1, count_veh=100, max_pl=100, debug=False):
     # Choose random streets and position on streets
     time_start = utils.debug(debug, None, 'Building graph for wave propagation')
 
-    streets = data['streets']
-    buildings = data['buildings']
+    graph_streets = data['streets']
+    gdf_buildings = data['buildings']
 
     # Vehicles are placed in a undirected version of the graph because electromagnetic
     # waves do not respect driving directions
-    ox_a.add_geometry(streets)
-    streets_wave = streets.to_undirected()
-    prop.add_edges_if_los(streets_wave, buildings)
+    ox_a.add_geometry(graph_streets)
+    streets_wave = graph_streets.to_undirected()
+    prop.add_edges_if_los(streets_wave, gdf_buildings)
 
     utils.debug(debug, time_start)
     time_start = utils.debug(debug, None, 'Choosing random vehicle positions')
 
-    street_lengths = geom_o.get_street_lengths(streets)
-    rand_index = dist.choose_random_streets(street_lengths, count_veh)
+    street_lengths = geom_o.get_street_lengths(graph_streets)
+
+    if density_type == 'absolute':
+        count_veh = int(density_veh)
+    elif density_type == 'length':
+        count_veh = int(round(density_veh*np.sum(street_lengths)))
+    elif density_type == 'area':
+        area = data['boundary'].area
+        count_veh = int(round(density_veh*area))
+    else:
+        raise ValueError('Density type not supported')
+
+
+    rand_street_idxs = dist.choose_random_streets(street_lengths, count_veh)
     points_vehs = np.zeros(count_veh, dtype=object)
 
     utils.debug(debug, time_start)
     time_start = utils.debug(debug, None, 'Creating graphs for vehicles')
 
     graphs_vehs = np.zeros(count_veh, dtype=object)
-    for iteration, index in enumerate(rand_index):
-        street = streets.edges(data=True)[index]
+    for iteration, index in enumerate(rand_street_idxs):
+        street = graph_streets.edges(data=True)[index]
         street_geom = street[2]['geometry']
         point_veh = dist.choose_random_point(street_geom)
         points_vehs[iteration] = point_veh[0]
@@ -120,14 +135,14 @@ def main_sim(place, which_result=1, count_veh=100, max_pl=100, debug=False):
         graph_iter.add_node(node, attr_dict=node_attr)
         graph_iter.add_nodes_from(street[0:2])
 
+        # Determine street parts that connect vehicle to intersections
         street_before, street_after = geom_o.split_line_at_point(street_geom, point_veh[0])
-        street_length = street_before.length
-        edge_attr = {'geometry': street_before, 'length': street_length, 'is_veh_edge': True}
+        edge_attr = {'geometry': street_before, 'length': street_before.length, 'is_veh_edge': True}
         graph_iter.add_edge(node, street[0], attr_dict=edge_attr)
-        street_length = street_after.length
-        edge_attr = {'geometry': street_after, 'length': street_length, 'is_veh_edge': True}
+        edge_attr = {'geometry': street_after, 'length': street_after.length, 'is_veh_edge': True}
         graph_iter.add_edge(node, street[1], attr_dict=edge_attr)
 
+        # Copy the created graph
         graphs_vehs[iteration] = graph_iter.copy()
 
     vehs = Vehicles(points_vehs, graphs_vehs)
@@ -148,7 +163,7 @@ def main_sim(place, which_result=1, count_veh=100, max_pl=100, debug=False):
     time_start = utils.debug(debug, None, 'Determining propagation conditions')
 
     is_nlos = prop.veh_cons_are_nlos(vehs.get_points('center'),
-                                     vehs.get_points('other'), buildings)
+                                     vehs.get_points('other'), gdf_buildings)
 
     vehs.add_key('nlos', index_other_vehs[is_nlos])
 
@@ -182,7 +197,7 @@ def main_sim(place, which_result=1, count_veh=100, max_pl=100, debug=False):
 
     utils.debug(debug, time_start)
 
-    plot.plot_prop_cond(streets, buildings, vehs, show=False, place=place)
+    plot.plot_prop_cond(graph_streets, gdf_buildings, vehs, show=False, place=place)
 
     # Determining pathlosses for LOS and OLOS
     time_start = utils.debug(debug, None, 'Calculating pathlosses for OLOS and LOS')
@@ -221,7 +236,7 @@ def main_sim(place, which_result=1, count_veh=100, max_pl=100, debug=False):
 
     # Plot pathlosses
     utils.debug(debug, time_start)
-    plot.plot_pathloss(streets, buildings, vehs, show=False, place=place)
+    plot.plot_pathloss(graph_streets, gdf_buildings, vehs, show=False, place=place)
 
     # Determine in range / out of range
     time_start = utils.debug(debug, None, 'Determining in range vehicles')
@@ -232,7 +247,7 @@ def main_sim(place, which_result=1, count_veh=100, max_pl=100, debug=False):
     vehs.add_key('out_range', vehs.get_idxs('other')[index_out_range])
 
     utils.debug(debug, time_start)
-    plot.plot_con_status(streets, buildings, vehs, show=False, place=place)
+    plot.plot_con_status(graph_streets, gdf_buildings, vehs, show=False, place=place)
 
     # Show the plots
     plt.show()
@@ -241,11 +256,15 @@ def parse_arguments():
     """Parses the command line arguments and returns them """
     parser = argparse.ArgumentParser(description='Simulate vehicle connections on map')
     parser.add_argument('-p', type=str, default='Neubau - Vienna - Austria', help='place')
-    parser.add_argument('-c', type=int, default=1000, help='number of vehicles')
     parser.add_argument('-w', type=int, default=1, help='which result')
+    parser.add_argument('-d', type=float, default=1000, help='vehicle density')
+    parser.add_argument('-l', type=float, default=150, help='pathloss threshold [dB]')
+    parser.add_argument('-t', type=str, default='absolute',
+                        help='density type (absolute, length, area)')
     arguments = parser.parse_args()
     return arguments
 
 if __name__ == '__main__':
     args = parse_arguments()
-    main_sim(args.p, which_result=args.w, count_veh=args.c, max_pl=150, debug=True)
+    main_sim(args.p, which_result=args.w, density_veh=args.d, max_pl=args.l, density_type=args.t,
+             debug=True)
