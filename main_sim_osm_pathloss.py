@@ -60,7 +60,8 @@ def main_sim(place, which_result=1, count_veh=100, max_pl=100, debug=False):
 
     street_lengths = geom_o.get_street_lengths(streets)
     rand_index = dist.choose_random_streets(street_lengths, count_veh)
-    points = np.zeros(count_veh, dtype=object)
+    points_vehs = {}
+    points_vehs['all'] = np.zeros(count_veh, dtype=object)
 
     utils.debug(debug, time_start)
     time_start = utils.debug(debug, None, 'Creating graphs for vehicles')
@@ -69,17 +70,17 @@ def main_sim(place, which_result=1, count_veh=100, max_pl=100, debug=False):
     for iteration, index in enumerate(rand_index):
         street = streets.edges(data=True)[index]
         street_geom = street[2]['geometry']
-        point = dist.choose_random_point(street_geom)
-        points[iteration] = point[0]
+        point_veh = dist.choose_random_point(street_geom)
+        points_vehs['all'][iteration] = point_veh[0]
         # NOTE: All vehicle nodes get the prefix 'v'
         node = 'v' + str(iteration)
         # Add vehicle, needed intersections and edges to graph
         graph_iter = nx.MultiGraph(node_veh=node)
-        node_attr = {'geometry': point[0], 'x' : point[0].x, 'y' : point[0].y}
+        node_attr = {'geometry': point_veh[0], 'x' : point_veh[0].x, 'y' : point_veh[0].y}
         graph_iter.add_node(node, attr_dict=node_attr)
         graph_iter.add_nodes_from(street[0:1])
 
-        street_before, street_after = geom_o.split_line_at_point(street_geom, point[0])
+        street_before, street_after = geom_o.split_line_at_point(street_geom, point_veh[0])
         street_length = street_before.length
         edge_attr = {'geometry': street_before, 'length': street_length, 'is_veh_edge': True}
         graph_iter.add_edge(node, street[0], attr_dict=edge_attr)
@@ -90,7 +91,7 @@ def main_sim(place, which_result=1, count_veh=100, max_pl=100, debug=False):
         graphs_veh[iteration] = graph_iter.copy()
 
     coords_vehs = {}
-    coords_vehs['all'] = geom_o.extract_point_array(points)
+    coords_vehs['all'] = geom_o.extract_point_array(points_vehs['all'])
 
     utils.debug(debug, time_start)
 
@@ -98,19 +99,19 @@ def main_sim(place, which_result=1, count_veh=100, max_pl=100, debug=False):
     time_start = utils.debug(debug, None, 'Finding center vehicle')
 
     index_center_veh = geom_o.find_center_veh(coords_vehs['all'])
-    index_other_vehs = np.ones(len(points), dtype=bool)
+    index_other_vehs = np.ones(len(points_vehs['all']), dtype=bool)
     index_other_vehs[index_center_veh] = False
     coords_vehs['center'] = coords_vehs['all'][index_center_veh, :]
     coords_vehs['other'] = coords_vehs['all'][index_other_vehs, :]
-    point_center_veh = points[index_center_veh]
-    points_other_veh = points[index_other_vehs]
+    points_vehs['center'] = points_vehs['all'][index_center_veh]
+    points_vehs['other'] = points_vehs['all'][index_other_vehs]
 
     utils.debug(debug, time_start)
 
     # Determine NLOS and OLOS/LOS
     time_start = utils.debug(debug, None, 'Determining propagation conditions')
 
-    is_nlos = prop.veh_cons_are_nlos(point_center_veh, points_other_veh, buildings)
+    is_nlos = prop.veh_cons_are_nlos(points_vehs['center'], points_vehs['other'], buildings)
     coords_vehs['nlos'] = coords_vehs['other'][is_nlos, :]
 
     utils.debug(debug, time_start)
@@ -120,9 +121,9 @@ def main_sim(place, which_result=1, count_veh=100, max_pl=100, debug=False):
 
     is_olos_los = np.invert(is_nlos)
     coords_vehs['olos_los'] = coords_vehs['other'][is_olos_los, :]
-    points_olos_los = points_other_veh[is_olos_los]
+    points_vehs['olos_los'] = points_vehs['other'][is_olos_los]
     # NOTE: A margin of 2, means round cars with radius 2 meters
-    is_olos = prop.veh_cons_are_olos(point_center_veh, points_olos_los, margin=2)
+    is_olos = prop.veh_cons_are_olos(points_vehs['center'], points_vehs['olos_los'], margin=2)
     is_los = np.invert(is_olos)
     coords_vehs['olos'] = coords_vehs['olos_los'][is_olos, :]
     coords_vehs['los'] = coords_vehs['olos_los'][is_los, :]
@@ -204,8 +205,6 @@ def main_sim(place, which_result=1, count_veh=100, max_pl=100, debug=False):
     plot.plot_con_status(streets, buildings, coords_vehs, show=False, place=place)
 
     # Show the plots
-    if debug:
-        print('Showing plot')
     plt.show()
 
 def parse_arguments():
