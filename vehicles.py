@@ -8,11 +8,14 @@ class Vehicles:
     # TODO: only points as attributes and get coordinates from points when requested?
 
     def __init__(self, points, graphs=None):
+        count_vehs = np.size(points)
+        count_cond = count_vehs*(count_vehs-1)//2
         self.points = points
         self.coordinates = geom_o.extract_point_array(points)
         self.graphs = graphs
-        self.pathlosses = np.zeros(np.size(points))
-        self.distances = np.zeros(np.size(points))
+        self.pathlosses = np.zeros(count_cond)
+        self.distances = np.zeros(count_cond)
+        self.nlos = np.zeros(count_cond, dtype=bool)
         self.idxs = {}
 
     def add_key(self, key, value):

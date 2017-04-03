@@ -7,14 +7,30 @@ import osmnx_addons
 import geometry as geom_o
 
 
-def veh_cons_are_nlos(point_own, point_vehs, buildings):
+def veh_cons_are_nlos(point_own, points_vehs, buildings):
     """ Determines for each connection if it is NLOS or not (i.e. LOS and OLOS)"""
 
-    is_nlos = np.zeros(np.size(point_vehs), dtype=bool)
+    is_nlos = np.zeros(np.size(points_vehs), dtype=bool)
 
-    for index, point in np.ndenumerate(point_vehs):
+    for index, point in enumerate(points_vehs):
         line = geom.LineString([point_own, point])
         is_nlos[index] = geom_o.line_intersects_buildings(line, buildings)
+
+    return is_nlos
+
+def veh_cons_are_nlos_all(points_vehs, buildings):
+    """ Determines for each possible connection if it is NLOS or not (i.e. LOS and OLOS)"""
+
+    count_vehs = np.size(points_vehs)
+    count_cond = count_vehs*(count_vehs-1)//2
+    is_nlos = np.zeros(count_cond, dtype=bool)
+
+    index = 0
+    for idx1, point1 in enumerate(points_vehs):
+        for point2 in points_vehs[idx1+1:]:
+            line = geom.LineString([point1, point2])
+            is_nlos[index] = geom_o.line_intersects_buildings(line, buildings)
+            index += 1
 
     return is_nlos
 
