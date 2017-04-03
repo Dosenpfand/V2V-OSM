@@ -6,6 +6,7 @@ import shapely.ops as ops
 import shapely.geometry as geom
 import osmnx_git as ox # TODO: update osmnx and delete _git
 import utils
+import ipdb
 
 
 def setup(debug=False):
@@ -29,14 +30,21 @@ def download_place(place, network_type='drive', file_prefix=None, which_result=1
     filename_streets = '{}_streets.pickle'.format(file_prefix)
     pickle.dump(streets, open(filename_streets, 'wb'))
 
-    # Buildings
-    gdf = ox.gdf_from_place(place, which_result=which_result)
-    polygon = gdf['geometry'].iloc[0]
+    # Boundary and buildings
+    boundary = ox.gdf_from_place(place, which_result=which_result)
+    polygon = boundary['geometry'].iloc[0]
     buildings = ox.create_buildings_gdf(polygon)
     if project:
         buildings = ox.project_gdf(buildings)
+        boundary = ox.project_gdf(boundary)
+
+    # Save buildings
     filename_buildings = '{}_buildings.pickle'.format(file_prefix)
     pickle.dump(buildings, open(filename_buildings, 'wb'))
+
+    # Save boundary
+    filename_boundary = '{}_boundary.pickle'.format(file_prefix)
+    pickle.dump(boundary, open(filename_boundary, 'wb'))
 
     # Return data
     data = {'streets': streets, 'buildings': buildings}
@@ -49,7 +57,10 @@ def load_place(file_prefix):
     buildings = pickle.load(open(filename_buildings, 'rb'))
     filename_streets = '{}_streets.pickle'.format(file_prefix)
     streets = pickle.load(open(filename_streets, 'rb'))
-    place = {'streets': streets, 'buildings': buildings}
+    filename_boundary = '{}_boundary.pickle'.format(file_prefix)
+    boundary = pickle.load(open(filename_boundary, 'rb'))
+
+    place = {'streets': streets, 'buildings': buildings, 'boundary': boundary}
     return place
 
 
