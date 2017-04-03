@@ -43,5 +43,7 @@ def parse_arguments():
     parser.add_argument('-l', type=float, default=150, help='pathloss threshold [dB]')
     parser.add_argument('-t', type=str, default='absolute',
                         help='density type (absolute, length, area)')
+    parser.add_argument('-v', type=int, default=1,
+                        help='simulate only connections of a single vehicle')
     arguments = parser.parse_args()
     return arguments
