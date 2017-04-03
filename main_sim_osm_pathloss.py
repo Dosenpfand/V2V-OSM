@@ -83,10 +83,10 @@ def main_sim(place, which_result=1, density_veh=100, use_pathloss=True, max_pl=1
     # Find center vehicle
     time_start = utils.debug(debug, None, 'Finding center vehicle')
 
-    index_center_veh = geom_o.find_center_veh(vehs.get())
-    index_other_vehs = np.where(np.arange(count_veh) != index_center_veh)[0]
-    vehs.add_key('center', index_center_veh)
-    vehs.add_key('other', index_other_vehs)
+    idx_center_veh = geom_o.find_center_veh(vehs.get())
+    idxs_other_vehs = np.where(np.arange(count_veh) != idx_center_veh)[0]
+    vehs.add_key('center', idx_center_veh)
+    vehs.add_key('other', idxs_other_vehs)
 
     utils.debug(debug, time_start)
 
@@ -95,9 +95,9 @@ def main_sim(place, which_result=1, density_veh=100, use_pathloss=True, max_pl=1
 
     is_nlos = prop.veh_cons_are_nlos(vehs.get_points('center'),
                                      vehs.get_points('other'), gdf_buildings)
-    vehs.add_key('nlos', index_other_vehs[is_nlos])
+    vehs.add_key('nlos', idxs_other_vehs[is_nlos])
     is_olos_los = np.invert(is_nlos)
-    vehs.add_key('olos_los', index_other_vehs[is_olos_los])
+    vehs.add_key('olos_los', idxs_other_vehs[is_olos_los])
 
     utils.debug(debug, time_start)
 
@@ -169,10 +169,10 @@ def main_sim(place, which_result=1, density_veh=100, use_pathloss=True, max_pl=1
         # Determine in range / out of range
         time_start = utils.debug(debug, None, 'Determining in range vehicles')
 
-        index_in_range = vehs.get_pathlosses('other') < max_pl
-        index_out_range = np.invert(index_in_range)
-        vehs.add_key('in_range', vehs.get_idxs('other')[index_in_range])
-        vehs.add_key('out_range', vehs.get_idxs('other')[index_out_range])
+        idxs_in_range = vehs.get_pathlosses('other') < max_pl
+        idxs_out_range = np.invert(idxs_in_range)
+        vehs.add_key('in_range', vehs.get_idxs('other')[idxs_in_range])
+        vehs.add_key('out_range', vehs.get_idxs('other')[idxs_out_range])
 
         utils.debug(debug, time_start)
 
@@ -187,10 +187,19 @@ def main_sim(place, which_result=1, density_veh=100, use_pathloss=True, max_pl=1
         max_dist_nlos = 140
         distances = np.linalg.norm(vehs.get('other') - vehs.get('center'), ord=2, axis=1)
         vehs.set_distances('other', distances)
-        index_in_range_los = vehs.get_distances('olos_los') < max_dist_los
-        index_in_range_nlos = vehs.get_distances('nlos') < max_dist_nlos
 
-        ipdb.set_trace()
+        is_in_range_olos_los = vehs.get_distances('olos_los') < max_dist_los
+        idxs_in_range_olos_los = vehs.get_idxs('olos_los')[is_in_range_olos_los]
+
+        is_in_range_nlos = vehs.get_distances('nlos') < max_dist_nlos
+        idxs_in_range_nlos = vehs.get_idxs('nlos')[is_in_range_nlos]
+        idxs_in_range = np.append(idxs_in_range_olos_los, idxs_in_range_nlos)
+        vehs.add_key('in_range', idxs_in_range)
+
+        idxs_out_range = vehs.get_idxs('other')\
+            [np.where(np.invert(np.in1d(vehs.get_idxs('other'), idxs_in_range)))]
+        vehs.add_key('out_range', idxs_out_range)
+
 
     # Common plots for both methods
     plot.plot_con_status(graph_streets, gdf_buildings, vehs, show=False, place=place)
