@@ -3,6 +3,7 @@
 # Standard imports
 import argparse
 import os.path
+import ipdb
 
 # Extension imports
 import numpy as np
@@ -18,10 +19,8 @@ import geometry as geom_o
 import vehicle_distribution as dist
 import propagation as prop
 
-
 class Vehicles:
-    # TODO: only points as attributes and get coordinates from points when
-    # requested?
+    # TODO: only points as attributes and get coordinates from points when requested?
 
     def __init__(self, points, graphs=None):
         self.points = points
@@ -63,7 +62,6 @@ class Vehicles:
         else:
             return self.pathlosses[self.idxs[key]]
 
-
 def main_sim(place, which_result=1, density_veh=100, max_pl=150, density_type='absolute',
              debug=False):
     """ Test the whole functionality"""
@@ -73,17 +71,13 @@ def main_sim(place, which_result=1, density_veh=100, max_pl=150, density_type='a
 
     # Load data
     file_prefix = 'data/{}'.format(utils.string_to_filename(place))
-    filename_data_streets = 'data/{}_streets.pickle'.format(
-        utils.string_to_filename(place))
-    filename_data_buildings = 'data/{}_buildings.pickle'.format(
-        utils.string_to_filename(place))
-    filename_data_boundary = 'data/{}_boundary.pickle'.format(
-        utils.string_to_filename(place))
+    filename_data_streets = 'data/{}_streets.pickle'.format(utils.string_to_filename(place))
+    filename_data_buildings = 'data/{}_buildings.pickle'.format(utils.string_to_filename(place))
+    filename_data_boundary = 'data/{}_boundary.pickle'.format(utils.string_to_filename(place))
 
     if os.path.isfile(filename_data_streets) and os.path.isfile(filename_data_buildings) and \
             os.path.isfile(filename_data_boundary):
         # Load from file
-
         time_start = utils.debug(debug, None, 'Loading data from disk')
         data = ox_a.load_place(file_prefix)
     else:
@@ -94,8 +88,7 @@ def main_sim(place, which_result=1, density_veh=100, max_pl=150, density_type='a
     utils.debug(debug, time_start)
 
     # Choose random streets and position on streets
-    time_start = utils.debug(
-        debug, None, 'Building graph for wave propagation')
+    time_start = utils.debug(debug, None, 'Building graph for wave propagation')
 
     graph_streets = data['streets']
     gdf_buildings = data['buildings']
@@ -114,12 +107,13 @@ def main_sim(place, which_result=1, density_veh=100, max_pl=150, density_type='a
     if density_type == 'absolute':
         count_veh = int(density_veh)
     elif density_type == 'length':
-        count_veh = int(round(density_veh * np.sum(street_lengths)))
+        count_veh = int(round(density_veh*np.sum(street_lengths)))
     elif density_type == 'area':
         area = data['boundary'].area
-        count_veh = int(round(density_veh * area))
+        count_veh = int(round(density_veh*area))
     else:
         raise ValueError('Density type not supported')
+
 
     rand_street_idxs = dist.choose_random_streets(street_lengths, count_veh)
     points_vehs = np.zeros(count_veh, dtype=object)
@@ -137,21 +131,15 @@ def main_sim(place, which_result=1, density_veh=100, max_pl=150, density_type='a
         node = 'v' + str(iteration)
         # Add vehicle, needed intersections and edges to graph
         graph_iter = nx.MultiGraph(node_veh=node)
-
-        node_attr = {'geometry': point_veh[
-            0], 'x': point_veh[0].x, 'y': point_veh[0].y}
-
+        node_attr = {'geometry': point_veh[0], 'x' : point_veh[0].x, 'y' : point_veh[0].y}
         graph_iter.add_node(node, attr_dict=node_attr)
         graph_iter.add_nodes_from(street[0:2])
 
         # Determine street parts that connect vehicle to intersections
-        street_before, street_after = geom_o.split_line_at_point(
-            street_geom, point_veh[0])
-        edge_attr = {'geometry': street_before,
-                     'length': street_before.length, 'is_veh_edge': True}
+        street_before, street_after = geom_o.split_line_at_point(street_geom, point_veh[0])
+        edge_attr = {'geometry': street_before, 'length': street_before.length, 'is_veh_edge': True}
         graph_iter.add_edge(node, street[0], attr_dict=edge_attr)
-        edge_attr = {'geometry': street_after,
-                     'length': street_after.length, 'is_veh_edge': True}
+        edge_attr = {'geometry': street_after, 'length': street_after.length, 'is_veh_edge': True}
         graph_iter.add_edge(node, street[1], attr_dict=edge_attr)
 
         # Copy the created graph
@@ -196,8 +184,7 @@ def main_sim(place, which_result=1, density_veh=100, max_pl=150, density_type='a
     utils.debug(debug, time_start)
 
     # Determine orthogonal and parallel
-    time_start = utils.debug(
-        debug, None, 'Determining orthogonal and parallel')
+    time_start = utils.debug(debug, None, 'Determining orthogonal and parallel')
 
     is_orthogonal, coords_intersections = \
         prop.check_if_cons_orthogonal(streets_wave,
@@ -210,16 +197,14 @@ def main_sim(place, which_result=1, density_veh=100, max_pl=150, density_type='a
 
     utils.debug(debug, time_start)
 
-    plot.plot_prop_cond(graph_streets, gdf_buildings,
-                        vehs, show=False, place=place)
+    plot.plot_prop_cond(graph_streets, gdf_buildings, vehs, show=False, place=place)
 
     # Determining pathlosses for LOS and OLOS
-    time_start = utils.debug(
-        debug, None, 'Calculating pathlosses for OLOS and LOS')
+    time_start = utils.debug(debug, None, 'Calculating pathlosses for OLOS and LOS')
 
     p_loss = pathloss.Pathloss()
-    distances_olos_los = np.sqrt(
-        (vehs.get('olos_los')[:, 0] - vehs.get('center')[0])**2 +
+    distances_olos_los = np.sqrt( \
+        (vehs.get('olos_los')[:, 0] - vehs.get('center')[0])**2 + \
         (vehs.get('olos_los')[:, 1] - vehs.get('center')[1])**2)
 
     # TODO: why - ? fix in pathloss.py
@@ -232,12 +217,10 @@ def main_sim(place, which_result=1, density_veh=100, max_pl=150, density_type='a
     utils.debug(debug, time_start)
 
     # Determining pathlosses for NLOS orthogonal
-    time_start = utils.debug(
-        debug, None, 'Calculating pathlosses for NLOS orthogonal')
+    time_start = utils.debug(debug, None, 'Calculating pathlosses for NLOS orthogonal')
 
     # NOTE: Assumes center vehicle is receiver
-    # NOTE: Uses airline vehicle -> intersection -> vehicle and not street
-    # route
+    # NOTE: Uses airline vehicle -> intersection -> vehicle and not street route
     distances_orth_tx = np.sqrt(
         (vehs.get('orth')[:, 0] - coords_intersections[is_orthogonal, 0])**2 +
         (vehs.get('orth')[:, 1] - coords_intersections[is_orthogonal, 1])**2)
@@ -246,16 +229,14 @@ def main_sim(place, which_result=1, density_veh=100, max_pl=150, density_type='a
         (vehs.get('center')[0] - coords_intersections[is_orthogonal, 0])**2 +
         (vehs.get('center')[1] - coords_intersections[is_orthogonal, 1])**2)
 
-    pathlosses_orth = p_loss.pathloss_nlos(
-        distances_orth_rx, distances_orth_tx)
+    pathlosses_orth = p_loss.pathloss_nlos(distances_orth_rx, distances_orth_tx)
     vehs.set_pathlosses('orth', pathlosses_orth)
-    pathlosses_par = np.Infinity * np.ones(np.sum(is_paralell))
+    pathlosses_par = np.Infinity*np.ones(np.sum(is_paralell))
     vehs.set_pathlosses('par', pathlosses_par)
 
     # Plot pathlosses
     utils.debug(debug, time_start)
-    plot.plot_pathloss(graph_streets, gdf_buildings,
-                       vehs, show=False, place=place)
+    plot.plot_pathloss(graph_streets, gdf_buildings, vehs, show=False, place=place)
 
     # Determine in range / out of range
     time_start = utils.debug(debug, None, 'Determining in range vehicles')
@@ -266,34 +247,24 @@ def main_sim(place, which_result=1, density_veh=100, max_pl=150, density_type='a
     vehs.add_key('out_range', vehs.get_idxs('other')[index_out_range])
 
     utils.debug(debug, time_start)
-    plot.plot_con_status(graph_streets, gdf_buildings,
-                         vehs, show=False, place=place)
+    plot.plot_con_status(graph_streets, gdf_buildings, vehs, show=False, place=place)
 
     # Show the plots
-
     plt.show()
-
 
 def parse_arguments():
     """Parses the command line arguments and returns them """
-
-    parser = argparse.ArgumentParser(
-        description='Simulate vehicle connections on map')
-    parser.add_argument(
-        '-p', type=str, default='Neubau - Vienna - Austria', help='place')
+    parser = argparse.ArgumentParser(description='Simulate vehicle connections on map')
+    parser.add_argument('-p', type=str, default='Neubau - Vienna - Austria', help='place')
     parser.add_argument('-w', type=int, default=1, help='which result')
     parser.add_argument('-d', type=float, default=1000, help='vehicle density')
-    parser.add_argument('-l', type=float, default=150,
-                        help='pathloss threshold [dB]')
+    parser.add_argument('-l', type=float, default=150, help='pathloss threshold [dB]')
     parser.add_argument('-t', type=str, default='absolute',
                         help='density type (absolute, length, area)')
-
     arguments = parser.parse_args()
     return arguments
 
-
 if __name__ == '__main__':
     args = parse_arguments()
-
-    main_sim(args.p, which_result=args.w, density_veh=args.d,
-             max_pl=args.l, density_type=args.t, debug=True)
+    main_sim(args.p, which_result=args.w, density_veh=args.d, max_pl=args.l, density_type=args.t,
+             debug=True)
