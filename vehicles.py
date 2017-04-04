@@ -35,7 +35,7 @@ class Vehicles:
     def get(self, key=None):
         """"Get the coordinates of a set of vehicles specified by a key"""
 
-        if key is None:
+        if key is None or key == "all":
             return self.coordinates
         else:
             return self.coordinates[self.idxs[key]]
@@ -69,7 +69,7 @@ class Vehicles:
     def get_pathlosses(self, key=None):
         """"Get the pathlosses of a set of relations specified by a key"""
 
-        if key is None:
+        if key is None or key == "all":
             return self.pathlosses
         else:
             return self.pathlosses[self.idxs[key]]
@@ -86,6 +86,12 @@ class Vehicles:
             return self.distances
         else:
             return self.distances[self.idxs[key]]
+
+    def __repr__(self):
+        allowed_keys = list(self.idxs.keys())
+        allowed_keys.insert(0, "all")
+        return ("{} vehicles, allowed keys: {}".
+                format(self.count, allowed_keys))
 
 
 def choose_random_streets(lengths, count=1):
