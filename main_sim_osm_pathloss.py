@@ -251,7 +251,7 @@ if __name__ == '__main__':
     sim_mode = 'multi'
     place = 'Upper West Side - New York - USA'
     which_result = 1
-    densities_veh = np.array([np.arange(10, 90, 10), 120, 160]) * 1e-6
+    densities_veh = np.concatenate([np.arange(10, 90, 10), [120, 160]]) * 1e-6
     density_type = 'area'
     max_dist_olos_los = 250
     max_dist_nlos = 140
