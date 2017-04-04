@@ -2,7 +2,7 @@
 
 import matplotlib.pyplot as plt
 import numpy as np
-import osmnx_git as ox # TODO: update osmnx and delete _git
+import osmnx as ox
 
 # TODO: define figure and axis for every plot function call?
 # TODO: add option to save figure for every function?
