@@ -6,6 +6,7 @@ import networkx as nx
 
 
 class Vehicles:
+    """Class representing vehicles with their properties and relations to each other"""
     # TODO: only points as attributes and get coordinates from points when
     # requested?
 
@@ -20,47 +21,67 @@ class Vehicles:
         self.idxs = {}
 
     def allocate(self, size):
+        """Allocate memory for releational properties"""
+
         self.pathlosses = np.zeros(size)
         self.distances = np.zeros(size)
         self.nlos = np.zeros(size, dtype=bool)
 
     def add_key(self, key, value):
+        """Add a key that can then be used to retrieve a subset of the properties/relations"""
+
         self.idxs[key] = value
 
     def get(self, key=None):
+        """"Get the coordinates of a set of vehicles specified by a key"""
+
         if key is None:
             return self.coordinates
         else:
             return self.coordinates[self.idxs[key]]
 
     def get_points(self, key=None):
+        """"Get the geometry points of a set of vehicles specified by a key"""
+
         if key is None:
             return self.points
         else:
             return self.points[self.idxs[key]]
 
     def get_graph(self, key=None):
+        """"Get the graphs of a set of vehicles specified by a key"""
+
         if key is None:
             return self.graphs
         else:
             return self.graphs[self.idxs[key]]
 
     def get_idxs(self, key):
+        """Get the indices defined by a key"""
+
         return self.idxs[key]
 
     def set_pathlosses(self, key, values):
+        """"Set the pathlosses of a set of relations specified by a key"""
+
         self.pathlosses[self.idxs[key]] = values
 
     def get_pathlosses(self, key=None):
+        """"Get the pathlosses of a set of relations specified by a key"""
+
         if key is None:
             return self.pathlosses
         else:
             return self.pathlosses[self.idxs[key]]
 
     def set_distances(self, key, values):
+        """"Set the distances of a set of relations specified by a key"""
+
         self.distances[self.idxs[key]] = values
 
     def get_distances(self, key=None):
+        """"Get the distances of a set of relations specified by a key"""
+
         if key is None:
             return self.distances
         else:

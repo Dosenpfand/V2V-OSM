@@ -2,7 +2,6 @@
 
 # Standard imports
 import os.path
-import ipdb
 
 # Extension imports
 import numpy as np
@@ -255,6 +254,7 @@ if __name__ == '__main__':
     max_dist_olos_los = 250
     max_dist_nlos = 140
     iterations = 10
+    max_pl = 150
 
     # MULTI
     net_connectivities = np.zeros(iterations)
@@ -268,7 +268,6 @@ if __name__ == '__main__':
 
     print('Average network connectivity: {:.2f} %'.format(
         np.mean(net_connectivities) * 100))
-
     plot.plot_cluster_max(net['graph_streets'], net['gdf_buildings'],
                           net['vehs'], show=False, place=place)
     plt.show()
@@ -276,7 +275,7 @@ if __name__ == '__main__':
     # SINGLE
     net = prepare_network(place, which_result=which_result, density_veh=density_veh,
                           density_type=density_type, debug=True)
-    main_sim(net)
+    main_sim(net, max_pl=max_pl, debug=True)
     # Plots
     plot.plot_prop_cond(net['graph_streets'], net['gdf_buildings'],
                         net['vehs'], show=False)
@@ -284,5 +283,4 @@ if __name__ == '__main__':
                        net['vehs'], show=False)
     plot.plot_con_status(net['graph_streets'], net['gdf_buildings'],
                          net['vehs'], show=False)
-
     plt.show()
