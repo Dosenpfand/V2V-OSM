@@ -278,7 +278,8 @@ if __name__ == '__main__':
                           density_type=density_type, debug=True)
     main_sim(net, max_pl=max_pl, debug=True)
     # Plots
-    plot.plot_prop_cond()
+    plot.plot_prop_cond(net['graph_streets'], net['gdf_buildings'],
+                        net['vehs'], show=False)
     plot.plot_pathloss(net['graph_streets'], net['gdf_buildings'],
                        net['vehs'], show=False)
     plot.plot_con_status(net['graph_streets'], net['gdf_buildings'],
