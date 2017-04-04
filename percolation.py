@@ -164,93 +164,12 @@ def main_sim(network, max_pl=150, debug=False):
     vehs.add_key('center', idx_center_veh)
     vehs.add_key('other', idxs_other_vehs)
 
-    # Determine propagation conditions
-    time_start = utils.debug(
-        debug, None, 'Determining propagation conditions')
-    is_nlos = prop.veh_cons_are_nlos(vehs.get_points('center'),
-                                     vehs.get_points('other'), gdf_buildings)
-    vehs.add_key('nlos', idxs_other_vehs[is_nlos])
-    is_olos_los = np.invert(is_nlos)
-    vehs.add_key('olos_los', idxs_other_vehs[is_olos_los])
-    utils.debug(debug, time_start)
-
-    # Determine OLOS and LOS
-    time_start = utils.debug(debug, None, 'Determining OLOS and LOS')
-    # NOTE: A margin of 2, means round cars with radius 2 meters
-    is_olos = prop.veh_cons_are_olos(vehs.get_points('center'),
-                                     vehs.get_points('olos_los'), margin=2)
-    is_los = np.invert(is_olos)
-    vehs.add_key('olos', vehs.get_idxs('olos_los')[is_olos])
-    vehs.add_key('los', vehs.get_idxs('olos_los')[is_los])
-    utils.debug(debug, time_start)
-
-    # Determine orthogonal and parallel
-    time_start = utils.debug(
-        debug, None, 'Determining orthogonal and parallel')
-
-    is_orthogonal, coords_intersections = \
-        prop.check_if_cons_orthogonal(graph_streets_wave,
-                                      vehs.get_graph('center'),
-                                      vehs.get_graph('nlos'),
-                                      max_angle=np.pi)
-    is_parallel = np.invert(is_orthogonal)
-    vehs.add_key('orth', vehs.get_idxs('nlos')[is_orthogonal])
-    vehs.add_key('par', vehs.get_idxs('nlos')[is_parallel])
-    utils.debug(debug, time_start)
-
-    # Determining pathlosses for LOS and OLOS
-    time_start = utils.debug(
-        debug, None, 'Calculating pathlosses for OLOS and LOS')
-
-    p_loss = pathloss.Pathloss()
-    distances_olos_los = np.sqrt(
-        (vehs.get('olos_los')[:, 0] - vehs.get('center')[0])**2 +
-        (vehs.get('olos_los')[:, 1] - vehs.get('center')[1])**2)
-
-    # TODO: why - ? fix in pathloss.py
-    pathlosses_olos = - \
-        p_loss.pathloss_olos(distances_olos_los[is_olos])
-    vehs.set_pathlosses('olos', pathlosses_olos)
-    # TODO: why - ? fix in pathloss.py
-    pathlosses_los = -p_loss.pathloss_los(distances_olos_los[is_los])
-    vehs.set_pathlosses('los', pathlosses_los)
-    utils.debug(debug, time_start)
-
-    # Determining pathlosses for NLOS orthogonal
-    time_start = utils.debug(
-        debug, None, 'Calculating pathlosses for NLOS orthogonal')
-
-    # NOTE: Assumes center vehicle is receiver
-    # NOTE: Uses airline vehicle -> intersection -> vehicle and not
-    # street route
-    distances_orth_tx = np.sqrt(
-        (vehs.get('orth')[:, 0] - coords_intersections[is_orthogonal, 0])**2 +
-        (vehs.get('orth')[:, 1] - coords_intersections[is_orthogonal, 1])**2)
-    distances_orth_rx = np.sqrt(
-        (vehs.get('center')[0] - coords_intersections[is_orthogonal, 0])**2 +
-        (vehs.get('center')[1] - coords_intersections[is_orthogonal, 1])**2)
-    pathlosses_orth = p_loss.pathloss_nlos(
-        distances_orth_rx, distances_orth_tx)
-    vehs.set_pathlosses('orth', pathlosses_orth)
-    pathlosses_par = np.Infinity * np.ones(np.sum(is_parallel))
-    vehs.set_pathlosses('par', pathlosses_par)
-    utils.debug(debug, time_start)
-
-    # Determine in range / out of range
-    time_start = utils.debug(
-        debug, None, 'Determining in range vehicles')
-    idxs_in_range = vehs.get_pathlosses('other') < max_pl
-    idxs_out_range = np.invert(idxs_in_range)
-    vehs.add_key('in_range', vehs.get_idxs('other')[idxs_in_range])
-    vehs.add_key('out_range', vehs.get_idxs('other')[idxs_out_range])
-    utils.debug(debug, time_start)
-
 
 if __name__ == '__main__':
     # TODO: argparse!
     place = 'Neubau - Vienna - Austria'
     which_result = 1
-    density_veh = 5e-5
+    density_veh = 5e-4
     density_type = 'area'
     max_dist_olos_los = 250
     max_dist_nlos = 140
@@ -259,29 +178,20 @@ if __name__ == '__main__':
 
     # MULTI
     net_connectivities = np.zeros(iterations)
-    for iter in np.arange(iterations):
-        net = prepare_network(place, which_result=which_result, density_veh=density_veh,
-                              density_type=density_type, debug=True)
-        net_connectivity = main_sim_multi(net, max_dist_olos_los=max_dist_olos_los,
-                                          max_dist_nlos=max_dist_nlos, debug=True)
-
-        net_connectivities[iter] = net_connectivity
-
-    print('Average network connectivity: {:.2f} %'.format(
-        np.mean(net_connectivities) * 100))
-    plot.plot_cluster_max(net['graph_streets'], net['gdf_buildings'],
-                          net['vehs'], show=False, place=place)
-    plt.show()
-
     # SINGLE
     net = prepare_network(place, which_result=which_result, density_veh=density_veh,
                           density_type=density_type, debug=True)
     main_sim(net, max_pl=max_pl, debug=True)
     # Plots
-    plot.plot_prop_cond(net['graph_streets'], net['gdf_buildings'],
-                        net['vehs'], show=False)
-    plot.plot_pathloss(net['graph_streets'], net['gdf_buildings'],
-                       net['vehs'], show=False)
-    plot.plot_con_status(net['graph_streets'], net['gdf_buildings'],
-                         net['vehs'], show=False)
+    print()
+    print(net["vehs"])
+    print(net["vehs"])
+    fig, ax = plot.plot_streets_and_buildings(net['graph_streets'],
+                                              net['gdf_buildings'],
+                                              show=False)
+    print("scatter:")
+    vehicles = net["vehs"].get("all")
+
+    plt.scatter(vehicles[:, 0], vehicles[:, 1], label='Own',
+                marker='x', zorder=10, s=2 * plt.rcParams['lines.markersize']**2, c='black')
     plt.show()
