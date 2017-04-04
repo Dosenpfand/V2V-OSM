@@ -250,7 +250,7 @@ if __name__ == '__main__':
     # TODO: argparse!
     place = 'Neubau - Vienna - Austria'
     which_result = 1
-    density_veh = 5e-5
+    density_veh = 5e-3
     density_type = 'area'
     max_dist_olos_los = 250
     max_dist_nlos = 140
