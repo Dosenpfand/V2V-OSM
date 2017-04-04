@@ -231,28 +231,29 @@ def main_sim(place, which_result=1, density_veh=100, use_pathloss=True, max_pl=1
         plt.show()
 
     else:  # not single_veh
-        # Determine NLOS and OLOS/LOS
-        time_start = utils.debug(
-            debug, None, 'Determining propagation conditions')
-        # vehs.is_nlos = ... TODO
-        is_nlos = prop.veh_cons_are_nlos_all(vehs.get_points(), gdf_buildings)
-        is_olos_los = np.invert(is_nlos)
-        idxs_olos_los = np.where(is_olos_los)[0]
-        idxs_nlos = np.where(is_nlos)[0]
-
-        count_cond = count_veh * (count_veh - 1) // 2
-
-        utils.debug(debug, time_start)
-
         if use_pathloss:
             raise NotImplementedError('Not yet supported')
         else:  # not use_pathloss
-            time_start = utils.debug(
-                debug, None, 'Determining in range vehicles')
-
             # TODO: make parameters
             max_dist_olos_los = 250
             max_dist_nlos = 140
+            max_dist = max(max_dist_nlos, max_dist_olos_los)
+            # Determine NLOS and OLOS/LOS
+            time_start = utils.debug(
+                debug, None, 'Determining propagation conditions')
+            # vehs.is_nlos = ... TODO
+            is_nlos = prop.veh_cons_are_nlos_all(
+                vehs.get_points(), gdf_buildings, max_dist=max_dist)
+            is_olos_los = np.invert(is_nlos)
+            idxs_olos_los = np.where(is_olos_los)[0]
+            idxs_nlos = np.where(is_nlos)[0]
+
+            count_cond = count_veh * (count_veh - 1) // 2
+
+            utils.debug(debug, time_start)
+
+            time_start = utils.debug(
+                debug, None, 'Determining in range vehicles')
 
             distances = dist.pdist(vehs.coordinates)
             idxs_in_range_olos_los = idxs_olos_los[
