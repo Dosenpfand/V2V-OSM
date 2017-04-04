@@ -7,16 +7,36 @@ import osmnx_addons
 import geometry as geom_o
 
 
-def veh_cons_are_nlos(point_own, point_vehs, buildings):
+def veh_cons_are_nlos(point_own, points_vehs, buildings):
     """ Determines for each connection if it is NLOS or not (i.e. LOS and OLOS)"""
 
-    is_nlos = np.zeros(np.size(point_vehs), dtype=bool)
+    is_nlos = np.zeros(np.size(points_vehs), dtype=bool)
 
-    for index, point in np.ndenumerate(point_vehs):
+    for index, point in enumerate(points_vehs):
         line = geom.LineString([point_own, point])
         is_nlos[index] = geom_o.line_intersects_buildings(line, buildings)
 
     return is_nlos
+
+
+def veh_cons_are_nlos_all(points_vehs, buildings, max_dist=None):
+    """ Determines for each possible connection if it is NLOS or not (i.e. LOS and OLOS)"""
+
+    count_vehs = np.size(points_vehs)
+    count_cond = count_vehs * (count_vehs - 1) // 2
+    is_nlos = np.zeros(count_cond, dtype=bool)
+
+    index = 0
+    for idx1, point1 in enumerate(points_vehs):
+        for point2 in points_vehs[idx1 + 1:]:
+            line = geom.LineString([point1, point2])
+            if (max_dist is None) or (line.length < max_dist):
+                is_nlos[index] = geom_o.line_intersects_buildings(
+                    line, buildings)
+            index += 1
+
+    return is_nlos
+
 
 def veh_cons_are_olos(point_own, point_vehs, margin=1):
     """ Determines for each LOS/OLOS connection if it is OLOS """
@@ -30,7 +50,7 @@ def veh_cons_are_olos(point_own, point_vehs, margin=1):
         line = geom.LineString([point_own, point])
         indices_other = np.ones(np.size(point_vehs), dtype=bool)
         indices_other[index] = False
-        is_olos[index] = geom_o.line_intersects_points(line, point_vehs[indices_other], \
+        is_olos[index] = geom_o.line_intersects_points(line, point_vehs[indices_other],
                                                        margin=margin)
 
     return is_olos
@@ -51,7 +71,8 @@ def check_if_cons_orthogonal(streets_wave, graph_veh_own, graphs_veh_other, max_
         streets_wave_local_iter = nx.compose(graph, streets_wave_local)
 
         # TODO: Use angles as weight and not length?
-        route = osmnx_addons.line_route_between_nodes(node_own, node_v, streets_wave_local_iter)
+        route = osmnx_addons.line_route_between_nodes(
+            node_own, node_v, streets_wave_local_iter)
         angles = geom_o.angles_along_line(route)
         angles_wrapped = np.pi - np.abs(geom_o.wrap_to_pi(angles))
 
@@ -64,7 +85,7 @@ def check_if_cons_orthogonal(streets_wave, graph_veh_own, graphs_veh_other, max_
         # Determine position of max angle
         index_angle = np.argmax(angles_wrapped)
         route_coords = np.array(route.xy)
-        coords_max_angle[index, :] = route_coords[:, index_angle+1]
+        coords_max_angle[index, :] = route_coords[:, index_angle + 1]
 
     return is_orthogonal, coords_max_angle
 
