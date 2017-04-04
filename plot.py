@@ -36,7 +36,8 @@ def plot_prop_cond(streets, buildings, coordinates_vehs, show=True, place=None):
     orthoognal)"""
 
     # Plot streets and buildings
-    fig, axi = plot_streets_and_buildings(streets, buildings, show=False, dpi=300)
+    fig, axi = plot_streets_and_buildings(
+        streets, buildings, show=False, dpi=300)
 
     # Plot vehicles with propagation conditions
     plt.scatter(coordinates_vehs.get('center')[0], coordinates_vehs.get('center')[1], label='Own',
@@ -69,7 +70,8 @@ def plot_pathloss(streets, buildings, vehicles, show=True, place=None):
     """ Plots vehicles and their respecitive pathloss color coded"""
 
     # Plot streets and buildings
-    fig, axi = plot_streets_and_buildings(streets, buildings, show=False, dpi=300)
+    fig, axi = plot_streets_and_buildings(
+        streets, buildings, show=False, dpi=300)
 
     # Plot vehicles with pathlosses
     pathlosses = vehicles.get_pathlosses('other')
@@ -78,7 +80,7 @@ def plot_pathloss(streets, buildings, vehicles, show=True, place=None):
     plt.scatter(vehicles.get('center')[0], vehicles.get('center')[1], label='Own',
                 c='black', marker='x', s=2 * plt.rcParams['lines.markersize']**2)
     cax = plt.scatter(vehicles.get('other')[index_wo_inf][:, 0],
-                      vehicles.get('other')[index_wo_inf][:, 1], marker='o', \
+                      vehicles.get('other')[index_wo_inf][:, 1], marker='o',
                       c=pathlosses[index_wo_inf], cmap=plt.cm.magma, label='Finite PL')
     plt.scatter(vehicles.get('other')[index_inf][:, 0],
                 vehicles.get('other')[index_inf][:, 1], marker='.', c='y',
@@ -93,7 +95,6 @@ def plot_pathloss(streets, buildings, vehicles, show=True, place=None):
         title_string += ' ({})'.format(place)
     axi.set_title(title_string)
 
-
     # Plot color map
     pl_min = np.min(pathlosses[index_wo_inf])
     pl_max = np.max(pathlosses[index_wo_inf])
@@ -101,7 +102,8 @@ def plot_pathloss(streets, buildings, vehicles, show=True, place=None):
     string_min = '{:.0f}'.format(pl_min)
     string_med = '{:.0f}'.format(pl_med)
     string_max = '{:.0f}'.format(pl_max)
-    cbar = fig.colorbar(cax, ticks=[pl_min, pl_med, pl_max], orientation='vertical')
+    cbar = fig.colorbar(
+        cax, ticks=[pl_min, pl_med, pl_max], orientation='vertical')
     cbar.ax.set_xticklabels([string_min, string_med, string_max])
     cbar.ax.set_xlabel('Pathloss [dB]')
 
@@ -115,7 +117,8 @@ def plot_con_status(streets, buildings, coordinates_vehs, show=True, place=None)
     """ Plots the connection status (connected/not conected) in regard to another vehicle"""
 
     # Plot streets and buildings
-    fig, axi = plot_streets_and_buildings(streets, buildings, show=False, dpi=300)
+    fig, axi = plot_streets_and_buildings(
+        streets, buildings, show=False, dpi=300)
 
     # Plot vehicles with connection status
     plt.scatter(coordinates_vehs.get('center')[0], coordinates_vehs.get('center')[1], label='Own',
