@@ -247,40 +247,47 @@ def main_sim(network, max_pl=150, debug=False):
 
 if __name__ == '__main__':
     # TODO: argparse!
-    place = 'Neubau - Vienna - Austria'
+    sim_mode = 'multi'
+    place = 'Upper West Side - New York - USA'
     which_result = 1
-    density_veh = 5e-5
+    densities_veh = np.array([np.arange(10, 90, 10), 120, 160]) * 1e-6
     density_type = 'area'
     max_dist_olos_los = 250
     max_dist_nlos = 140
-    iterations = 10
+    iterations = 100
     max_pl = 150
+    show_plot = False
 
-    # MULTI
-    net_connectivities = np.zeros(iterations)
-    for iter in np.arange(iterations):
-        net = prepare_network(place, which_result=which_result, density_veh=density_veh,
+    if sim_mode == 'multi':
+        net_connectivities = np.zeros([np.size(densities_veh), iterations])
+        for idx_density, density in enumerate(densities_veh):
+            for iteration in np.arange(iterations):
+                net = prepare_network(place, which_result=which_result, density_veh=density,
+                                      density_type=density_type, debug=True)
+                net_connectivity = main_sim_multi(net, max_dist_olos_los=max_dist_olos_los,
+                                                  max_dist_nlos=max_dist_nlos, debug=True)
+                net_connectivities[idx_density, iteration] = net_connectivity
+            np.save('results/net_connectivities',
+                    net_connectivities[:idx_density + 1])
+
+        if show_plot:
+            plot.plot_cluster_max(net['graph_streets'], net['gdf_buildings'],
+                                  net['vehs'], show=False, place=place)
+            plt.show()
+
+    elif sim_mode == 'single':
+        net = prepare_network(place, which_result=which_result, density_veh=densities_veh,
                               density_type=density_type, debug=True)
-        net_connectivity = main_sim_multi(net, max_dist_olos_los=max_dist_olos_los,
-                                          max_dist_nlos=max_dist_nlos, debug=True)
+        main_sim(net, max_pl=max_pl, debug=True)
 
-        net_connectivities[iter] = net_connectivity
+        if show_plot:
+            plot.plot_prop_cond(net['graph_streets'], net['gdf_buildings'],
+                                net['vehs'], show=False)
+            plot.plot_pathloss(net['graph_streets'], net['gdf_buildings'],
+                               net['vehs'], show=False)
+            plot.plot_con_status(net['graph_streets'], net['gdf_buildings'],
+                                 net['vehs'], show=False)
+            plt.show()
 
-    print('Average network connectivity: {:.2f} %'.format(
-        np.mean(net_connectivities) * 100))
-    plot.plot_cluster_max(net['graph_streets'], net['gdf_buildings'],
-                          net['vehs'], show=False, place=place)
-    plt.show()
-
-    # SINGLE
-    net = prepare_network(place, which_result=which_result, density_veh=density_veh,
-                          density_type=density_type, debug=True)
-    main_sim(net, max_pl=max_pl, debug=True)
-    # Plots
-    plot.plot_prop_cond(net['graph_streets'], net['gdf_buildings'],
-                        net['vehs'], show=False)
-    plot.plot_pathloss(net['graph_streets'], net['gdf_buildings'],
-                       net['vehs'], show=False)
-    plot.plot_con_status(net['graph_streets'], net['gdf_buildings'],
-                         net['vehs'], show=False)
-    plt.show()
+    else:
+        raise NotImplementedError('Simulation type not supported')
