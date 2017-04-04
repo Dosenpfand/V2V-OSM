@@ -34,11 +34,7 @@ def prepare_network(place, which_result=1, density_veh=100, density_type='absolu
     filename_data_boundary = 'data/{}_boundary.pickle'.format(
         utils.string_to_filename(place))
 
-<< << << < HEAD
     if os.path.isfile(filename_data_streets) and os.path.isfile(filename_data_buildings) and \
-== == == =
-    if os.path.isfile(filename_data_streets) and os.path.isfile(filename_data_buildings) and    \
->>>>>> > 7e7f568cd64d288b312411bc015c0ec2963e564f
             os.path.isfile(filename_data_boundary):
         # Load from file
 
