@@ -250,7 +250,7 @@ if __name__ == '__main__':
     # TODO: argparse!
     place = 'Neubau - Vienna - Austria'
     which_result = 1
-    density_veh = 5e-3
+    density_veh = 5e-5
     density_type = 'area'
     max_dist_olos_los = 250
     max_dist_nlos = 140
@@ -278,8 +278,7 @@ if __name__ == '__main__':
                           density_type=density_type, debug=True)
     main_sim(net, max_pl=max_pl, debug=True)
     # Plots
-    plot.plot_prop_cond(net['graph_streets'], net['gdf_buildings'],
-                        net['vehs'], show=False)
+    plot.plot_prop_cond()
     plot.plot_pathloss(net['graph_streets'], net['gdf_buildings'],
                        net['vehs'], show=False)
     plot.plot_con_status(net['graph_streets'], net['gdf_buildings'],
