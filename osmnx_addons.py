@@ -15,6 +15,7 @@ def setup(debug=False):
     else:
         ox.config(log_console=False, use_cache=False)
 
+
 def download_place(place, network_type='drive', file_prefix=None, which_result=1, project=True):
     """ Downloads streets and buildings for a place, saves the data to disk and returns them """
 
@@ -86,6 +87,7 @@ def check_geometry(streets):
 
     return complete
 
+
 def line_route_between_nodes(node_from, node_to, graph):
     """Determines the line representing the shortest path between two nodes"""
 
@@ -95,7 +97,7 @@ def line_route_between_nodes(node_from, node_to, graph):
     lines = []
     for u_node, v_node in edge_nodes:
         # If there are parallel edges, select the shortest in length
-        data = min([data for data in graph.edge[u_node][v_node].values()], \
+        data = min([data for data in graph.edge[u_node][v_node].values()],
                    key=lambda x: x['length'])
         lines.append(data['geometry'])
 
