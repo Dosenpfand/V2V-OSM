@@ -6,7 +6,6 @@ import osmnx as ox
 
 # TODO: define figure and axis for every plot function call?
 # TODO: add option to save figure for every function?
-# TODO: change indices? 0 for vehicle, 1 for x/y
 
 
 def plot_streets_and_buildings(streets, buildings=None, show=True, filename=None, dpi=300):
@@ -134,6 +133,38 @@ def plot_con_status(streets, buildings, coordinates_vehs, show=True, place=None)
     plt.ylabel('Y coordinate [m]')
     plt.legend()
     title_string = 'Vehicle positions and connectivity'
+
+    if place is not None:
+        title_string += ' ({})'.format(place)
+    plt.title(title_string)
+
+    if show:
+        plt.show()
+
+    return fig, axi
+
+
+def plot_cluster_max(streets, buildings, coordinates_vehs, show=True, place=None):
+    """ Plots the biggest cluster and the remainding vehicles"""
+
+    # Plot streets and buildings
+    fig, axi = plot_streets_and_buildings(
+        streets, buildings, show=False, dpi=300)
+
+    # Plot vehicles with connection status
+    plt.scatter(coordinates_vehs.get('cluster_max')[:, 0],
+                coordinates_vehs.get('cluster_max')[:, 1],
+                label='Biggest cluster', marker='o', zorder=2)
+    plt.scatter(coordinates_vehs.get('not_cluster_max')[:, 0],
+                coordinates_vehs.get('not_cluster_max')[:, 1],
+                label='Other vehicles', marker='o', alpha=0.75, zorder=1)
+
+    # Add additional information to plot
+
+    plt.xlabel('X coordinate [m]')
+    plt.ylabel('Y coordinate [m]')
+    plt.legend()
+    title_string = 'Vehicle positions and biggest cluster'
 
     if place is not None:
         title_string += ' ({})'.format(place)
