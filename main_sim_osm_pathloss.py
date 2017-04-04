@@ -100,7 +100,7 @@ def main_sim(place, which_result=1, density_veh=100, use_pathloss=True, max_pl=1
 
         # Determine NLOS and OLOS/LOS
         time_start = utils.debug(
-            debug,                           None, 'Determining propagation conditions')
+            debug, None, 'Determining propagation conditions')
 
         is_nlos = prop.veh_cons_are_nlos(vehs.get_points('center'),
                                          vehs.get_points('other'), gdf_buildings)
@@ -268,12 +268,15 @@ def main_sim(place, which_result=1, density_veh=100, use_pathloss=True, max_pl=1
             clusters = nx.connected_component_subgraphs(graph_cons)
             # TODO: iterate clusters to find max
             cluster_max = max(clusters, key=len)
+            net_connectivity = cluster_max.order() / count_veh
             vehs.add_key('cluster_max', cluster_max.nodes())
             not_cluster_max_nodes = np.arange(count_veh)[~np.in1d(
                 np.arange(count_veh), cluster_max.nodes())]
             vehs.add_key('not_cluster_max', not_cluster_max_nodes)
 
             utils.debug(debug, time_start)
+            print('Network connectivity: {:.2f} %'.format(
+                net_connectivity * 100))
 
             plot.plot_cluster_max(graph_streets, gdf_buildings,
                                   vehs, show=False, place=place)
