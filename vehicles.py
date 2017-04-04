@@ -4,19 +4,25 @@ import numpy as np
 import geometry as geom_o
 import networkx as nx
 
-class Vehicles:
-    # TODO: only points as attributes and get coordinates from points when requested?
 
-    def __init__(self, points, graphs=None):
-        count_vehs = np.size(points)
-        count_cond = count_vehs*(count_vehs-1)//2
+class Vehicles:
+    # TODO: only points as attributes and get coordinates from points when
+    # requested?
+
+    def __init__(self, points, graphs=None, size=0):
+        self.count = np.size(points)
         self.points = points
         self.coordinates = geom_o.extract_point_array(points)
         self.graphs = graphs
-        self.pathlosses = np.zeros(count_cond)
-        self.distances = np.zeros(count_cond)
-        self.nlos = np.zeros(count_cond, dtype=bool)
+        self.pathlosses = np.zeros(size)
+        self.distances = np.zeros(size)
+        self.nlos = np.zeros(size, dtype=bool)
         self.idxs = {}
+
+    def allocate(self, size):
+        self.pathlosses = np.zeros(size)
+        self.distances = np.zeros(size)
+        self.nlos = np.zeros(size, dtype=bool)
 
     def add_key(self, key, value):
         self.idxs[key] = value
@@ -99,15 +105,19 @@ def generate_vehs(graph_streets, street_idxs):
         node = 'v' + str(iteration)
         # Add vehicle, needed intersections and edges to graph
         graph_iter = nx.MultiGraph(node_veh=node)
-        node_attr = {'geometry': point_veh[0], 'x' : point_veh[0].x, 'y' : point_veh[0].y}
+        node_attr = {'geometry': point_veh[
+            0], 'x': point_veh[0].x, 'y': point_veh[0].y}
         graph_iter.add_node(node, attr_dict=node_attr)
         graph_iter.add_nodes_from(street[0:2])
 
         # Determine street parts that connect vehicle to intersections
-        street_before, street_after = geom_o.split_line_at_point(street_geom, point_veh[0])
-        edge_attr = {'geometry': street_before, 'length': street_before.length, 'is_veh_edge': True}
+        street_before, street_after = geom_o.split_line_at_point(
+            street_geom, point_veh[0])
+        edge_attr = {'geometry': street_before,
+                     'length': street_before.length, 'is_veh_edge': True}
         graph_iter.add_edge(node, street[0], attr_dict=edge_attr)
-        edge_attr = {'geometry': street_after, 'length': street_after.length, 'is_veh_edge': True}
+        edge_attr = {'geometry': street_after,
+                     'length': street_after.length, 'is_veh_edge': True}
         graph_iter.add_edge(node, street[1], attr_dict=edge_attr)
 
         # Copy the created graph
