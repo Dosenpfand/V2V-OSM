@@ -4,7 +4,7 @@ import pickle
 import networkx as nx
 import shapely.ops as ops
 import shapely.geometry as geom
-import osmnx_git as ox  # TODO: update osmnx and delete _git
+import osmnx as ox
 import utils
 
 

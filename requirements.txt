@@ -4,6 +4,7 @@ ipdb==0.10.2
 matplotlib==2.0.0
 networkx==1.11
 numpy==1.12.1
+osmnx==0.4.1
 pandas==0.19.2
 requests==2.13.0
 Shapely==1.6b4
