@@ -45,8 +45,9 @@ def download_place(place, network_type='drive', file_prefix=None, which_result=1
     pickle.dump(boundary, open(filename_boundary, 'wb'))
 
     # Return data
-    data = {'streets': streets, 'buildings': buildings}
+    data = {'streets': streets, 'buildings': buildings, 'boundary': boundary}
     return data
+
 
 def load_place(file_prefix):
     """ Loads previously downloaded street and building data of a place"""
