@@ -2,6 +2,10 @@
 
 # Standard imports
 import os.path
+import multiprocessing as mp
+from itertools import repeat
+import pickle
+import ipdb
 
 # Extension imports
 import numpy as np
@@ -33,11 +37,12 @@ def prepare_network(place, which_result=1, density_veh=100, density_type='absolu
         utils.string_to_filename(place))
     filename_data_boundary = 'data/{}_boundary.pickle'.format(
         utils.string_to_filename(place))
+    filename_data_wave = 'data/{}_wave.pickle'.format(
+        utils.string_to_filename(place))
 
     if os.path.isfile(filename_data_streets) and os.path.isfile(filename_data_buildings) and \
             os.path.isfile(filename_data_boundary):
         # Load from file
-
         time_start = utils.debug(debug, None, 'Loading data from disk')
         data = ox_a.load_place(file_prefix)
     else:
@@ -45,20 +50,29 @@ def prepare_network(place, which_result=1, density_veh=100, density_type='absolu
         time_start = utils.debug(debug, None, 'Loading data from the internet')
         data = ox_a.download_place(place, which_result=which_result)
 
-    utils.debug(debug, time_start)
-
-    # Choose random streets and position on streets
-    time_start = utils.debug(
-        debug, None, 'Building graph for wave propagation')
-
     graph_streets = data['streets']
     gdf_buildings = data['buildings']
+    ox_a.add_geometry(graph_streets)
 
+    utils.debug(debug, time_start)
+
+    # Generate wave propagation graph:
     # Vehicles are placed in a undirected version of the graph because electromagnetic
     # waves do not respect driving directions
-    ox_a.add_geometry(graph_streets)
-    graph_streets_wave = graph_streets.to_undirected()
-    prop.add_edges_if_los(graph_streets_wave, gdf_buildings)
+    if os.path.isfile(filename_data_wave):
+        # Load from file
+        time_start = utils.debug(
+            debug, None, 'Loading graph for wave propagation')
+        with open(filename_data_wave, 'rb') as file:
+            graph_streets_wave = pickle.load(file)
+    else:
+        # Generate
+        time_start = utils.debug(
+            debug, None, 'Generating graph for wave propagation')
+        graph_streets_wave = graph_streets.to_undirected()
+        prop.add_edges_if_los(graph_streets_wave, gdf_buildings)
+        with open(filename_data_wave, 'wb') as file:
+            pickle.dump(graph_streets_wave, file)
 
     utils.debug(debug, time_start)
 
@@ -246,9 +260,26 @@ def main_sim(network, max_pl=150, debug=False):
     utils.debug(debug, time_start)
 
 
+def multiprocess_sim(iteration, densities_veh):
+
+    np.random.seed(iteration)
+    net_connectivities = np.zeros(np.size(densities_veh))
+
+    for idx_density, density in enumerate(densities_veh):
+        print('Densitiy: {:.2E}, Iteration: {:d}'.format(
+            density, iteration))
+        net = prepare_network(place, which_result=which_result, density_veh=density,
+                              density_type=density_type, debug=False)
+        net_connectivity = main_sim_multi(net, max_dist_olos_los=max_dist_olos_los,
+                                          max_dist_nlos=max_dist_nlos, debug=False)
+        net_connectivities[idx_density] = net_connectivity
+
+    return net_connectivities
+
 if __name__ == '__main__':
+    # TODO: what happens when multiprocess simulation is started and data files are not present?
     # TODO: argparse!
-    sim_mode = 'multi'
+    sim_mode = 'multi'  # 'single', 'multi', 'multiprocess'
     place = 'Upper West Side - New York - USA'
     which_result = 1
     densities_veh = np.concatenate([np.arange(10, 90, 10), [120, 160]]) * 1e-6
@@ -260,21 +291,31 @@ if __name__ == '__main__':
     show_plot = False
 
     if sim_mode == 'multi':
-        net_connectivities = np.zeros([np.size(densities_veh), iterations])
-        for idx_density, density in enumerate(densities_veh):
-            for iteration in np.arange(iterations):
+        net_connectivities = np.zeros([iterations, np.size(densities_veh)])
+        for iteration in np.arange(iterations):
+            for idx_density, density in enumerate(densities_veh):
+                print('Densitiy: {:.2E}, Iteration: {:d}'.format(
+                    density, iteration))
                 net = prepare_network(place, which_result=which_result, density_veh=density,
                                       density_type=density_type, debug=True)
                 net_connectivity = main_sim_multi(net, max_dist_olos_los=max_dist_olos_los,
                                                   max_dist_nlos=max_dist_nlos, debug=True)
-                net_connectivities[idx_density, iteration] = net_connectivity
+                net_connectivities[iteration, idx_density] = net_connectivity
             np.save('results/net_connectivities',
-                    net_connectivities[:idx_density + 1])
+                    net_connectivities[:iteration + 1])
 
         if show_plot:
             plot.plot_cluster_max(net['graph_streets'], net['gdf_buildings'],
                                   net['vehs'], show=False, place=place)
             plt.show()
+
+    elif sim_mode == 'multiprocess':
+        net_connectivities = np.zeros([iterations, np.size(densities_veh)])
+        with mp.Pool() as pool:
+            net_connectivities = pool.starmap(multiprocess_sim, zip(
+                range(iterations), repeat(densities_veh)))
+
+        np.save('results/net_connectivities', net_connectivities)
 
     elif sim_mode == 'single':
         net = prepare_network(place, which_result=which_result, density_veh=densities_veh,
