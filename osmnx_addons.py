@@ -28,7 +28,8 @@ def download_place(place, network_type='drive', file_prefix=None, which_result=1
     if project:
         streets = ox.project_graph(streets)
     filename_streets = '{}_streets.pickle'.format(file_prefix)
-    pickle.dump(streets, open(filename_streets, 'wb'))
+    with open(filename_streets, 'wb') as file:
+        pickle.dump(streets, file)
 
     # Boundary and buildings
     boundary = ox.gdf_from_place(place, which_result=which_result)
@@ -40,11 +41,13 @@ def download_place(place, network_type='drive', file_prefix=None, which_result=1
 
     # Save buildings
     filename_buildings = '{}_buildings.pickle'.format(file_prefix)
-    pickle.dump(buildings, open(filename_buildings, 'wb'))
+    with open(filename_buildings, 'wb') as file:
+        pickle.dump(buildings, file)
 
     # Save boundary
     filename_boundary = '{}_boundary.pickle'.format(file_prefix)
-    pickle.dump(boundary, open(filename_boundary, 'wb'))
+    with open(filename_boundary, 'wb') as file:
+        pickle.dump(boundary, file)
 
     # Return data
     data = {'streets': streets, 'buildings': buildings, 'boundary': boundary}
@@ -55,11 +58,14 @@ def load_place(file_prefix):
     """ Loads previously downloaded street and building data of a place"""
 
     filename_buildings = '{}_buildings.pickle'.format(file_prefix)
-    buildings = pickle.load(open(filename_buildings, 'rb'))
+    with open(filename_buildings, 'rb') as file:
+        buildings = pickle.load(file)
     filename_streets = '{}_streets.pickle'.format(file_prefix)
-    streets = pickle.load(open(filename_streets, 'rb'))
+    with open(filename_streets, 'rb') as file:
+        streets = pickle.load(file)
     filename_boundary = '{}_boundary.pickle'.format(file_prefix)
-    boundary = pickle.load(open(filename_boundary, 'rb'))
+    with open(filename_boundary, 'rb') as file:
+        boundary = pickle.load(file)
 
     place = {'streets': streets, 'buildings': buildings, 'boundary': boundary}
     return place
