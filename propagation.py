@@ -110,8 +110,9 @@ def add_edges_if_los(graph, buildings, max_distance=50):
                 continue
 
             # Check if there are buildings between the nodes
-            line = geom.asLineString(
-                ((coords_u[0], coords_u[1]), (coords_v[0], coords_v[1])))
+            line = geom.LineString(
+                [(coords_u[0], coords_u[1]), (coords_v[0], coords_v[1])])
+
             if geom_o.line_intersects_buildings(line, buildings):
                 continue
 
