@@ -5,7 +5,6 @@ import os.path
 import multiprocessing as mp
 from itertools import repeat
 import pickle
-import ipdb
 
 # Extension imports
 import numpy as np
@@ -70,6 +69,7 @@ def prepare_network(place, which_result=1, density_veh=100, density_type='absolu
         time_start = utils.debug(
             debug, None, 'Generating graph for wave propagation')
         graph_streets_wave = graph_streets.to_undirected()
+        # TODO: check if add_edges_if_los() is really working!!!
         prop.add_edges_if_los(graph_streets_wave, gdf_buildings)
         with open(filename_data_wave, 'wb') as file:
             pickle.dump(graph_streets_wave, file)
@@ -279,7 +279,7 @@ def multiprocess_sim(iteration, densities_veh):
 if __name__ == '__main__':
     # TODO: what happens when multiprocess simulation is started and data files are not present?
     # TODO: argparse!
-    sim_mode = 'multi'  # 'single', 'multi', 'multiprocess'
+    sim_mode = 'multiprocess'  # 'single', 'multi', 'multiprocess'
     place = 'Upper West Side - New York - USA'
     which_result = 1
     densities_veh = np.concatenate([np.arange(10, 90, 10), [120, 160]]) * 1e-6
@@ -289,6 +289,11 @@ if __name__ == '__main__':
     iterations = 100
     max_pl = 150
     show_plot = False
+
+    # # TODO: temp!
+    # place = 'Neubau - Vienna - Austria'
+    # densities_veh = np.arange(10, 40, 10) * 1e-6
+    # iterations = 4
 
     if sim_mode == 'multi':
         net_connectivities = np.zeros([iterations, np.size(densities_veh)])
