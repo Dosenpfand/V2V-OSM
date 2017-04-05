@@ -10,6 +10,7 @@ import pickle
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy.spatial.distance as dist
+import scipy.stats as st
 import networkx as nx
 
 # Local imports
@@ -260,7 +261,7 @@ def main_sim(network, max_pl=150, debug=False):
     utils.debug(debug, time_start)
 
 
-def multiprocess_sim(iteration, densities_veh):
+def multiprocess_sim(iteration, densities_veh, static_params):
 
     np.random.seed(iteration)
     net_connectivities = np.zeros(np.size(densities_veh))
@@ -268,19 +269,53 @@ def multiprocess_sim(iteration, densities_veh):
     for idx_density, density in enumerate(densities_veh):
         print('Densitiy: {:.2E}, Iteration: {:d}'.format(
             density, iteration))
-        net = prepare_network(place, which_result=which_result, density_veh=density,
-                              density_type=density_type, debug=False)
-        net_connectivity = main_sim_multi(net, max_dist_olos_los=max_dist_olos_los,
-                                          max_dist_nlos=max_dist_nlos, debug=False)
+        net = prepare_network(static_params['place'], which_result=static_params['which_result'],
+                              density_veh=density, density_type=static_params[
+                                  'density_type'],
+                              debug=False)
+        net_connectivity = main_sim_multi(net, max_dist_olos_los=static_params['max_dist_olos_los'],
+                                          max_dist_nlos=static_params['max_dist_nlos'], debug=False)
         net_connectivities[idx_density] = net_connectivity
 
     return net_connectivities
+
+
+def average_net_connectivity(net_connectivities, confidence=0.95):
+    # TODO: !
+    mean = np.mean(net_connectivities)
+    conf_intervals = st.t.interval(confidence, len(
+        net_connectivities) - 1, loc=mean, scale=st.sem(net_connectivities))
+
+    return mean, conf_intervals
+
+
+def plot_net_connectivity():
+    net_connectivities = np.load('results/net_connectivities.npy')
+    aver_net_cons = np.mean(net_connectivities, axis=0) * 100
+    aver_net_cons_paper = [12.67, 18.92, 21.33,
+                           34.75, 69.72, 90.05, 97.46, 98.97, 99.84, 100]
+    net_densities = np.concatenate([np.arange(10, 90, 10), [120, 160]])
+
+    plt.rc('font', **{'family': 'serif', 'serif': ['Palatino']})
+    plt.rc('text', usetex=True)
+    plt.plot(net_densities, aver_net_cons, label='OSM (own method)')
+    plt.plot(net_densities, aver_net_cons_paper,
+             label='Manhattan grid (Viriyasitavat et al.)')
+
+    # Add additional information to plot
+
+    plt.xlabel(r'Network density $[veh/km^2]$')
+    plt.ylabel('Average network connectivity [\%]')
+    plt.legend()
+    plt.show()
 
 if __name__ == '__main__':
     # TODO: what happens when multiprocess simulation is started and data files are not present?
     # TODO: argparse!
     sim_mode = 'multiprocess'  # 'single', 'multi', 'multiprocess'
     place = 'Upper West Side - New York - USA'
+    # TODO: Implement functions to use use_pathloss
+    use_pathloss = False
     which_result = 1
     densities_veh = np.concatenate([np.arange(10, 90, 10), [120, 160]]) * 1e-6
     density_type = 'area'
@@ -289,11 +324,6 @@ if __name__ == '__main__':
     iterations = 100
     max_pl = 150
     show_plot = False
-
-    # # TODO: temp!
-    # place = 'Neubau - Vienna - Austria'
-    # densities_veh = np.arange(10, 40, 10) * 1e-6
-    # iterations = 4
 
     if sim_mode == 'multi':
         net_connectivities = np.zeros([iterations, np.size(densities_veh)])
@@ -315,10 +345,22 @@ if __name__ == '__main__':
             plt.show()
 
     elif sim_mode == 'multiprocess':
+        static_params = {'place': place,
+                         'which_result': which_result,
+                         'density_type': density_type,
+                         'max_dist_olos_los': max_dist_olos_los,
+                         'max_dist_nlos': max_dist_nlos}
+        in_vars = static_params
+        in_vars['iterations'] = iterations
+        in_vars['densities_veh'] = densities_veh
+
         net_connectivities = np.zeros([iterations, np.size(densities_veh)])
         with mp.Pool() as pool:
             net_connectivities = pool.starmap(multiprocess_sim, zip(
-                range(iterations), repeat(densities_veh)))
+                range(iterations), repeat(densities_veh), repeat(static_params)))
+
+        out_vars = {'densities_veh': densities_veh}
+        # TODO: here! save in_vars and out_vars
 
         np.save('results/net_connectivities', net_connectivities)
 
