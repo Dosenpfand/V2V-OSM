@@ -1,22 +1,28 @@
 # Code repository for diploma thesis
 ## Quickstart
-1. Install basic tools. On Debian 8
+Applies to Debian 8
+
+1. Install basic tools
 
     apt-get install python3 python3-pip git
 
-2. Install libraries. On Debian 8
+2. Install libraries
 
     apt-get install libfreetype6-dev libxft-dev libgeos-dev libgdal-dev libspatialindex-dev
 
-3. Optionally install linear algebra libraries for a faster numpy experience, on Debian 8
+3. Optionally install linear algebra libraries for a faster numpy experience
 
-    apt-get install libopenblas-dev liblapack-dev libatlas-dev
+    apt-get install libopenblas-dev liblapack-dev gfortran
+
+    or if you want to use ATLAS instead of OpenBLAS:
+
+    apt-get install liblapack-dev libatlas-dev libatlas-base-dev gfortran
 
 4. Clone the repository and cd into it
 
 5. Create a virtual environment
 
-    virtualenv venv
+    python3 -m venv venv
 
 6. Activate the virtual environment
 
