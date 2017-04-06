@@ -270,6 +270,8 @@ def multiprocess_sim(iteration, densities_veh, static_params):
     for idx_density, density in enumerate(densities_veh):
         print('Densitiy: {:.2E}, Iteration: {:d}'.format(
             density, iteration))
+        # TODO: for optimization, seperate street+building loading and vehicle
+        # placement and execute loading only once!
         net = prepare_network(static_params['place'], which_result=static_params['which_result'],
                               density_veh=density, density_type=static_params[
                                   'density_type'],
@@ -282,39 +284,42 @@ def multiprocess_sim(iteration, densities_veh, static_params):
 
 
 def net_connectivity_stats(net_connectivities, confidence=0.95):
-    # TODO: !
-    mean = np.mean(net_connectivities)
-    conf_intervals = st.t.interval(confidence, len(
-        net_connectivities) - 1, loc=mean, scale=st.sem(net_connectivities))
+    """Calculates the means and confidence intervals for network connectivity results"""
 
-    return mean, conf_intervals
+    means = np.mean(net_connectivities, axis=0)
+    conf_intervals = np.zeros([np.size(means), 2])
+
+    for index, mean in enumerate(means):
+        conf_intervals[index] = st.t.interval(confidence, len(
+            net_connectivities[:, index]) - 1, loc=mean, scale=st.sem(net_connectivities[:, index]))
+
+    return means, conf_intervals
 
 
 def plot_net_connectivity():
-    # TODO: plot confidence intervals
     net_connectivities = np.load('results/net_connectivities.npy')
-    aver_net_cons = np.mean(net_connectivities, axis=0) * 100
+    aver_net_cons, conf_net_cons = net_connectivity_stats(
+        net_connectivities)
     aver_net_cons_paper = np.array([12.67, 18.92, 21.33,
-                                    34.75, 69.72, 90.05, 97.46, 98.97, 99.84, 100])
-    conf_net_cons_paper = np.array([2.22, 4.51, 2.57,
-                                    6.58, 8.02, 3.48, 1.25, 0.61, 0.25, 0]) / 100 * aver_net_cons_paper
+                                    34.75, 69.72, 90.05, 97.46, 98.97, 99.84, 100]) / 100
+    conf_net_cons_paper = np.array(
+        [2.22, 4.51, 2.57, 6.58, 8.02, 3.48, 1.25, 0.61, 0.25, 0]) / 100
     net_densities = np.concatenate([np.arange(10, 90, 10), [120, 160]])
 
     plt.rc('font', **{'family': 'serif', 'serif': ['Palatino']})
     plt.rc('text', usetex=True)
-    plt.plot(net_densities, aver_net_cons, label='OSM (own method)')
+    plt.errorbar(net_densities, aver_net_cons,
+                 np.abs(aver_net_cons - conf_net_cons.T), label='OSM (own method)')
     plt.errorbar(net_densities, aver_net_cons_paper, conf_net_cons_paper,
                  label='Manhattan grid (Viriyasitavat et al.)')
 
     # Add additional information to plot
-
     plt.xlabel(r'Network density $[veh/km^2]$')
     plt.ylabel(r'Average network connectivity [\%]')
     plt.legend()
     plt.show()
 
 if __name__ == '__main__':
-    # TODO: what happens when multiprocess simulation is started and data files are not present?
     # TODO: argparse!
     sim_mode = 'multiprocess'  # 'single', 'multi', 'multiprocess'
     place = 'Upper West Side - New York - USA'
@@ -365,6 +370,8 @@ if __name__ == '__main__':
         with mp.Pool() as pool:
             net_connectivities = pool.starmap(multiprocess_sim, zip(
                 range(iterations), repeat(densities_veh), repeat(static_params)))
+
+        net_connectivities = np.array(net_connectivities)
 
         # Save in and outputs
         in_vars = static_params
