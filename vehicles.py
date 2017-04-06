@@ -6,7 +6,8 @@ import networkx as nx
 
 
 class Vehicles:
-    """Class representing vehicles with their properties and relations to each other"""
+    """Class representing vehicles with their properties and relations
+     to each other."""
     # TODO: only points as attributes and get coordinates from points when
     # requested?
 
@@ -28,7 +29,8 @@ class Vehicles:
         self.nlos = np.zeros(size, dtype=bool)
 
     def add_key(self, key, value):
-        """Add a key that can then be used to retrieve a subset of the properties/relations"""
+        """Add a key that can then be used to retrieve a subset
+        of the properties/relations"""
 
         self.idxs[key] = value
 
@@ -116,23 +118,22 @@ def choose_random_point(street, count=1):
     return points
 
 
-def generate_vehs(graph_streets, street_idxs=None, veh_points=None):
+def generate_vehs(graph_streets, street_idxs=None, points_vehs=None):
     """Generates vehicles on specific streets """
 
-    if veh_points is None:
-        veh_points = get_vehicles_from_streets(graph_streets, street_idxs)
+    if points_vehs is None:
+        points_vehs = get_vehicles_from_streets(
+            graph_streets, street_idxs)
     elif street_idxs is None:
-        street_idxs = get_streets_from_vehicles(graph_streets, veh_points)
+        street_idxs = get_streets_from_vehicles(graph_streets, points_vehs)
     count_veh = np.size(street_idxs)
-    points_vehs = np.zeros(count_veh, dtype=object)
     graphs_vehs = np.zeros(count_veh, dtype=object)
 
     for iteration, index in enumerate(street_idxs):
 
         street = graph_streets.edges(data=True)[index]
-        point_veh = veh_points[iteration]
+        point_veh = points_vehs[iteration]
         street_geom = street[2]['geometry']
-        points_vehs[iteration] = point_veh
         # NOTE: All vehicle nodes get the prefix 'v'
         node = 'v' + str(iteration)
         # Add vehicle, needed intersections and edges to graph
@@ -159,26 +160,35 @@ def generate_vehs(graph_streets, street_idxs=None, veh_points=None):
 
 
 def get_vehicles_from_streets(graph_streets, street_idxs):
+    """Generate Random vehicle points according to the street_idxs."""
     count_veh = np.size(street_idxs)
     points_vehs = np.zeros(count_veh, dtype=object)
     for iteration, index in enumerate(street_idxs):
         street = graph_streets.edges(data=True)[index]
         street_geom = street[2]['geometry']
-        point_veh = choose_random_point(street_geom)
-        points_vehs[iteration] = point_veh[0]
+        points_vehs[iteration] = choose_random_point(street_geom)[0]
     return points_vehs
 
 
-def get_streets_from_vehicles(graph_streets, veh_points):
+def get_streets_from_vehicles(graph_streets, points_vehs):
+    """Generate appropriate streets for given vehicular point coordinates."""
+    street_idxs = np.zeros(len(points_vehs), dtype=object)
+    edge_set = graph_streets.edges(data=True)
 
-    mininds = np.zeros(len(veh_points), dtype=object)
-    for iteration, index in enumerate(veh_points):
-        point_veh = veh_points[iteration]
-        gs = graph_streets.edges(data=True)
-        res = [(point_veh.distance(x[2]['geometry']), ind)
-               for (ind, x) in enumerate(gs)]
-        ds, mininds[iteration] = min(res)
-        gs_shape = gs[mininds[iteration]][2]['geometry']
-        correction = gs_shape.project(point_veh)
-        veh_points[iteration] = gs_shape.interpolate(correction)
-    return mininds
+    for iteration, index in enumerate(points_vehs):
+        point_veh = points_vehs[iteration]
+        # Generate distances for vehicle to all edges (minimum distance)
+        # Result is a tuple with (distance, index). Min can use this to return
+        # the tuple with minimum 1st entry, so we have the index of the minimum
+        distance_list = [(point_veh.distance(x[2]['geometry']), ind)
+                         for (ind, x) in enumerate(edge_set)]
+
+        _, street_idxs[iteration] = min(distance_list)
+        current_street = edge_set[street_idxs[iteration]][2]['geometry']
+
+        # Find the closest point to point_veh that lies ON the street
+        correction = current_street.project(point_veh)
+
+        # Reset the point so that it lies on the street
+        points_vehs[iteration] = current_street.interpolate(correction)
+    return street_idxs
