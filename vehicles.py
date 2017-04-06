@@ -116,30 +116,34 @@ def choose_random_point(street, count=1):
     return points
 
 
-def generate_vehs(graph_streets, street_idxs):
+def generate_vehs(graph_streets, street_idxs=None, veh_points=None):
     """Generates vehicles on specific streets """
 
+    if veh_points is None:
+        veh_points = get_vehicles_from_streets(graph_streets, street_idxs)
+    elif street_idxs is None:
+        street_idxs = get_streets_from_vehicles(graph_streets, veh_points)
     count_veh = np.size(street_idxs)
     points_vehs = np.zeros(count_veh, dtype=object)
     graphs_vehs = np.zeros(count_veh, dtype=object)
 
     for iteration, index in enumerate(street_idxs):
+
         street = graph_streets.edges(data=True)[index]
+        point_veh = veh_points[iteration]
         street_geom = street[2]['geometry']
-        point_veh = choose_random_point(street_geom)
-        points_vehs[iteration] = point_veh[0]
+        points_vehs[iteration] = point_veh
         # NOTE: All vehicle nodes get the prefix 'v'
         node = 'v' + str(iteration)
         # Add vehicle, needed intersections and edges to graph
         graph_iter = nx.MultiGraph(node_veh=node)
-        node_attr = {'geometry': point_veh[
-            0], 'x': point_veh[0].x, 'y': point_veh[0].y}
+        node_attr = {'geometry': point_veh, 'x': point_veh.x, 'y': point_veh.y}
         graph_iter.add_node(node, attr_dict=node_attr)
-        graph_iter.add_nodes_from(street[0:2])
+        graph_iter.add_nodes_from(street[0: 2])
 
         # Determine street parts that connect vehicle to intersections
         street_before, street_after = geom_o.split_line_at_point(
-            street_geom, point_veh[0])
+            street_geom, point_veh)
         edge_attr = {'geometry': street_before,
                      'length': street_before.length, 'is_veh_edge': True}
         graph_iter.add_edge(node, street[0], attr_dict=edge_attr)
@@ -152,3 +156,29 @@ def generate_vehs(graph_streets, street_idxs):
 
     vehs = Vehicles(points_vehs, graphs_vehs)
     return vehs
+
+
+def get_vehicles_from_streets(graph_streets, street_idxs):
+    count_veh = np.size(street_idxs)
+    points_vehs = np.zeros(count_veh, dtype=object)
+    for iteration, index in enumerate(street_idxs):
+        street = graph_streets.edges(data=True)[index]
+        street_geom = street[2]['geometry']
+        point_veh = choose_random_point(street_geom)
+        points_vehs[iteration] = point_veh[0]
+    return points_vehs
+
+
+def get_streets_from_vehicles(graph_streets, veh_points):
+
+    mininds = np.zeros(len(veh_points), dtype=object)
+    for iteration, index in enumerate(veh_points):
+        point_veh = veh_points[iteration]
+        gs = graph_streets.edges(data=True)
+        res = [(point_veh.distance(x[2]['geometry']), ind)
+               for (ind, x) in enumerate(gs)]
+        ds, mininds[iteration] = min(res)
+        gs_shape = gs[mininds[iteration]][2]['geometry']
+        correction = gs_shape.project(point_veh)
+        veh_points[iteration] = gs_shape.interpolate(correction)
+    return mininds
