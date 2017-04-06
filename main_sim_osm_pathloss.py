@@ -1,6 +1,7 @@
 """ Generates streets, buildings and vehicles from OpenStreetMap data with osmnx"""
 
 # Standard imports
+import time
 import os.path
 import multiprocessing as mp
 from itertools import repeat
@@ -280,7 +281,7 @@ def multiprocess_sim(iteration, densities_veh, static_params):
     return net_connectivities
 
 
-def average_net_connectivity(net_connectivities, confidence=0.95):
+def net_connectivity_stats(net_connectivities, confidence=0.95):
     # TODO: !
     mean = np.mean(net_connectivities)
     conf_intervals = st.t.interval(confidence, len(
@@ -290,22 +291,25 @@ def average_net_connectivity(net_connectivities, confidence=0.95):
 
 
 def plot_net_connectivity():
+    # TODO: plot confidence intervals
     net_connectivities = np.load('results/net_connectivities.npy')
     aver_net_cons = np.mean(net_connectivities, axis=0) * 100
-    aver_net_cons_paper = [12.67, 18.92, 21.33,
-                           34.75, 69.72, 90.05, 97.46, 98.97, 99.84, 100]
+    aver_net_cons_paper = np.array([12.67, 18.92, 21.33,
+                                    34.75, 69.72, 90.05, 97.46, 98.97, 99.84, 100])
+    conf_net_cons_paper = np.array([2.22, 4.51, 2.57,
+                                    6.58, 8.02, 3.48, 1.25, 0.61, 0.25, 0]) / 100 * aver_net_cons_paper
     net_densities = np.concatenate([np.arange(10, 90, 10), [120, 160]])
 
     plt.rc('font', **{'family': 'serif', 'serif': ['Palatino']})
     plt.rc('text', usetex=True)
     plt.plot(net_densities, aver_net_cons, label='OSM (own method)')
-    plt.plot(net_densities, aver_net_cons_paper,
-             label='Manhattan grid (Viriyasitavat et al.)')
+    plt.errorbar(net_densities, aver_net_cons_paper, conf_net_cons_paper,
+                 label='Manhattan grid (Viriyasitavat et al.)')
 
     # Add additional information to plot
 
     plt.xlabel(r'Network density $[veh/km^2]$')
-    plt.ylabel('Average network connectivity [\%]')
+    plt.ylabel(r'Average network connectivity [\%]')
     plt.legend()
     plt.show()
 
@@ -350,19 +354,28 @@ if __name__ == '__main__':
                          'density_type': density_type,
                          'max_dist_olos_los': max_dist_olos_los,
                          'max_dist_nlos': max_dist_nlos}
-        in_vars = static_params
-        in_vars['iterations'] = iterations
-        in_vars['densities_veh'] = densities_veh
+
+        # Prepare one network realization to download missing files
+        # TODO: seperate download function
+        prepare_network(place, which_result=which_result,
+                        density_veh=0, density_type='absolute',
+                        debug=False)
 
         net_connectivities = np.zeros([iterations, np.size(densities_veh)])
         with mp.Pool() as pool:
             net_connectivities = pool.starmap(multiprocess_sim, zip(
                 range(iterations), repeat(densities_veh), repeat(static_params)))
 
-        out_vars = {'densities_veh': densities_veh}
-        # TODO: here! save in_vars and out_vars
-
-        np.save('results/net_connectivities', net_connectivities)
+        # Save in and outputs
+        in_vars = static_params
+        in_vars['iterations'] = iterations
+        in_vars['densities_veh'] = densities_veh
+        out_vars = {'net_connectivities': net_connectivities}
+        save_vars = {'in': in_vars, 'out': out_vars}
+        finish_time = time.time()
+        filepath_res = 'results/{:.0f}.pickle'.format(finish_time)
+        with open(filepath_res, 'wb') as file:
+            pickle.dump(save_vars, file)
 
     elif sim_mode == 'single':
         net = prepare_network(place, which_result=which_result, density_veh=densities_veh,
