@@ -118,21 +118,23 @@ def choose_random_point(street, count=1):
     return points
 
 
-def generate_vehs(graph_streets, street_idxs=None, points_vehs=None):
+def generate_vehs(graph_streets, street_idxs=None, points_vehs_in=None):
     """Generates vehicles on specific streets """
 
-    if points_vehs is None:
-        points_vehs = get_vehicles_from_streets(
+    if points_vehs_in is None:
+        points_vehs_in = get_vehicles_from_streets(
             graph_streets, street_idxs)
     elif street_idxs is None:
-        street_idxs = get_streets_from_vehicles(graph_streets, points_vehs)
+        street_idxs = get_streets_from_vehicles(graph_streets, points_vehs_in)
+
     count_veh = np.size(street_idxs)
     graphs_vehs = np.zeros(count_veh, dtype=object)
-
+    points_vehs = np.zeros(count_veh, dtype=object)
     for iteration, index in enumerate(street_idxs):
 
         street = graph_streets.edges(data=True)[index]
-        point_veh = points_vehs[iteration]
+        point_veh = points_vehs_in[iteration]
+        points_vehs[iteration] = point_veh
         street_geom = street[2]['geometry']
         # NOTE: All vehicle nodes get the prefix 'v'
         node = 'v' + str(iteration)
