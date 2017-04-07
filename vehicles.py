@@ -177,8 +177,7 @@ def get_streets_from_vehicles(graph_streets, points_vehs):
     street_idxs = np.zeros(len(points_vehs), dtype=object)
     edge_set = graph_streets.edges(data=True)
 
-    for iteration, index in enumerate(points_vehs):
-        point_veh = points_vehs[iteration]
+    for iteration, point_veh in enumerate(points_vehs):
         # Generate distances for vehicle to all edges (minimum distance)
         # Result is a tuple with (distance, index). Min can use this to return
         # the tuple with minimum 1st entry, so we have the index of the minimum
