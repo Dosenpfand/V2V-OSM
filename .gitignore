@@ -103,3 +103,4 @@ cache/*.json
 osmnx_git/
 
 *.pickle
+*.p

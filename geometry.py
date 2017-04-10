@@ -6,7 +6,8 @@ import numpy as np
 
 def line_intersects_buildings(line, buildings):
     """ Checks if a line intersects with any of the buildings"""
-    # TODO: check if it's faster to convert sequence of polygons into a multipolygon and use it
+    # TODO: check if it's faster to convert sequence of polygons into a
+    # multipolygon and use it
 
     intersects = False
     for geometry in buildings['geometry']:
@@ -77,11 +78,12 @@ def split_line_at_point(line, point):
     if line.distance(point) > 1e-8:
         raise ValueError('Point not on line')
 
-    # NOTE: Use small circle instead of point to get around floating point precision
+    # NOTE: Use small circle instead of point to get around floating point
+    # precision
     circle = point.buffer(1e-8)
     line_split = ops.split(line, circle)
     line_before = line_split[0]
-    line_after = line_split[2]
+    line_after = line_split[-1]
 
     return line_before, line_after
 
@@ -96,17 +98,19 @@ def angles_along_line(line):
 
     for index, coord in enumerate(coords[1:]):
         coord_prev = coords[index]
-        angle_temp = np.arctan2(coord[0] - coord_prev[0], coord[1] - coord_prev[1])
+        angle_temp = np.arctan2(
+            coord[0] - coord_prev[0], coord[1] - coord_prev[1])
         if index != 0:
             if angle_temp - angle_temp_prev < np.pi:
-                angles[index-1] = angle_temp - angle_temp_prev + np.pi
+                angles[index - 1] = angle_temp - angle_temp_prev + np.pi
             else:
-                angles[index-1] = angle_temp - angle_temp_prev - np.pi
+                angles[index - 1] = angle_temp - angle_temp_prev - np.pi
         angle_temp_prev = angle_temp
 
     return angles
 
+
 def wrap_to_pi(angle):
     """ Limits angle from -pi to +pi"""
 
-    return (angle + np.pi) % (2*np.pi) - np.pi
+    return (angle + np.pi) % (2 * np.pi) - np.pi
