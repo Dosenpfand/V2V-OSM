@@ -171,35 +171,17 @@ def main_sim_multi(network, max_dist_olos_los=250, max_dist_nlos=140, debug=Fals
     utils.debug(debug, time_start)
 
     # Determine path redundancy
-    # TODO: also determine edge disjoint path redundancy (not only node disjoint path redundancy)
-    # TODO: save path redundancy at distance
-    # TODO: use specific algorithm to get disjoint paths
+    # NOTE: we calculate the minimum number of node independent paths as an approximation (and not
+    # the maximum)
     node_center_veh = idx_center_veh  # TODO: this does not seem to be the center?
     time_start = utils.debug(debug, None, 'Determining path redundancy')
 
-    count_disjoint_paths = np.zeros(count_veh - 1)
-    iter_veh = 0
-    for node_iter_veh in graph_cons.nodes():
-        graph_cons_iter = graph_cons.copy()
-        if node_iter_veh == node_center_veh:
-            continue
-        while True:
-            try:
-                path = nx.shortest_path(
-                    graph_cons_iter, source=node_center_veh, target=node_iter_veh)
-            except nx.NetworkXNoPath:
-                break
-            if len(path) == 2:
-                graph_cons_iter.remove_edge(*path)
-            else:
-                graph_cons_iter.remove_nodes_from(path[1:-1])
-
-            count_disjoint_paths[iter_veh] += 1
-        iter_veh += 1
+    path_redundancy = prop.path_redundancy(
+        graph_cons, node_center_veh, distances)
 
     utils.debug(debug, time_start)
 
-    return net_connectivity
+    return net_connectivity, path_redundancy
 
 
 def main_sim(network, max_pl=150, debug=False):
@@ -318,6 +300,9 @@ def multiprocess_sim(iteration, densities_veh, static_params):
                               debug=False)
         net_connectivity = main_sim_multi(net, max_dist_olos_los=static_params['max_dist_olos_los'],
                                           max_dist_nlos=static_params['max_dist_nlos'], debug=False)
+        net_connectivity, path_redundancy = \
+            main_sim_multi(net, max_dist_olos_los=static_params['max_dist_olos_los'],
+                           max_dist_nlos=static_params['max_dist_nlos'], debug=False)
         net_connectivities[idx_density] = net_connectivity
 
     return net_connectivities
@@ -390,6 +375,9 @@ if __name__ == '__main__':
                                       density_type=density_type, debug=True)
                 net_connectivity = main_sim_multi(net, max_dist_olos_los=max_dist_olos_los,
                                                   max_dist_nlos=max_dist_nlos, debug=True)
+                net_connectivity, path_redundancy = \
+                    main_sim_multi(net, max_dist_olos_los=max_dist_olos_los,
+                                   max_dist_nlos=max_dist_nlos, debug=True)
                 net_connectivities[iteration, idx_density] = net_connectivity
             # TODO: Adapt filename and saved variable structure from
             # multiprocess!
