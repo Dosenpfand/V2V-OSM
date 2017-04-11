@@ -171,30 +171,31 @@ def main_sim_multi(network, max_dist_olos_los=250, max_dist_nlos=140, debug=Fals
     utils.debug(debug, time_start)
 
     # Determine path redundancy
-    # TODO: also determine edge disjoint path redundance (not only node disjoint path redundancy)
+    # TODO: also determine edge disjoint path redundancy (not only node disjoint path redundancy)
     # TODO: save path redundancy at distance
-    # TODO: use specific algorithm for path disjoint paths
-    node_center_veh = idx_center_veh  # TODO: correct?
+    # TODO: use specific algorithm to get disjoint paths
+    node_center_veh = idx_center_veh  # TODO: this does not seem to be the center?
     time_start = utils.debug(debug, None, 'Determining path redundancy')
-    graph_cons_path = graph_cons.copy()
 
-    for node_veh in graph_cons.nodes():
-        if node_veh == node_center_veh:
+    count_disjoint_paths = np.zeros(count_veh - 1)
+    iter_veh = 0
+    for node_iter_veh in graph_cons.nodes():
+        graph_cons_iter = graph_cons.copy()
+        if node_iter_veh == node_center_veh:
             continue
-        disjoint_paths = []
-        paths = nx.all_simple_paths(
-            graph_cons, source=node_center_veh, target=node_veh)
-        for path in paths:
-            path_is_disjoint = True
-            for disjoint_path in disjoint_paths:
-                inters = set(path[1:-1]).intersection(set(disjoint_path))
-                if inters:
-                    path_is_disjoint = False
-                    break
-            if path_is_disjoint:
-                disjoint_paths.append(path[1:-1])
-        count_disjoint_paths = len(disjoint_paths)
-        print(count_disjoint_paths)
+        while True:
+            try:
+                path = nx.shortest_path(
+                    graph_cons_iter, source=node_center_veh, target=node_iter_veh)
+            except nx.NetworkXNoPath:
+                break
+            if len(path) == 2:
+                graph_cons_iter.remove_edge(*path)
+            else:
+                graph_cons_iter.remove_nodes_from(path[1:-1])
+
+            count_disjoint_paths[iter_veh] += 1
+        iter_veh += 1
 
     utils.debug(debug, time_start)
 
