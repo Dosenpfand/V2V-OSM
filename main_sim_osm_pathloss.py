@@ -6,6 +6,7 @@ import os.path
 import multiprocessing as mp
 from itertools import repeat
 import pickle
+import ipdb
 
 # Extension imports
 import numpy as np
@@ -156,9 +157,46 @@ def main_sim_multi(network, max_dist_olos_los=250, max_dist_nlos=140, debug=Fals
         np.arange(count_veh), cluster_max.nodes())]
     vehs.add_key('not_cluster_max', not_cluster_max_nodes)
     utils.debug(debug, time_start)
+
     if debug:
         print('Network connectivity: {:.2f} %'.format(
             net_connectivity * 100))
+
+    # Find center vehicle
+    time_start = utils.debug(debug, None, 'Finding center vehicle')
+    idx_center_veh = geom_o.find_center_veh(vehs.get())
+    idxs_other_vehs = np.where(np.arange(count_veh) != idx_center_veh)[0]
+    vehs.add_key('center', idx_center_veh)
+    vehs.add_key('other', idxs_other_vehs)
+    utils.debug(debug, time_start)
+
+    # Determine path redundancy
+    # TODO: also determine edge disjoint path redundance (not only node disjoint path redundancy)
+    # TODO: save path redundancy at distance
+    # TODO: use specific algorithm for path disjoint paths
+    node_center_veh = idx_center_veh  # TODO: correct?
+    time_start = utils.debug(debug, None, 'Determining path redundancy')
+    graph_cons_path = graph_cons.copy()
+
+    for node_veh in graph_cons.nodes():
+        if node_veh == node_center_veh:
+            continue
+        disjoint_paths = []
+        paths = nx.all_simple_paths(
+            graph_cons, source=node_center_veh, target=node_veh)
+        for path in paths:
+            path_is_disjoint = True
+            for disjoint_path in disjoint_paths:
+                inters = set(path[1:-1]).intersection(set(disjoint_path))
+                if inters:
+                    path_is_disjoint = False
+                    break
+            if path_is_disjoint:
+                disjoint_paths.append(path[1:-1])
+        count_disjoint_paths = len(disjoint_paths)
+        print(count_disjoint_paths)
+
+    utils.debug(debug, time_start)
 
     return net_connectivity
 
@@ -179,6 +217,7 @@ def main_sim(network, max_pl=150, debug=False):
     idxs_other_vehs = np.where(np.arange(count_veh) != idx_center_veh)[0]
     vehs.add_key('center', idx_center_veh)
     vehs.add_key('other', idxs_other_vehs)
+    utils.debug(debug, time_start)
 
     # Determine propagation conditions
     time_start = utils.debug(
@@ -321,7 +360,7 @@ def plot_net_connectivity():
 
 if __name__ == '__main__':
     # TODO: argparse!
-    sim_mode = 'multiprocess'  # 'single', 'multi', 'multiprocess'
+    sim_mode = 'mutliprocess'  # 'single', 'multi', 'multiprocess'
     place = 'Upper West Side - New York - USA'
     # TODO: Implement functions to use use_pathloss
     use_pathloss = False
@@ -334,6 +373,12 @@ if __name__ == '__main__':
     max_pl = 150
     show_plot = False
 
+    # TODO: temp!
+    densities_veh = np.array([40]) * 1e-6
+    iterations = 1
+    show_plot = False
+    sim_mode = 'multi'
+
     if sim_mode == 'multi':
         net_connectivities = np.zeros([iterations, np.size(densities_veh)])
         for iteration in np.arange(iterations):
@@ -345,6 +390,8 @@ if __name__ == '__main__':
                 net_connectivity = main_sim_multi(net, max_dist_olos_los=max_dist_olos_los,
                                                   max_dist_nlos=max_dist_nlos, debug=True)
                 net_connectivities[iteration, idx_density] = net_connectivity
+            # TODO: Adapt filename and saved variable structure from
+            # multiprocess!
             np.save('results/net_connectivities',
                     net_connectivities[:iteration + 1])
 
@@ -380,11 +427,16 @@ if __name__ == '__main__':
         out_vars = {'net_connectivities': net_connectivities}
         save_vars = {'in': in_vars, 'out': out_vars}
         finish_time = time.time()
-        filepath_res = 'results/{:.0f}.pickle'.format(finish_time)
+        filepath_res = 'results/{:.0f}_{}.pickle'.format(
+            finish_time, utils.string_to_filename(place))
         with open(filepath_res, 'wb') as file:
             pickle.dump(save_vars, file)
 
     elif sim_mode == 'single':
+        if np.size(densities_veh) > 1:
+            raise ValueError(
+                'Single simulation mode can only simulate 1 density value')
+
         net = prepare_network(place, which_result=which_result, density_veh=densities_veh,
                               density_type=density_type, debug=True)
         main_sim(net, max_pl=max_pl, debug=True)
