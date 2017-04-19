@@ -330,6 +330,7 @@ if __name__ == '__main__':
     iterations = 100
     max_pl = 150
     show_plot = False
+    send_mail = True
 
     # TODO: temp!
     place = 'Neubau - Vienna - Austria'
@@ -408,6 +409,10 @@ if __name__ == '__main__':
             time_finish, utils.string_to_filename(place))
         with open(filepath_res, 'wb') as file:
             pickle.dump(save_vars, file)
+
+        # Send mail
+        if send_mail:
+            utils.send_mail_finish()
 
     elif sim_mode == 'single':
         if np.size(densities_veh) > 1:

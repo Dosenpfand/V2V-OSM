@@ -4,6 +4,10 @@ import time
 import scipy.special as spc
 import scipy.stats as st
 import numpy as np
+import smtplib
+from email.mime.text import MIMEText
+import socket
+import getpass
 
 
 def string_to_filename(string):
@@ -54,3 +58,20 @@ def net_connectivity_stats(net_connectivities, confidence=0.95):
             net_connectivities[:, index]) - 1, loc=mean, scale=st.sem(net_connectivities[:, index]))
 
     return means, conf_intervals
+
+
+def send_mail_finish(recipient=None, time_start=None):
+    if time_start is None:
+        msg = MIMEText('The simulation is finished.')
+    else:
+        msg = MIMEText('The simulation started at {:d} is finished.'.format(
+            time_start))
+    msg['Subject'] = 'Simulation finished'
+    msg['From'] = getpass.getuser() + '@' + socket.gethostname()
+    if recipient is None:
+        msg['To'] = msg['From']
+    else:
+        msg['To'] = recipient
+    smtp = smtplib.SMTP('localhost')
+    smtp.send_message(msg)
+    smtp.quit()
