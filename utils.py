@@ -8,6 +8,7 @@ import smtplib
 from email.mime.text import MIMEText
 import socket
 import getpass
+import warnings
 
 
 def string_to_filename(string):
@@ -64,7 +65,7 @@ def send_mail_finish(recipient=None, time_start=None):
     if time_start is None:
         msg = MIMEText('The simulation is finished.')
     else:
-        msg = MIMEText('The simulation started at {:d} is finished.'.format(
+        msg = MIMEText('The simulation started at {:.0f} is finished.'.format(
             time_start))
     msg['Subject'] = 'Simulation finished'
     msg['From'] = getpass.getuser() + '@' + socket.getfqdn()
@@ -72,6 +73,10 @@ def send_mail_finish(recipient=None, time_start=None):
         msg['To'] = msg['From']
     else:
         msg['To'] = recipient
-    smtp = smtplib.SMTP('localhost')
-    smtp.send_message(msg)
-    smtp.quit()
+    try:
+        smtp = smtplib.SMTP('localhost')
+    except ConnectionRefusedError:
+        warnings.warn('Connection to mailserver refused.')
+    else:
+        smtp.send_message(msg)
+        smtp.quit()
