@@ -331,6 +331,7 @@ if __name__ == '__main__':
     max_pl = 150
     show_plot = False
     send_mail = True
+    mail_to = 'markus.gasser@nt.tuwien.ac.at'
 
     # TODO: temp!
     place = 'Neubau - Vienna - Austria'
@@ -412,7 +413,7 @@ if __name__ == '__main__':
 
         # Send mail
         if send_mail:
-            utils.send_mail_finish()
+            utils.send_mail_finish(mail_to)
 
     elif sim_mode == 'single':
         if np.size(densities_veh) > 1:
