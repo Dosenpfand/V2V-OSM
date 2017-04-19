@@ -297,30 +297,31 @@ def multiprocess_sim(iteration, densities_veh, static_params):
 
     np.random.seed(iteration)
     net_connectivities = np.zeros(np.size(densities_veh))
+    path_redundancies = np.zeros(np.size(densities_veh))
+
+    net = load_network(static_params['place'], which_result=static_params['which_result'],
+                       debug=False)
 
     for idx_density, density in enumerate(densities_veh):
         print('Densitiy: {:.2E}, Iteration: {:d}'.format(
             density, iteration))
-        # TODO: for optimization, seperate street+building loading and vehicle
-        # placement and execute loading only once!
-        net = load_network(static_params['place'], which_result=static_params['which_result'],
-                           debug=False)
-        generate_vehicles(net, density_veh=density, density_type=static_params['density_type'],
+        net_iter = net.copy()
+
+        generate_vehicles(net_iter, density_veh=density, density_type=static_params['density_type'],
                           debug=False)
         net_connectivity, path_redundancy = \
-            main_sim_multi(net, max_dist_olos_los=static_params['max_dist_olos_los'],
+            main_sim_multi(net_iter, max_dist_olos_los=static_params['max_dist_olos_los'],
                            max_dist_nlos=static_params['max_dist_nlos'], debug=False)
         net_connectivities[idx_density] = net_connectivity
+        path_redundancies[idx_density] = path_redundancy
 
-    return net_connectivities
+    return net_connectivities, path_redundancies
 
 
 if __name__ == '__main__':
-    # TODO: argparse!
-    sim_mode = 'mutliprocess'  # 'single', 'multi', 'multiprocess'
+    sim_mode = 'multiprocess'  # 'single', 'multi', 'multiprocess'
     place = 'Upper West Side - New York - USA'
-    # TODO: Implement functions to use use_pathloss
-    use_pathloss = False
+    use_pathloss = False  # TODO: Implement functions to use use_pathloss
     which_result = 1
     densities_veh = np.concatenate([np.arange(10, 90, 10), [120, 160]]) * 1e-6
     density_type = 'area'
@@ -331,11 +332,11 @@ if __name__ == '__main__':
     show_plot = False
 
     # TODO: temp!
-    densities_veh = np.array([40]) * 1e-6
+    place = 'Neubau - Vienna - Austria'
+    densities_veh = np.array([20, 30]) * 1e-6
     iterations = 1
     show_plot = False
-    sim_mode = 'single'
-    show_plot = True
+    sim_mode = 'multi'
 
     # Adapt static input parameters
     static_params = {'place': place,
@@ -380,17 +381,21 @@ if __name__ == '__main__':
 
         net_connectivities = np.zeros([iterations, np.size(densities_veh)])
         with mp.Pool() as pool:
-            net_connectivities = pool.starmap(multiprocess_sim, zip(
+            sim_results = pool.starmap(multiprocess_sim, zip(
                 range(iterations), repeat(densities_veh), repeat(static_params)))
 
+        ipdb.set_trace()
+
         net_connectivities = np.array(net_connectivities)
+        path_redundancies = np.array(path_redundancies)
 
         # Save in and outputs
         time_finish = time.time()
         in_vars = static_params
         in_vars['iterations'] = iterations
         in_vars['densities_veh'] = densities_veh
-        out_vars = {'net_connectivities': net_connectivities}
+        out_vars = {'net_connectivities': net_connectivities,
+                    'path_redundancies': path_redundancies}
         info_vars = {'time_start': time_start, 'time_finish': time_finish}
         save_vars = {'in': in_vars, 'out': out_vars, 'info': info_vars}
         filepath_res = 'results/{:.0f}_{}.pickle'.format(
