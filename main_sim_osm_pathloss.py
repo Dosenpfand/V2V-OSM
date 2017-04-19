@@ -25,8 +25,8 @@ import vehicles
 import propagation as prop
 
 
-def prepare_network(place, which_result=1, density_veh=100, density_type='absolute', debug=False):
-    """Generates streets, buildings and vehicles """
+def load_network(place, which_result=1, debug=False):
+    """Generates streets and buildings and"""
 
     # Setup
     ox_a.setup(debug)
@@ -54,6 +54,7 @@ def prepare_network(place, which_result=1, density_veh=100, density_type='absolu
 
     graph_streets = data['streets']
     gdf_buildings = data['buildings']
+    gdf_boundary = data['boundary']
     ox_a.add_geometry(graph_streets)
 
     utils.debug(debug, time_start)
@@ -79,6 +80,19 @@ def prepare_network(place, which_result=1, density_veh=100, density_type='absolu
 
     utils.debug(debug, time_start)
 
+    network = {'graph_streets': graph_streets,
+               'graph_streets_wave': graph_streets_wave,
+               'gdf_buildings': gdf_buildings,
+               'gdf_boundary': gdf_boundary}
+
+    return network
+
+
+def generate_vehicles(network, density_veh=100, density_type='absolute', debug=False):
+    """Generates vehicles in the network"""
+
+    graph_streets = network['graph_streets']
+
     # Streets and positions selection
     time_start = utils.debug(debug, None, 'Choosing random vehicle positions')
 
@@ -89,7 +103,7 @@ def prepare_network(place, which_result=1, density_veh=100, density_type='absolu
     elif density_type == 'length':
         count_veh = int(round(density_veh * np.sum(street_lengths)))
     elif density_type == 'area':
-        area = data['boundary'].area
+        area = network['gdf_boundary'].area
         count_veh = int(round(density_veh * area))
     else:
         raise ValueError('Density type not supported')
@@ -103,10 +117,8 @@ def prepare_network(place, which_result=1, density_veh=100, density_type='absolu
     vehs = vehicles.generate_vehs(graph_streets, rand_street_idxs)
     utils.debug(debug, time_start)
 
-    network = {'graph_streets': graph_streets, 'graph_streets_wave': graph_streets_wave,
-               'gdf_buildings': gdf_buildings, 'vehs': vehs}
-
-    return network
+    network['vehs'] = vehs
+    return vehs
 
 
 def main_sim_multi(network, max_dist_olos_los=250, max_dist_nlos=140, debug=False):
@@ -146,6 +158,7 @@ def main_sim_multi(network, max_dist_olos_los=250, max_dist_nlos=140, debug=Fals
         idxs_in_range_olos_los, idxs_in_range_nlos)
     is_in_range = np.in1d(np.arange(count_cond), idxs_in_range)
     is_in_range_matrix = dist.squareform(is_in_range).astype(bool)
+    # TODO: check if node names correspond to same indices as in vehs?
     graph_cons = nx.from_numpy_matrix(is_in_range_matrix)
 
     # Find biggest cluster
@@ -294,12 +307,10 @@ def multiprocess_sim(iteration, densities_veh, static_params):
             density, iteration))
         # TODO: for optimization, seperate street+building loading and vehicle
         # placement and execute loading only once!
-        net = prepare_network(static_params['place'], which_result=static_params['which_result'],
-                              density_veh=density, density_type=static_params[
-                                  'density_type'],
-                              debug=False)
-        net_connectivity = main_sim_multi(net, max_dist_olos_los=static_params['max_dist_olos_los'],
-                                          max_dist_nlos=static_params['max_dist_nlos'], debug=False)
+        net = load_network(static_params['place'], which_result=static_params['which_result'],
+                           debug=False)
+        generate_vehicles(net, density_veh=density, density_type=static_params['density_type'],
+                          debug=False)
         net_connectivity, path_redundancy = \
             main_sim_multi(net, max_dist_olos_los=static_params['max_dist_olos_los'],
                            max_dist_nlos=static_params['max_dist_nlos'], debug=False)
@@ -363,18 +374,29 @@ if __name__ == '__main__':
     densities_veh = np.array([40]) * 1e-6
     iterations = 1
     show_plot = False
-    sim_mode = 'multi'
+    sim_mode = 'single'
+    show_plot = True
 
+    # Adapt static input parameters
+    static_params = {'place': place,
+                     'which_result': which_result,
+                     'density_type': density_type,
+                     'max_dist_olos_los': max_dist_olos_los,
+                     'max_dist_nlos': max_dist_nlos}
+
+    # Switch to selected simulation mode
     if sim_mode == 'multi':
         net_connectivities = np.zeros([iterations, np.size(densities_veh)])
         for iteration in np.arange(iterations):
             for idx_density, density in enumerate(densities_veh):
                 print('Densitiy: {:.2E}, Iteration: {:d}'.format(
                     density, iteration))
-                net = prepare_network(place, which_result=which_result, density_veh=density,
-                                      density_type=density_type, debug=True)
-                net_connectivity = main_sim_multi(net, max_dist_olos_los=max_dist_olos_los,
-                                                  max_dist_nlos=max_dist_nlos, debug=True)
+                net = load_network(static_params['place'],
+                                   which_result=static_params['which_result'],
+                                   debug=False)
+                generate_vehicles(net, density_veh=density,
+                                  density_type=static_params['density_type'],
+                                  debug=False)
                 net_connectivity, path_redundancy = \
                     main_sim_multi(net, max_dist_olos_los=max_dist_olos_los,
                                    max_dist_nlos=max_dist_nlos, debug=True)
@@ -390,17 +412,11 @@ if __name__ == '__main__':
             plt.show()
 
     elif sim_mode == 'multiprocess':
-        static_params = {'place': place,
-                         'which_result': which_result,
-                         'density_type': density_type,
-                         'max_dist_olos_los': max_dist_olos_los,
-                         'max_dist_nlos': max_dist_nlos}
+        time_start = time.time()
 
         # Prepare one network realization to download missing files
-        # TODO: seperate download function
-        prepare_network(place, which_result=which_result,
-                        density_veh=0, density_type='absolute',
-                        debug=False)
+        load_network(static_params['place'], which_result=static_params['which_result'],
+                     debug=False)
 
         net_connectivities = np.zeros([iterations, np.size(densities_veh)])
         with mp.Pool() as pool:
@@ -427,8 +443,12 @@ if __name__ == '__main__':
             raise ValueError(
                 'Single simulation mode can only simulate 1 density value')
 
-        net = prepare_network(place, which_result=which_result, density_veh=densities_veh,
-                              density_type=density_type, debug=True)
+        net = load_network(static_params['place'],
+                           which_result=static_params['which_result'],
+                           debug=False)
+        generate_vehicles(net, density_veh=densities_veh,
+                          density_type=static_params['density_type'],
+                          debug=False)
         main_sim(net, max_pl=max_pl, debug=True)
 
         if show_plot:
