@@ -22,20 +22,25 @@ Applies to Debian 8
 
 5. Create a virtual environment
 
-    python3 -m venv venv
+    python3 -m venv venv --without-pip
 
 6. Activate the virtual environment
 
     source venv/bin/activate
 
-7. Install dependencies
+7. Download and install pip
+
+    wget https://bootstrap.pypa.io/get-pip.py
+    python 3 get-pip.py
+
+8. Install dependencies
 
     pip install -r requirements.txt
 
-8. Run an exemplary simulation
+9. Run an exemplary simulation
 
     python3 main_sim_osm_pathloss.py
 
-9. Get help
+10. Get help
 
     python3 main_sim_osm_pathloss.py -h
