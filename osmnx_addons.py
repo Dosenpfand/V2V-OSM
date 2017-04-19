@@ -1,11 +1,13 @@
 """ Additional functions missing in the OSMnx package"""
 
 import pickle
+import os.path
 import networkx as nx
 import shapely.ops as ops
 import shapely.geometry as geom
 import osmnx as ox
 import utils
+import propagation as prop
 
 
 def setup(debug=False):
@@ -14,6 +16,69 @@ def setup(debug=False):
         ox.config(log_console=True, use_cache=True)
     else:
         ox.config(log_console=False, use_cache=False)
+
+
+def load_network(place, which_result=1, debug=False):
+    """Generates streets and buildings"""
+
+    # TODO: eliminate debug parameter
+
+    # Setup
+    setup(debug)
+
+    # Load data
+    file_prefix = 'data/{}'.format(utils.string_to_filename(place))
+    filename_data_streets = 'data/{}_streets.pickle'.format(
+        utils.string_to_filename(place))
+    filename_data_buildings = 'data/{}_buildings.pickle'.format(
+        utils.string_to_filename(place))
+    filename_data_boundary = 'data/{}_boundary.pickle'.format(
+        utils.string_to_filename(place))
+    filename_data_wave = 'data/{}_wave.pickle'.format(
+        utils.string_to_filename(place))
+
+    if os.path.isfile(filename_data_streets) and os.path.isfile(filename_data_buildings) and \
+            os.path.isfile(filename_data_boundary):
+        # Load from file
+        time_start = utils.debug(None, 'Loading data from disk')
+        data = load_place(file_prefix)
+    else:
+        # Load from internet
+        time_start = utils.debug(None, 'Loading data from the internet')
+        data = download_place(place, which_result=which_result)
+
+    graph_streets = data['streets']
+    gdf_buildings = data['buildings']
+    gdf_boundary = data['boundary']
+    add_geometry(graph_streets)
+
+    utils.debug(time_start)
+
+    # Generate wave propagation graph:
+    # Vehicles are placed in a undirected version of the graph because electromagnetic
+    # waves do not respect driving directions
+    if os.path.isfile(filename_data_wave):
+        # Load from file
+        time_start = utils.debug(None, 'Loading graph for wave propagation')
+        with open(filename_data_wave, 'rb') as file:
+            graph_streets_wave = pickle.load(file)
+    else:
+        # Generate
+        time_start = utils.debug(None, 'Generating graph for wave propagation')
+        graph_streets_wave = graph_streets.to_undirected()
+        # TODO: check if add_edges_if_los() is really working!!!
+        prop.add_edges_if_los(graph_streets_wave, gdf_buildings)
+        with open(filename_data_wave, 'wb') as file:
+            pickle.dump(graph_streets_wave, file)
+
+    utils.debug(time_start)
+
+    network = {'graph_streets': graph_streets,
+               'graph_streets_wave': graph_streets_wave,
+               'gdf_buildings': gdf_buildings,
+               'gdf_boundary': gdf_boundary}
+
+    return network
 
 
 def download_place(place, network_type='drive', file_prefix=None, which_result=1, project=True):

@@ -3,6 +3,7 @@
 import numpy as np
 import geometry as geom_o
 import networkx as nx
+import utils
 
 
 class Vehicles:
@@ -94,6 +95,39 @@ class Vehicles:
         allowed_keys.insert(0, "all")
         return ("{} vehicles, allowed keys: {}".
                 format(self.count, allowed_keys))
+
+
+def place_vehicles_in_network(network, density_veh=100, density_type='absolute'):
+    """Generates vehicles in the network"""
+
+    graph_streets = network['graph_streets']
+
+    # Streets and positions selection
+    time_start = utils.debug(None, 'Choosing random vehicle positions')
+
+    street_lengths = geom_o.get_street_lengths(graph_streets)
+
+    if density_type == 'absolute':
+        count_veh = int(density_veh)
+    elif density_type == 'length':
+        count_veh = int(round(density_veh * np.sum(street_lengths)))
+    elif density_type == 'area':
+        area = network['gdf_boundary'].area
+        count_veh = int(round(density_veh * area))
+    else:
+        raise ValueError('Density type not supported')
+
+    rand_street_idxs = choose_random_streets(
+        street_lengths, count_veh)
+    utils.debug(time_start)
+
+    # Vehicle generation
+    time_start = utils.debug(None, 'Generating vehicles')
+    vehs = generate_vehs(graph_streets, rand_street_idxs)
+    utils.debug(time_start)
+
+    network['vehs'] = vehs
+    return vehs
 
 
 def choose_random_streets(lengths, count=1):

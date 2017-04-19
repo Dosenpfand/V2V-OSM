@@ -2,12 +2,10 @@
 
 # Standard imports
 import time
-import os.path
 import multiprocessing as mp
 from itertools import repeat
 import pickle
 import logging
-import ipdb
 
 # Extension imports
 import numpy as np
@@ -23,102 +21,6 @@ import osmnx_addons as ox_a
 import geometry as geom_o
 import vehicles
 import propagation as prop
-
-
-def load_network(place, which_result=1, debug=False):
-    """Generates streets and buildings"""
-
-    # TODO: eliminate debug parameter
-
-    # Setup
-    ox_a.setup(debug)
-
-    # Load data
-    file_prefix = 'data/{}'.format(utils.string_to_filename(place))
-    filename_data_streets = 'data/{}_streets.pickle'.format(
-        utils.string_to_filename(place))
-    filename_data_buildings = 'data/{}_buildings.pickle'.format(
-        utils.string_to_filename(place))
-    filename_data_boundary = 'data/{}_boundary.pickle'.format(
-        utils.string_to_filename(place))
-    filename_data_wave = 'data/{}_wave.pickle'.format(
-        utils.string_to_filename(place))
-
-    if os.path.isfile(filename_data_streets) and os.path.isfile(filename_data_buildings) and \
-            os.path.isfile(filename_data_boundary):
-        # Load from file
-        time_start = utils.debug(None, 'Loading data from disk')
-        data = ox_a.load_place(file_prefix)
-    else:
-        # Load from internet
-        time_start = utils.debug(None, 'Loading data from the internet')
-        data = ox_a.download_place(place, which_result=which_result)
-
-    graph_streets = data['streets']
-    gdf_buildings = data['buildings']
-    gdf_boundary = data['boundary']
-    ox_a.add_geometry(graph_streets)
-
-    utils.debug(time_start)
-
-    # Generate wave propagation graph:
-    # Vehicles are placed in a undirected version of the graph because electromagnetic
-    # waves do not respect driving directions
-    if os.path.isfile(filename_data_wave):
-        # Load from file
-        time_start = utils.debug(None, 'Loading graph for wave propagation')
-        with open(filename_data_wave, 'rb') as file:
-            graph_streets_wave = pickle.load(file)
-    else:
-        # Generate
-        time_start = utils.debug(None, 'Generating graph for wave propagation')
-        graph_streets_wave = graph_streets.to_undirected()
-        # TODO: check if add_edges_if_los() is really working!!!
-        prop.add_edges_if_los(graph_streets_wave, gdf_buildings)
-        with open(filename_data_wave, 'wb') as file:
-            pickle.dump(graph_streets_wave, file)
-
-    utils.debug(time_start)
-
-    network = {'graph_streets': graph_streets,
-               'graph_streets_wave': graph_streets_wave,
-               'gdf_buildings': gdf_buildings,
-               'gdf_boundary': gdf_boundary}
-
-    return network
-
-
-def generate_vehicles(network, density_veh=100, density_type='absolute'):
-    """Generates vehicles in the network"""
-
-    graph_streets = network['graph_streets']
-
-    # Streets and positions selection
-    time_start = utils.debug(None, 'Choosing random vehicle positions')
-
-    street_lengths = geom_o.get_street_lengths(graph_streets)
-
-    if density_type == 'absolute':
-        count_veh = int(density_veh)
-    elif density_type == 'length':
-        count_veh = int(round(density_veh * np.sum(street_lengths)))
-    elif density_type == 'area':
-        area = network['gdf_boundary'].area
-        count_veh = int(round(density_veh * area))
-    else:
-        raise ValueError('Density type not supported')
-
-    rand_street_idxs = vehicles.choose_random_streets(
-        street_lengths, count_veh)
-    utils.debug(time_start)
-
-    # Vehicle generation
-    time_start = utils.debug(None, 'Generating vehicles')
-    vehs = vehicles.generate_vehs(graph_streets, rand_street_idxs)
-    utils.debug(time_start)
-
-    network['vehs'] = vehs
-    return vehs
 
 
 def main_sim_multi(network, max_dist_olos_los=250, max_dist_nlos=140):
@@ -294,16 +196,16 @@ def multiprocess_sim(iteration, densities_veh, static_params):
     net_connectivities = np.zeros(np.size(densities_veh))
     path_redundancies = np.zeros(np.size(densities_veh), dtype=object)
 
-    net = load_network(static_params['place'],
-                       which_result=static_params['which_result'])
+    net = ox_a.load_network(static_params['place'],
+                            which_result=static_params['which_result'])
 
     for idx_density, density in enumerate(densities_veh):
         logging.info('Started simulation with densitiy: {:.2E}, iteration: {:d}'.format(
             density, iteration))
         net_iter = net.copy()
 
-        generate_vehicles(net_iter, density_veh=density,
-                          density_type=static_params['density_type'])
+        vehicles.place_vehicles_in_network(net_iter, density_veh=density,
+                                           density_type=static_params['density_type'])
         net_connectivity, path_redundancy = \
             main_sim_multi(net_iter, max_dist_olos_los=static_params['max_dist_olos_los'],
                            max_dist_nlos=static_params['max_dist_nlos'])
@@ -355,10 +257,10 @@ def main():
             for idx_density, density in enumerate(densities_veh):
                 logging.info('Started simulation with densitiy {:.2E}, iteration: {:d}'.format(
                     density, iteration))
-                net = load_network(static_params['place'],
-                                   which_result=static_params['which_result'])
-                generate_vehicles(net, density_veh=density,
-                                  density_type=static_params['density_type'])
+                net = ox_a.load_network(static_params['place'],
+                                        which_result=static_params['which_result'])
+                vehicles.place_vehicles_in_network(net, density_veh=density,
+                                                   density_type=static_params['density_type'])
                 net_connectivity, path_redundancy = \
                     main_sim_multi(net, max_dist_olos_los=max_dist_olos_los,
                                    max_dist_nlos=max_dist_nlos)
@@ -377,8 +279,8 @@ def main():
         time_start = time.time()
 
         # Prepare one network realization to download missing files
-        load_network(static_params['place'],
-                     which_result=static_params['which_result'])
+        ox_a.load_network(static_params['place'],
+                          which_result=static_params['which_result'])
 
         with mp.Pool() as pool:
             sim_results = pool.starmap(multiprocess_sim, zip(
@@ -419,10 +321,10 @@ def main():
             raise ValueError(
                 'Single simulation mode can only simulate 1 density value')
 
-        net = load_network(static_params['place'],
-                           which_result=static_params['which_result'])
-        generate_vehicles(net, density_veh=densities_veh,
-                          density_type=static_params['density_type'])
+        net = ox_a.load_network(static_params['place'],
+                                which_result=static_params['which_result'])
+        vehicles.place_vehicles_in_network(net, density_veh=densities_veh,
+                                           density_type=static_params['density_type'])
         main_sim(net, max_pl=max_pl)
 
         if show_plot:
