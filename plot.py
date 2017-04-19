@@ -3,6 +3,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import osmnx as ox
+import utils
 
 # TODO: define figure and axis for every plot function call?
 # TODO: add option to save figure for every function?
@@ -174,3 +175,33 @@ def plot_cluster_max(streets, buildings, coordinates_vehs, show=True, place=None
         plt.show()
 
     return fig, axi
+
+
+def plot_net_connectivity_comparison(filename=None):
+    """ Plots the simulated network connectivity statistics and the ones from the paper"""
+
+    if filename is None:
+        filename = 'results/net_connectivities.npy'
+    net_connectivities = np.load(filename)
+
+    aver_net_cons, conf_net_cons = utils.net_connectivity_stats(
+        net_connectivities)
+
+    aver_net_cons_paper = np.array([12.67, 18.92, 21.33,
+                                    34.75, 69.72, 90.05, 97.46, 98.97, 99.84, 100]) / 100
+    conf_net_cons_paper = np.array(
+        [2.22, 4.51, 2.57, 6.58, 8.02, 3.48, 1.25, 0.61, 0.25, 0]) / 100
+    net_densities = np.concatenate([np.arange(10, 90, 10), [120, 160]])
+
+    plt.rc('font', **{'family': 'serif', 'serif': ['Palatino']})
+    plt.rc('text', usetex=True)
+    plt.errorbar(net_densities, aver_net_cons,
+                 np.abs(aver_net_cons - conf_net_cons.T), label='OSM (own method)')
+    plt.errorbar(net_densities, aver_net_cons_paper, conf_net_cons_paper,
+                 label='Manhattan grid (Viriyasitavat et al.)')
+
+    # Add additional information to plot
+    plt.xlabel(r'Network density $[veh/km^2]$')
+    plt.ylabel(r'Average network connectivity [\%]')
+    plt.legend()
+    plt.show()
