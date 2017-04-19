@@ -297,7 +297,7 @@ def multiprocess_sim(iteration, densities_veh, static_params):
 
     np.random.seed(iteration)
     net_connectivities = np.zeros(np.size(densities_veh))
-    path_redundancies = np.zeros(np.size(densities_veh))
+    path_redundancies = np.zeros(np.size(densities_veh), dtype=object)
 
     net = load_network(static_params['place'], which_result=static_params['which_result'],
                        debug=False)
@@ -333,10 +333,10 @@ if __name__ == '__main__':
 
     # TODO: temp!
     place = 'Neubau - Vienna - Austria'
-    densities_veh = np.array([20, 30]) * 1e-6
-    iterations = 1
+    densities_veh = np.array([20, 50]) * 1e-6
+    iterations = 4
     show_plot = False
-    sim_mode = 'multi'
+    sim_mode = 'multiprocess'
 
     # Adapt static input parameters
     static_params = {'place': place,
@@ -379,15 +379,21 @@ if __name__ == '__main__':
         load_network(static_params['place'], which_result=static_params['which_result'],
                      debug=False)
 
-        net_connectivities = np.zeros([iterations, np.size(densities_veh)])
         with mp.Pool() as pool:
             sim_results = pool.starmap(multiprocess_sim, zip(
                 range(iterations), repeat(densities_veh), repeat(static_params)))
 
-        ipdb.set_trace()
+        # Network connectivity results
+        net_connectivities = np.zeros([iterations, np.size(densities_veh)])
+        for iter_index, iter_result in enumerate(sim_results):
+            net_connectivities[iter_index, :] = iter_result[0]
 
-        net_connectivities = np.array(net_connectivities)
-        path_redundancies = np.array(path_redundancies)
+        # Path redundancy results
+        sim_results_arr = np.array(sim_results)
+        path_redundancies = np.zeros(np.size(densities_veh), dtype=object)
+        for idx_density, density in enumerate(densities_veh):
+            path_redundancies[idx_density] = np.concatenate(
+                sim_results_arr[:, 1, idx_density])
 
         # Save in and outputs
         time_finish = time.time()
