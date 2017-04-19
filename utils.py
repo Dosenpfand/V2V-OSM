@@ -67,7 +67,7 @@ def send_mail_finish(recipient=None, time_start=None):
         msg = MIMEText('The simulation started at {:d} is finished.'.format(
             time_start))
     msg['Subject'] = 'Simulation finished'
-    msg['From'] = getpass.getuser() + '@' + socket.gethostname()
+    msg['From'] = getpass.getuser() + '@' + socket.getfqdn()
     if recipient is None:
         msg['To'] = msg['From']
     else:
