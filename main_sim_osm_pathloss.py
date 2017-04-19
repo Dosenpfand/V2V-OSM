@@ -410,14 +410,15 @@ if __name__ == '__main__':
         net_connectivities = np.array(net_connectivities)
 
         # Save in and outputs
+        time_finish = time.time()
         in_vars = static_params
         in_vars['iterations'] = iterations
         in_vars['densities_veh'] = densities_veh
         out_vars = {'net_connectivities': net_connectivities}
-        save_vars = {'in': in_vars, 'out': out_vars}
-        finish_time = time.time()
+        info_vars = {'time_start': time_start, 'time_finish': time_finish}
+        save_vars = {'in': in_vars, 'out': out_vars, 'info': info_vars}
         filepath_res = 'results/{:.0f}_{}.pickle'.format(
-            finish_time, utils.string_to_filename(place))
+            time_finish, utils.string_to_filename(place))
         with open(filepath_res, 'wb') as file:
             pickle.dump(save_vars, file)
 
