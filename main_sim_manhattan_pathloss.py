@@ -268,10 +268,10 @@ def main_sim():
         distances_nlos_tx = np.abs(coords_nlos[:, dir_own] - coords_own[dir_own])
         pl_obj = pathloss.Pathloss()
 
-        # TODO: minus for both functions?
-        pathlosses_los = -pl_obj.pathloss_los(distances_same_street[ind_los])
-        pathlosses_olos = -pl_obj.pathloss_olos(distances_same_street[ind_olos])
-        pathlosses_nlos = pl_obj.pathloss_nlos(distances_nlos_rx, distances_nlos_tx)
+        pathlosses_los = pl_obj.pathloss_los(distances_same_street[ind_los])
+        pathlosses_olos = pl_obj.pathloss_olos(distances_same_street[ind_olos])
+        pathlosses_nlos = pl_obj.pathloss_nlos(
+            distances_nlos_rx, distances_nlos_tx)
         # TODO: infinity?
         # pathlosses_very_high_pl = np.inf*np.ones_like(ind_very_high_pl)
         pathlosses_very_high_pl = 450*np.ones_like(ind_very_high_pl)

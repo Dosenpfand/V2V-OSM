@@ -91,7 +91,8 @@ class Pathloss:
             + 10 * self.los_config['pathloss_exp_2'] \
             * np.log10(dist / self.los_config['dist_break']))
 
-        pathloss = pathloss_slope_1 + pathloss_slope_2 + sf_loss
+        # NOTE: Invert sign to keep consistency with NLOS
+        pathloss = - (pathloss_slope_1 + pathloss_slope_2 + sf_loss)
         return pathloss
 
 
@@ -115,5 +116,6 @@ class Pathloss:
             + 10 * self.olos_config['pathloss_exp_2'] * \
             np.log10(dist / self.olos_config['dist_break']))
 
-        pathloss = pathloss_slope_1 + pathloss_slope_2 + sf_loss
+        # NOTE: Invert sign to keep consistency with NLOS
+        pathloss = - (pathloss_slope_1 + pathloss_slope_2 + sf_loss)
         return pathloss

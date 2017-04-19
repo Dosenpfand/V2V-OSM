@@ -258,12 +258,9 @@ def main_sim(network, max_pl=150, debug=False):
         (vehs.get('olos_los')[:, 0] - vehs.get('center')[0])**2 +
         (vehs.get('olos_los')[:, 1] - vehs.get('center')[1])**2)
 
-    # TODO: why - ? fix in pathloss.py
-    pathlosses_olos = - \
-        p_loss.pathloss_olos(distances_olos_los[is_olos])
+    pathlosses_olos = p_loss.pathloss_olos(distances_olos_los[is_olos])
     vehs.set_pathlosses('olos', pathlosses_olos)
-    # TODO: why - ? fix in pathloss.py
-    pathlosses_los = -p_loss.pathloss_los(distances_olos_los[is_los])
+    pathlosses_los = p_loss.pathloss_los(distances_olos_los[is_los])
     vehs.set_pathlosses('los', pathlosses_los)
     utils.debug(debug, time_start)
 
