@@ -4,7 +4,7 @@ Abbas, Taimoor, et al.
 International Journal of Antennas and Propagation 2015 (2015).
 """
 
-import warnings
+import logging
 import numpy as np
 
 
@@ -80,7 +80,7 @@ class Pathloss:
 
         if (np.isscalar(dist) and dist < self.los_config['dist_ref']) or \
                 (not np.isscalar(dist) and any(dist < self.los_config['dist_ref'])):
-            warnings.warn('Distance smaller than reference distance')
+            logging.warning('Distance smaller than reference distance')
 
         # TODO: check equation again!
         slope_selector = dist < self.los_config['dist_break']
@@ -105,7 +105,7 @@ class Pathloss:
 
         if (np.isscalar(dist) and dist < self.olos_config['dist_ref']) or \
                 (not np.isscalar(dist) and any(dist < self.olos_config['dist_ref'])):
-            warnings.warn('Distance smaller than reference distance')
+            logging.warning('Distance smaller than reference distance')
 
         # TODO: check equation again
         slope_selector = dist < self.olos_config['dist_break']
