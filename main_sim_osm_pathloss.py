@@ -12,7 +12,6 @@ import ipdb
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy.spatial.distance as dist
-import scipy.stats as st
 import networkx as nx
 
 # Local imports
@@ -315,42 +314,6 @@ def multiprocess_sim(iteration, densities_veh, static_params):
 
     return net_connectivities
 
-
-def net_connectivity_stats(net_connectivities, confidence=0.95):
-    """Calculates the means and confidence intervals for network connectivity results"""
-
-    means = np.mean(net_connectivities, axis=0)
-    conf_intervals = np.zeros([np.size(means), 2])
-
-    for index, mean in enumerate(means):
-        conf_intervals[index] = st.t.interval(confidence, len(
-            net_connectivities[:, index]) - 1, loc=mean, scale=st.sem(net_connectivities[:, index]))
-
-    return means, conf_intervals
-
-
-def plot_net_connectivity():
-    net_connectivities = np.load('results/net_connectivities.npy')
-    aver_net_cons, conf_net_cons = net_connectivity_stats(
-        net_connectivities)
-    aver_net_cons_paper = np.array([12.67, 18.92, 21.33,
-                                    34.75, 69.72, 90.05, 97.46, 98.97, 99.84, 100]) / 100
-    conf_net_cons_paper = np.array(
-        [2.22, 4.51, 2.57, 6.58, 8.02, 3.48, 1.25, 0.61, 0.25, 0]) / 100
-    net_densities = np.concatenate([np.arange(10, 90, 10), [120, 160]])
-
-    plt.rc('font', **{'family': 'serif', 'serif': ['Palatino']})
-    plt.rc('text', usetex=True)
-    plt.errorbar(net_densities, aver_net_cons,
-                 np.abs(aver_net_cons - conf_net_cons.T), label='OSM (own method)')
-    plt.errorbar(net_densities, aver_net_cons_paper, conf_net_cons_paper,
-                 label='Manhattan grid (Viriyasitavat et al.)')
-
-    # Add additional information to plot
-    plt.xlabel(r'Network density $[veh/km^2]$')
-    plt.ylabel(r'Average network connectivity [\%]')
-    plt.legend()
-    plt.show()
 
 if __name__ == '__main__':
     # TODO: argparse!
