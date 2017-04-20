@@ -96,7 +96,7 @@ def main_sim_multi(network, max_dist_olos_los=250, max_dist_nlos=140):
     return net_connectivity, path_redundancy
 
 
-def main_sim(network, max_pl=150):
+def main_sim_single(network, max_pl=150):
     """Simulates the connections from one to all other vehicles using pathloss functions """
 
     # Initialize
@@ -189,7 +189,7 @@ def main_sim(network, max_pl=150):
     utils.debug(time_start)
 
 
-def multiprocess_sim(iteration, densities_veh, static_params):
+def main_sim_multiprocess(iteration, densities_veh, static_params):
     """Runs the simulation using multiple processes"""
 
     np.random.seed(iteration)
@@ -231,13 +231,6 @@ def main():
     show_plot = False
     send_mail = True
     mail_to = 'markus.gasser@nt.tuwien.ac.at'
-
-    # TODO: temp!
-    place = 'Neubau - Vienna - Austria'
-    densities_veh = np.array([20, 50]) * 1e-6
-    iterations = 4
-    show_plot = False
-    sim_mode = 'multiprocess'
 
     # Logger setup
     logger = logging.getLogger()
@@ -283,7 +276,7 @@ def main():
                           which_result=static_params['which_result'])
 
         with mp.Pool() as pool:
-            sim_results = pool.starmap(multiprocess_sim, zip(
+            sim_results = pool.starmap(main_sim_multiprocess, zip(
                 range(iterations), repeat(densities_veh), repeat(static_params)))
 
         # Network connectivity results
@@ -325,7 +318,7 @@ def main():
                                 which_result=static_params['which_result'])
         vehicles.place_vehicles_in_network(net, density_veh=densities_veh,
                                            density_type=static_params['density_type'])
-        main_sim(net, max_pl=max_pl)
+        main_sim_single(net, max_pl=max_pl)
 
         if show_plot:
             plot.plot_prop_cond(net['graph_streets'], net['gdf_buildings'],
