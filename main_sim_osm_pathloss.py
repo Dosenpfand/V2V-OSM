@@ -231,10 +231,12 @@ def main():
     show_plot = False
     send_mail = True
     mail_to = 'markus.gasser@nt.tuwien.ac.at'
+    loglevel = logging.DEBUG
 
     # Logger setup
+    # TODO: loglevel does not propagate to modules!
     logger = logging.getLogger()
-    logger.setLevel(logging.INFO)
+    logger.setLevel(loglevel)
 
     # Adapt static input parameters
     static_params = {'place': place,
