@@ -13,7 +13,7 @@ import utils
 
 
 def path_redundancy(graph, node, distances):
-    """Determines the path redundancy (number of node/edge disjoint paths) 
+    """Determines the path redundancy (number of node/edge disjoint paths)
     from one specific node to all other nodes"""
     # NOTE: we calculate the minimum number of node independent paths as an approximation (and not
     # the maximum)
