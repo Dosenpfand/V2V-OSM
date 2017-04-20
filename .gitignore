@@ -99,8 +99,6 @@ ENV/
 # osmnx cache files
 cache/*.json
 
-# Temporary new version of osmnx
-osmnx_git/
-
+# Pickle saved objects
 *.pickle
 *.p
