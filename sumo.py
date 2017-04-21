@@ -34,8 +34,9 @@ def parse_veh_traces(filename):
 def min_max_coords(traces):
     """Determines the min and max x and y coordinates of all vehicle traces"""
 
-    # TODO: better performance? set to 0?
-    x_min, x_max, y_min, y_max = 0, 0, 0, 0
+    # TODO: better performance?
+    x_min, x_max = traces[0][0]['x'], traces[0][0]['x']
+    y_min, y_max = traces[0][0]['y'], traces[0][0]['y']
     for trace in traces:
         if np.size(trace) == 0:
             continue
@@ -62,16 +63,17 @@ def plot_veh_traces(traces):
     x_min, x_max, y_min, y_max = min_max_coords(traces)
 
     def update_line(timestep, traces, line):
+        """Updates the animation periodically"""
         line.set_data([traces[timestep]['x'], traces[timestep]['y']])
-        print(timestep, traces[timestep]['x'][0], traces[timestep]['y'][0])
         return line,
 
     fig1 = plt.figure()
     line, = plt.plot([], [], 'ro')
     plt.xlim([x_min, x_max])
     plt.ylim([y_min, y_max])
-    line_ani = animation.FuncAnimation(fig1, update_line, len(traces), fargs=(traces, line),
-                                       interval=25, blit=True)
+    # NOTE: Without the assignment the animation does not work
+    line_anim = animation.FuncAnimation(fig1, update_line, len(traces), fargs=(traces, line),
+                                        interval=25, blit=True)
     plt.show()
 
 
