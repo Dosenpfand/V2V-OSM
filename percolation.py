@@ -194,10 +194,10 @@ def main_sim(network, max_pl=150, debug=False):
 
 def setup():
     place = 'Neubau - Wien - Austria'
-    place = 'Linz Stadt - Austria'
+    # place = 'Linz Stadt - Austria'
     which_result = 1
     density_veh = 5e-6
-    density_type = 'external'
+    density_type = 'area'
     # max_dist_olos_los = 250
     # max_dist_nlos = 140
     # iterations = 10
