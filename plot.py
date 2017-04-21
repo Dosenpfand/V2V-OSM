@@ -1,6 +1,7 @@
 """ Plot functionality"""
 
 import matplotlib.pyplot as plt
+import matplotlib.animation as animation
 import numpy as np
 import osmnx as ox
 import utils
@@ -204,4 +205,27 @@ def plot_net_connectivity_comparison(filename=None):
     plt.xlabel(r'Network density $[veh/km^2]$')
     plt.ylabel(r'Average network connectivity [\%]')
     plt.legend()
+    plt.show()
+
+
+def plot_veh_traces_animation(traces, streets, buildings=None):
+    """Plots an animation of the vehicle traces"""
+
+    # TODO: make whole function prettier
+    # x_min, x_max, y_min, y_max = min_max_coords(traces)
+
+    def update_line(timestep, traces, line):
+        """Updates the animation periodically"""
+        line.set_data([traces[timestep]['x'], traces[timestep]['y']])
+        return line,
+
+    fig, axis = plot_streets_and_buildings(
+        streets, buildings=buildings, show=False)
+    line, = plt.plot([], [], 'ro')
+
+    # plt.xlim([x_min, x_max])
+    # plt.ylim([y_min, y_max])
+    # NOTE: Without the assignment the animation does not work
+    line_anim = animation.FuncAnimation(fig, update_line, len(traces), fargs=(traces, line),
+                                        interval=25, blit=True)
     plt.show()
