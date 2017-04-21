@@ -2,12 +2,11 @@
 
 import xml.etree.ElementTree as ET
 import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.animation as animation
 
 
-def parse_veh_traces(filename):
+def parse_veh_traces(filename, offsets=(0, 0)):
     """Parses a SUMO traces XML file and returns a numpy array"""
+
     tree = ET.parse(filename)
     root = tree.getroot()
 
@@ -26,9 +25,24 @@ def parse_veh_traces(filename):
             trace_timestep[idx_veh_node]['id'] = veh_id
             trace_timestep[idx_veh_node]['x'] = float(veh['x'])
             trace_timestep[idx_veh_node]['y'] = float(veh['y'])
-
+        trace_timestep['x'] -= offsets[0]
+        trace_timestep['y'] -= offsets[1]
         traces[idx_timestep] = trace_timestep
     return traces
+
+
+def get_coordinates_offset(filename):
+    """Retrieves the x and y offset of the UTM projection from the SUMO net file"""
+
+    tree = ET.parse(filename)
+    root = tree.getroot()
+    location = root.find('location')
+    offset_string = location.attrib['netOffset']
+    offset_string_x, offset_string_y = offset_string.split(',')
+    offset_x = float(offset_string_x)
+    offset_y = float(offset_string_y)
+    offsets = [offset_x, offset_y]
+    return offsets
 
 
 def min_max_coords(traces):
@@ -54,29 +68,3 @@ def min_max_coords(traces):
             y_max = y_max_iter
 
     return x_min, x_max, y_min, y_max
-
-
-def plot_veh_traces(traces):
-    """Plots an animation of the vehicle traces"""
-
-    # TODO: make whole function prettier
-    x_min, x_max, y_min, y_max = min_max_coords(traces)
-
-    def update_line(timestep, traces, line):
-        """Updates the animation periodically"""
-        line.set_data([traces[timestep]['x'], traces[timestep]['y']])
-        return line,
-
-    fig1 = plt.figure()
-    line, = plt.plot([], [], 'ro')
-    plt.xlim([x_min, x_max])
-    plt.ylim([y_min, y_max])
-    # NOTE: Without the assignment the animation does not work
-    line_anim = animation.FuncAnimation(fig1, update_line, len(traces), fargs=(traces, line),
-                                        interval=25, blit=True)
-    plt.show()
-
-
-if __name__ == '__main__':
-    veh_traces = parse_veh_traces('sumo_traces/neubau_vienna_austria_many.xml')
-    plot_veh_traces(veh_traces)

@@ -21,6 +21,7 @@ import osmnx_addons as ox_a
 import geometry as geom_o
 import vehicles
 import propagation as prop
+import sumo
 
 
 def main_sim_multi(network, max_dist_olos_los=250, max_dist_nlos=140):
@@ -330,6 +331,17 @@ def main():
             plot.plot_con_status(net['graph_streets'], net['gdf_buildings'],
                                  net['vehs'], show=False)
             plt.show()
+
+    elif sim_mode == 'sumo':
+        # TODO: expand!
+        net = ox_a.load_network(static_params['place'],
+                                which_result=static_params['which_result'])
+        coord_offsets = sumo.get_coordinates_offset(
+            'sumo_traces/neubau_vienna_austria_many.net.xml')
+        veh_traces = sumo.parse_veh_traces(
+            'sumo_traces/neubau_vienna_austria_many.traces.xml', coord_offsets)
+        plot.plot_veh_traces_animation(
+            veh_traces, net['graph_streets'], net['gdf_buildings'])
 
     else:
         raise NotImplementedError('Simulation type not supported')
