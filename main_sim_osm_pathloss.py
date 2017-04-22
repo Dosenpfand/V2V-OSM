@@ -2,6 +2,7 @@
 
 # Standard imports
 import time
+import os
 import multiprocessing as mp
 from itertools import repeat
 import pickle
@@ -347,4 +348,7 @@ def main():
         raise NotImplementedError('Simulation type not supported')
 
 if __name__ == '__main__':
+    # Change to directory of script
+    os.chdir(os.path.dirname(os.path.abspath(__file__)))
+    # Run main function
     main()
