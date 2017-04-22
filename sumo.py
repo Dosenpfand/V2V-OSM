@@ -1,7 +1,26 @@
 """Interface to SUMO – Simulation of Urban MObility, sumo.dlr.de"""
 
-import xml.etree.ElementTree as ET
+import os
+import xml.etree.cElementTree as ET
 import numpy as np
+import utils
+
+
+def load_veh_traces(place):
+    """Load parsed traces if they are available otherwise parse, return and save them"""
+
+    file_prefix = 'sumo_traces/{}'.format(utils.string_to_filename(place))
+    filename_traces_npy = file_prefix + '.traces.npy'
+    filename_traces_xml = file_prefix + '.traces.xml'
+    filename_network = file_prefix + '.net.xml'
+
+    if os.path.isfile(filename_traces_npy):
+        traces = np.load(filename_traces_npy)
+    else:
+        coord_offsets = get_coordinates_offset(filename_network)
+        traces = parse_veh_traces(filename_traces_xml, coord_offsets)
+        np.save(filename_traces_npy, traces)
+    return traces
 
 
 def parse_veh_traces(filename, offsets=(0, 0)):

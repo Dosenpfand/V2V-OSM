@@ -208,24 +208,26 @@ def plot_net_connectivity_comparison(filename=None):
     plt.show()
 
 
-def plot_veh_traces_animation(traces, streets, buildings=None):
+def plot_veh_traces_animation(traces, streets, buildings=None, show=True, filename=None):
     """Plots an animation of the vehicle traces"""
 
     # TODO: make whole function prettier
-    # x_min, x_max, y_min, y_max = min_max_coords(traces)
 
     def update_line(timestep, traces, line):
         """Updates the animation periodically"""
         line.set_data([traces[timestep]['x'], traces[timestep]['y']])
         return line,
 
-    fig, axis = plot_streets_and_buildings(
+    fig, _ = plot_streets_and_buildings(
         streets, buildings=buildings, show=False)
     line, = plt.plot([], [], 'ro')
 
-    # plt.xlim([x_min, x_max])
-    # plt.ylim([y_min, y_max])
-    # NOTE: Without the assignment the animation does not work
     line_anim = animation.FuncAnimation(fig, update_line, len(traces), fargs=(traces, line),
                                         interval=25, blit=True)
-    plt.show()
+    if show:
+        plt.show()
+
+    if filename is not None:
+        writer = animation.writers['ffmpeg']
+        writer_inst = writer(fps=15, bitrate=1800)
+        line_anim.save(filename, writer=writer_inst)

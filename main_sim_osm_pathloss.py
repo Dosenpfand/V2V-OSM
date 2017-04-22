@@ -335,14 +335,18 @@ def main():
 
     elif sim_mode == 'sumo':
         # TODO: expand!
+        time_start = utils.debug(None, 'Loading street network')
         net = ox_a.load_network(static_params['place'],
                                 which_result=static_params['which_result'])
-        coord_offsets = sumo.get_coordinates_offset(
-            'sumo_traces/neubau_vienna_austria_many.net.xml')
-        veh_traces = sumo.parse_veh_traces(
-            'sumo_traces/neubau_vienna_austria_many.traces.xml', coord_offsets)
+        utils.debug(time_start)
+        time_start = utils.debug(None, 'Loading vehicle traces')
+        veh_traces = sumo.load_veh_traces(place)
+        utils.debug(time_start)
+
+        time_start = utils.debug(None, 'Plotting animation')
         plot.plot_veh_traces_animation(
             veh_traces, net['graph_streets'], net['gdf_buildings'])
+        utils.debug(time_start)
 
     else:
         raise NotImplementedError('Simulation type not supported')
