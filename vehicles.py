@@ -23,7 +23,7 @@ class Vehicles:
         self.idxs = {}
 
     def allocate(self, size):
-        """Allocate memory for releational properties"""
+        """Allocate memory for relational properties"""
 
         self.pathlosses = np.zeros(size)
         self.distances = np.zeros(size)
