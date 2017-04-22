@@ -1,5 +1,6 @@
 """ Plot functionality"""
 
+import pickle
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import numpy as np
@@ -178,12 +179,12 @@ def plot_cluster_max(streets, buildings, coordinates_vehs, show=True, place=None
     return fig, axi
 
 
-def plot_net_connectivity_comparison(filename=None):
+def plot_net_connectivity_comp(filename):
     """ Plots the simulated network connectivity statistics and the ones from the paper"""
 
-    if filename is None:
-        filename = 'results/net_connectivities.npy'
-    net_connectivities = np.load(filename)
+    with open(filename, 'rb') as file:
+        results = pickle.load(file)
+    net_connectivities = results['out']['net_connectivities']
 
     aver_net_cons, conf_net_cons = utils.net_connectivity_stats(
         net_connectivities)
