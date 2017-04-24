@@ -46,18 +46,17 @@ def prepare_network(place,
             os.path.isfile(filename_data_boundary)):
         # Load from file
 
-        time_start = utils.debug(debug, None, 'Loading data from disk')
+        time_start = utils.debug(None, 'Loading data from disk')
         data = ox_a.load_place(file_prefix)
     else:
         # Load from internet
-        time_start = utils.debug(debug, None, 'Loading data from the internet')
+        time_start = utils.debug(None, 'Loading data from the internet')
         data = ox_a.download_place(place, which_result=which_result)
 
-    utils.debug(debug, time_start)
+    utils.debug(time_start)
 
     # Choose random streets and position on streets
-    time_start = utils.debug(
-        debug, None, 'Building graph for wave propagation')
+    time_start = utils.debug(None, 'Building graph for wave propagation')
 
     graph_streets = data['streets']
     gdf_buildings = data['buildings']
@@ -69,10 +68,10 @@ def prepare_network(place,
     graph_streets_wave = graph_streets.to_undirected()
     prop.add_edges_if_los(graph_streets_wave, gdf_buildings)
 
-    utils.debug(debug, time_start)
+    utils.debug(time_start)
 
     # Streets and positions selection
-    time_start = utils.debug(debug, None, 'Choosing random vehicle positions')
+    time_start = utils.debug(None, 'Choosing random vehicle positions')
 
     street_lengths = geom_o.get_street_lengths(graph_streets)
 
@@ -99,15 +98,15 @@ def prepare_network(place,
         vehicular_point_coords = [geo.Point(coords[0], coords[1])
                                   for coords in zip(vals['x'], vals['y'])]
         rand_street_idxs = None
-    utils.debug(debug, time_start)
+    utils.debug(time_start)
 
     # Vehicle generation
-    time_start = utils.debug(debug, None, 'Generating vehicles')
+    time_start = utils.debug(None, 'Generating vehicles')
 
     vehs = vehicles.generate_vehs(
         graph_streets, rand_street_idxs, vehicular_point_coords)
 
-    utils.debug(debug, time_start)
+    utils.debug(time_start)
 
     network = {'graph_streets': graph_streets,
                'graph_streets_wave': graph_streets_wave,
@@ -130,8 +129,7 @@ def main_sim_multi(network, max_dist_olos_los=250,
     vehs.allocate(count_cond)
 
     # Determine NLOS and OLOS/LOS
-    time_start = utils.debug(
-        debug, None, 'Determining propagation conditions')
+    time_start = utils.debug(None, 'Determining propagation conditions')
     is_nlos = prop.veh_cons_are_nlos_all(
         vehs.get_points(), gdf_buildings, max_dist=max_dist)
     is_olos_los = np.invert(is_nlos)
@@ -140,11 +138,10 @@ def main_sim_multi(network, max_dist_olos_los=250,
 
     count_cond = count_veh * (count_veh - 1) // 2
 
-    utils.debug(debug, time_start)
+    utils.debug(time_start)
 
     # Determine in range vehicles
-    time_start = utils.debug(
-        debug, None, 'Determining in range vehicles')
+    time_start = utils.debug(None, 'Determining in range vehicles')
 
     distances = dist.pdist(vehs.coordinates)
     idxs_in_range_olos_los = idxs_olos_los[
@@ -165,7 +162,7 @@ def main_sim_multi(network, max_dist_olos_los=250,
     not_cluster_max_nodes = np.arange(count_veh)[~np.in1d(
         np.arange(count_veh), cluster_max.nodes())]
     vehs.add_key('not_cluster_max', not_cluster_max_nodes)
-    utils.debug(debug, time_start)
+    utils.debug(time_start)
     if debug:
         print('Network connectivity: {:.2f} %'.format(
             net_connectivity * 100))
@@ -185,7 +182,7 @@ def main_sim(network, max_pl=150, debug=False):
     vehs.allocate(count_veh)
 
     # Find center vehicle
-    # time_start = utils.debug(debug, None, 'Finding center vehicle')
+    # time_start = utils.debug(None, 'Finding center vehicle')
     idx_center_veh = geom_o.find_center_veh(vehs.get())
     idxs_other_vehs = np.where(np.arange(count_veh) != idx_center_veh)[0]
     vehs.add_key('center', idx_center_veh)

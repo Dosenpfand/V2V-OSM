@@ -1,6 +1,8 @@
 """ Plot functionality"""
 
+import pickle
 import matplotlib.pyplot as plt
+import matplotlib.animation as animation
 import numpy as np
 import osmnx as ox
 import utils
@@ -177,12 +179,12 @@ def plot_cluster_max(streets, buildings, coordinates_vehs, show=True, place=None
     return fig, axi
 
 
-def plot_net_connectivity_comparison(filename=None):
+def plot_net_connectivity_comp(filename):
     """ Plots the simulated network connectivity statistics and the ones from the paper"""
 
-    if filename is None:
-        filename = 'results/net_connectivities.npy'
-    net_connectivities = np.load(filename)
+    with open(filename, 'rb') as file:
+        results = pickle.load(file)
+    net_connectivities = results['out']['net_connectivities']
 
     aver_net_cons, conf_net_cons = utils.net_connectivity_stats(
         net_connectivities)
@@ -205,3 +207,28 @@ def plot_net_connectivity_comparison(filename=None):
     plt.ylabel(r'Average network connectivity [\%]')
     plt.legend()
     plt.show()
+
+
+def plot_veh_traces_animation(traces, streets, buildings=None, show=True, filename=None):
+    """Plots an animation of the vehicle traces"""
+
+    # TODO: make whole function prettier
+
+    def update_line(timestep, traces, line):
+        """Updates the animation periodically"""
+        line.set_data([traces[timestep]['x'], traces[timestep]['y']])
+        return line,
+
+    fig, _ = plot_streets_and_buildings(
+        streets, buildings=buildings, show=False)
+    line, = plt.plot([], [], 'ro')
+
+    line_anim = animation.FuncAnimation(fig, update_line, len(traces), fargs=(traces, line),
+                                        interval=25, blit=True)
+    if show:
+        plt.show()
+
+    if filename is not None:
+        writer = animation.writers['ffmpeg']
+        writer_inst = writer(fps=15, bitrate=1800)
+        line_anim.save(filename, writer=writer_inst)
