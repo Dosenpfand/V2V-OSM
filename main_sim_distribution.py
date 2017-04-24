@@ -254,13 +254,13 @@ def main_sim(network, max_pl=150, debug=False):
             pickle.dump((target_array, distance_array), fp)
 
 
-if __name__ == '__main__':
-    os.chdir(os.path.dirname(__file__))
+def execute_main():
     sim_mode = 'single'  # 'single', 'multi', 'multiprocess'
     place = 'Upper West Side - New York - USA'
+    place = 'Neubau - Vienna - Austria'
     use_pathloss = False  # TODO: Implement functions to use use_pathloss
     which_result = 1
-    densities_veh = 3e-2
+    densities_veh = 5e-3
     density_type = 'length'
     max_dist_olos_los = 250
     max_dist_nlos = 140
@@ -272,7 +272,7 @@ if __name__ == '__main__':
 
     # TODO: temp!
     # place = 'Neubau - Wien - Austria'
-    densities_veh = 30e-3
+    densities_veh = 3e-3
     iterations = 1
     # place = 'Neubau - Vienna - Austria'
     sim_mode = 'single'
@@ -326,3 +326,5 @@ if __name__ == '__main__':
 
     else:
         raise NotImplementedError('Simulation type not supported')
+if __name__ == '__main__':
+    execute_main()

@@ -41,14 +41,15 @@ def path_redundancy(graph, node, distances):
     return path_redundancy
 
 
-def veh_cons_are_nlos(point_own, points_vehs, buildings):
+def veh_cons_are_nlos(point_own, points_vehs, buildings, max_dist=None):
     """ Determines for each connection if it is NLOS or not (i.e. LOS and OLOS)"""
 
-    is_nlos = np.zeros(np.size(points_vehs), dtype=bool)
+    is_nlos = np.ones(np.size(points_vehs), dtype=bool)
 
     for index, point in enumerate(points_vehs):
         line = geom.LineString([point_own, point])
-        is_nlos[index] = geom_o.line_intersects_buildings(line, buildings)
+        if (max_dist is None) or (line.length < max_dist):
+            is_nlos[index] = geom_o.line_intersects_buildings(line, buildings)
 
     return is_nlos
 
@@ -58,7 +59,7 @@ def veh_cons_are_nlos_all(points_vehs, buildings, max_dist=None):
 
     count_vehs = np.size(points_vehs)
     count_cond = count_vehs * (count_vehs - 1) // 2
-    is_nlos = np.zeros(count_cond, dtype=bool)
+    is_nlos = np.ones(count_cond, dtype=bool)
 
     index = 0
     for idx1, point1 in enumerate(points_vehs):
