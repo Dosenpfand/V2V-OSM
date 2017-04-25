@@ -9,19 +9,28 @@ import utils
 import osmnx as ox
 
 
-def sumo_simple_simulation_wrapper(place, directory=''):
+def simple_wrapper(place, directory=''):
     """Generates and downloads all necessary files, runs a generic SUMO simulation
-    and returns the vehicles traces"""
+    and returns the vehicle traces"""
+
+    # TODO: use more of the arguments
+    # TODO: check if result files of each function is already present
+    download_and_build_network(place, directory=directory)
+    create_random_trips(place, directory=directory)
+    gen_simulation_conf(place, directory=directory)
+    run_simulation(place, directory=directory)
+    traces = load_veh_traces(place, directory=directory)
+
+    return traces
 
 
 def gen_simulation_conf(place, directory='', veh_class='passenger', debug=False, bin_dir=''):
     """Generates a SUMO simulation configuration file"""
 
     filename_place = utils.string_to_filename(place)
-    path_network = os.path.join(directory, filename_place + '.net.xml')
     path_cfg = os.path.join(directory, filename_place + '.sumocfg')
-    path_trips = os.path.join(
-        directory, filename_place + '.' + veh_class + '.trips.xml')
+    path_network = filename_place + '.net.xml'
+    path_trips = filename_place + '.' + veh_class + '.trips.xml'
     path_bin = os.path.join(bin_dir, 'sumo')
 
     arguments = [path_bin,
@@ -121,7 +130,7 @@ def create_random_trips(place,
 
 def download_and_build_network(place,
                                prefix=None,
-                               out_dir=None,
+                               directory='',
                                veh_class='passenger',
                                debug=False,
                                script_path='/usr/lib/sumo/tools'):
@@ -132,29 +141,26 @@ def download_and_build_network(place,
     else:
         file_prefix = prefix
 
-    if out_dir is None:
-        out_dir = './'
-    else:
-        out_dir = out_dir + '/'
-
-    download_streets_from_name(place, file_prefix, out_dir, debug, script_path)
-    build_network(out_dir + file_prefix + '_city.osm.xml',
-                  veh_class, file_prefix, out_dir, debug, script_path)
+    download_streets_from_name(
+        place, file_prefix, directory, debug, script_path)
+    build_network(file_prefix + '_city.osm.xml',
+                  veh_class, file_prefix, directory, debug, script_path)
 
 
 def build_network(filename,
                   veh_class='passenger',
                   prefix=None,
-                  out_dir=None,
+                  directory='',
                   debug=False,
                   script_dir='/usr/lib/sumo/tools'):
     """Converts a OpenStreetMap files to a SUMO street network file"""
 
-    arguments = [script_dir + '/osmBuild.py', '-f', filename, '-c', veh_class]
+    filepath = os.path.join(directory, filename)
+    arguments = [script_dir + '/osmBuild.py', '-f', filepath, '-c', veh_class]
     if prefix is not None:
         arguments += ['-p', prefix]
-    if out_dir is not None:
-        arguments += ['-d', out_dir]
+    if directory != '':
+        arguments += ['-d', directory]
     working_dir = os.path.dirname(os.path.abspath(__file__))
 
     proc = sproc.Popen(arguments, cwd=working_dir,
@@ -171,7 +177,7 @@ def build_network(filename,
 
 def download_streets_from_id(area_id,
                              prefix=None,
-                             out_dir=None,
+                             directory='',
                              debug=False,
                              script_dir='/usr/lib/sumo/tools'):
     """Downloads a street data defined by it's id from OpennStreetMap
@@ -180,8 +186,8 @@ def download_streets_from_id(area_id,
     arguments = [script_dir + '/osmGet.py', '-a', str(area_id)]
     if prefix is not None:
         arguments += ['-p', prefix]
-    if out_dir is not None:
-        arguments += ['-d', out_dir]
+    if directory != '':
+        arguments += ['-d', directory]
     working_dir = os.path.dirname(os.path.abspath(__file__))
 
     proc = sproc.Popen(arguments, cwd=working_dir,
@@ -198,7 +204,7 @@ def download_streets_from_id(area_id,
 
 def download_streets_from_name(place,
                                prefix=None,
-                               out_dir=None,
+                               directory='',
                                debug=False,
                                script_dir='/usr/lib/sumo/tools'):
     """Downloads a street data defined by it's name from OpennStreetMap
@@ -211,14 +217,13 @@ def download_streets_from_name(place,
         raise RuntimeError('Place not found')
     area_id = api_resp[0]['osm_id']
     exit_code = download_streets_from_id(
-        area_id, prefix, out_dir, debug, script_dir)
+        area_id, prefix, directory, debug, script_dir)
     return exit_code
 
 
 def load_veh_traces(place, directory=''):
     """Load parsed traces if they are available otherwise parse, return and save them"""
 
-    # TODO: test!
     path_and_prefix = os.path.join(directory, utils.string_to_filename(place))
     filename_traces_npy = path_and_prefix + '.traces.npy'
     filename_traces_xml = path_and_prefix + '.traces.xml'
