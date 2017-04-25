@@ -1,5 +1,6 @@
 """Interface to SUMO – Simulation of Urban MObility, sumo.dlr.de"""
 
+import sys
 import os
 import subprocess as sproc
 import xml.etree.cElementTree as ET
@@ -12,6 +13,7 @@ def download_and_build_network(place,
                                prefix=None,
                                out_dir=None,
                                veh_class='passenger',
+                               debug=False,
                                script_path='/usr/lib/sumo/tools'):
     """Donloads the street data from OpenStreetMap and builds a SUMO street network file"""
 
@@ -25,15 +27,16 @@ def download_and_build_network(place,
     else:
         out_dir = out_dir + '/'
 
-    download_streets_from_name(place, file_prefix, out_dir, script_path)
+    download_streets_from_name(place, file_prefix, out_dir, debug, script_path)
     build_network(out_dir + file_prefix + '_city.osm.xml',
-                  veh_class, file_prefix, out_dir, script_path)
+                  veh_class, file_prefix, out_dir, debug, script_path)
 
 
 def build_network(filename,
                   veh_class='passenger',
                   prefix=None,
                   out_dir=None,
+                  debug=False,
                   script_dir='/usr/lib/sumo/tools'):
     """Converts a OpenStreetMap files to a SUMO street network file"""
 
@@ -44,14 +47,22 @@ def build_network(filename,
         arguments += ['-d', out_dir]
     working_dir = os.path.dirname(os.path.abspath(__file__))
 
-    proc = sproc.Popen(arguments, cwd=working_dir)
-    exit_code = proc.wait()
+    proc = sproc.Popen(arguments, cwd=working_dir,
+                       stdout=sproc.PIPE, stderr=sproc.PIPE)
+    out_text, err_text = proc.communicate()
+    exit_code = proc.returncode
+
+    if debug:
+        utils.print_nnl(out_text.decode())
+    utils.print_nnl(err_text.decode(), file=sys.stderr)
+
     return exit_code
 
 
 def download_streets_from_id(area_id,
                              prefix=None,
                              out_dir=None,
+                             debug=False,
                              script_dir='/usr/lib/sumo/tools'):
     """Downloads a street data defined by it's id from OpennStreetMap
     with the SUMO helper script"""
@@ -63,21 +74,30 @@ def download_streets_from_id(area_id,
         arguments += ['-d', out_dir]
     working_dir = os.path.dirname(os.path.abspath(__file__))
 
-    proc = sproc.Popen(arguments, cwd=working_dir)
-    exit_code = proc.wait()
+    proc = sproc.Popen(arguments, cwd=working_dir,
+                       stdout=sproc.PIPE, stderr=sproc.PIPE)
+    out_text, err_text = proc.communicate()
+    exit_code = proc.returncode
+
+    if debug:
+        utils.print_nnl(out_text.decode())
+    utils.print_nnl(err_text.decode(), file=sys.stderr)
+
     return exit_code
 
 
 def download_streets_from_name(place,
                                prefix=None,
                                out_dir=None,
+                               debug=False,
                                script_path='/usr/lib/sumo/tools/osmGet.py'):
     """Downloads a street data defined by it's name from OpennStreetMap
     with the SUMO helper script"""
 
     api_resp = ox.osm_polygon_download(place, polygon_geojson=0)
     area_id = api_resp[0]['osm_id']
-    exit_code = download_streets_from_id(area_id, prefix, out_dir, script_path)
+    exit_code = download_streets_from_id(
+        area_id, prefix, out_dir, debug, script_path)
     return exit_code
 
 
