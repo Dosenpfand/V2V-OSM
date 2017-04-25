@@ -44,21 +44,3 @@ Applies to Debian 8
 10. Get help
 
     python3 main_sim_osm_pathloss.py -h
-
-
-## Using SUMO data
-
-[//]: # TODO: more extensive howto!
-
-1. Download and install SUMO from http://sumo.dlr.de
-2. Select and export scenario
-
-    python2 /usr/lib/sumo/tools/osmWebWizard.py
-
-4. Change directory to exported data
-
-    cd ~/Sumo/...
-
-3. Simulate and export trace files
-
-    sumo -c osm.sumocfg --fcd-output sumoTrace.xml
