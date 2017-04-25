@@ -252,7 +252,7 @@ def execute_main():
     sim_mode='single'  # 'single', 'multi', 'multiprocess'
     place='Upper West Side - New York - USA'
     place='Linz Stadt - Austria'
-    place='Neubau - Vienna - Austria'
+    # place='Neubau - Vienna - Austria'
     use_pathloss=False  # TODO: Implement functions to use use_pathloss
     which_result=1
     densities_veh=50e-3
