@@ -340,7 +340,7 @@ def main():
                                 which_result=static_params['which_result'])
         utils.debug(time_start)
         time_start = utils.debug(None, 'Loading vehicle traces')
-        veh_traces = sumo.load_veh_traces(place)
+        veh_traces = sumo.simple_wrapper(place, 'sumo_traces')
         utils.debug(time_start)
 
         time_start = utils.debug(None, 'Plotting animation')

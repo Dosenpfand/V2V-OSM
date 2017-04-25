@@ -4,21 +4,51 @@ import sys
 import os
 import subprocess as sproc
 import xml.etree.cElementTree as ET
+import logging
 import numpy as np
 import utils
 import osmnx as ox
 
 
-def simple_wrapper(place, directory=''):
+def simple_wrapper(place, directory='', skip_if_exists=True, veh_class='passenger'):
     """Generates and downloads all necessary files, runs a generic SUMO simulation
     and returns the vehicle traces"""
 
     # TODO: use more of the arguments
     # TODO: check if result files of each function is already present
-    download_and_build_network(place, directory=directory)
-    create_random_trips(place, directory=directory)
-    gen_simulation_conf(place, directory=directory)
-    run_simulation(place, directory=directory)
+
+    filename_place = utils.string_to_filename(place)
+    path_network = os.path.join(directory, filename_place + '.net.xml')
+    path_trips = os.path.join(
+        directory, filename_place + '.' + veh_class + '.trips.xml')
+    path_cfg = os.path.join(directory, filename_place + '.sumocfg')
+    path_traces = os.path.join(directory, filename_place + '.traces.xml')
+
+    if not (skip_if_exists and os.path.isfile(path_network)):
+        logging.info('Downloading street network from the internet')
+        download_and_build_network(place, directory=directory)
+    else:
+        logging.info('Skipping street network download')
+
+    if not (skip_if_exists and os.path.isfile(path_trips)):
+        logging.info('Generating trips')
+        create_random_trips(place, directory=directory)
+    else:
+        logging.info('Skipping trip generation')
+
+    if not (skip_if_exists and os.path.isfile(path_cfg)):
+        logging.info('Generating SUMO simulation configuration')
+        gen_simulation_conf(place, directory=directory)
+    else:
+        logging.info('Skipping SUMO simulation configuration generation')
+
+    if not (skip_if_exists and os.path.isfile(path_traces)):
+        logging.info('Running SUMO simulation')
+        run_simulation(place, directory=directory)
+    else:
+        logging.info('Skipping SUMO simulation run')
+
+    logging.info('Loading and parsing vehicle traces')
     traces = load_veh_traces(place, directory=directory)
 
     return traces
