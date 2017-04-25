@@ -256,7 +256,7 @@ def execute_main():
     use_pathloss=False  # TODO: Implement functions to use use_pathloss
     which_result=1
     densities_veh=50e-3
-    density_type='length'
+    density_type='area'
     max_dist_olos_los=350
     max_dist_nlos=140
     iterations=1
@@ -267,7 +267,7 @@ def execute_main():
 
     # TODO: temp!
     # place = 'Neubau - Wien - Austria'
-    densities_veh=10e-3
+    densities_veh=250e-6
     iterations=1
     # place = 'Neubau - Vienna - Austria'
     sim_mode='single'
@@ -316,7 +316,7 @@ def execute_main():
         generate_vehicles(net, density_veh=densities_veh,
                           density_type=static_params['density_type'],
                           debug=False)
-        with mp.Pool() as p:
+        with mp.Pool(12) as p:
             return_val = p.starmap(main_sim, zip(repeat(net),repeat(max_pl),
                                                repeat(True), repeat(300), range(net['vehs']  .count)))
         with open("return_vals.p","wb") as fp:
