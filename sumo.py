@@ -1,9 +1,84 @@
 """Interface to SUMO – Simulation of Urban MObility, sumo.dlr.de"""
 
 import os
+import subprocess as sproc
 import xml.etree.cElementTree as ET
 import numpy as np
 import utils
+import osmnx as ox
+
+
+def download_and_build_network(place,
+                               prefix=None,
+                               out_dir=None,
+                               veh_class='passenger',
+                               script_path='/usr/lib/sumo/tools'):
+    """Donloads the street data from OpenStreetMap and builds a SUMO street network file"""
+
+    if prefix is None:
+        file_prefix = utils.string_to_filename(place)
+    else:
+        file_prefix = prefix
+
+    if out_dir is None:
+        out_dir = './'
+    else:
+        out_dir = out_dir + '/'
+
+    download_streets_from_name(place, file_prefix, out_dir, script_path)
+    build_network(out_dir + file_prefix + '_city.osm.xml',
+                  veh_class, file_prefix, out_dir, script_path)
+
+
+def build_network(filename,
+                  veh_class='passenger',
+                  prefix=None,
+                  out_dir=None,
+                  script_dir='/usr/lib/sumo/tools'):
+    """Converts a OpenStreetMap files to a SUMO street network file"""
+
+    arguments = [script_dir + '/osmBuild.py', '-f', filename, '-c', veh_class]
+    if prefix is not None:
+        arguments += ['-p', prefix]
+    if out_dir is not None:
+        arguments += ['-d', out_dir]
+    working_dir = os.path.dirname(os.path.abspath(__file__))
+
+    proc = sproc.Popen(arguments, cwd=working_dir)
+    exit_code = proc.wait()
+    return exit_code
+
+
+def download_streets_from_id(area_id,
+                             prefix=None,
+                             out_dir=None,
+                             script_dir='/usr/lib/sumo/tools'):
+    """Downloads a street data defined by it's id from OpennStreetMap
+    with the SUMO helper script"""
+
+    arguments = [script_dir + '/osmGet.py', '-a', str(area_id)]
+    if prefix is not None:
+        arguments += ['-p', prefix]
+    if out_dir is not None:
+        arguments += ['-d', out_dir]
+    working_dir = os.path.dirname(os.path.abspath(__file__))
+
+    proc = sproc.Popen(arguments, cwd=working_dir)
+    exit_code = proc.wait()
+    return exit_code
+
+
+def download_streets_from_name(place,
+                               prefix=None,
+                               out_dir=None,
+                               script_path='/usr/lib/sumo/tools/osmGet.py'):
+    """Downloads a street data defined by it's name from OpennStreetMap
+    with the SUMO helper script"""
+
+    api_resp = ox.osm_polygon_download(place, polygon_geojson=0)
+    area_id = api_resp[0]['osm_id']
+    exit_code = download_streets_from_id(area_id, prefix, out_dir, script_path)
+    return exit_code
 
 
 def load_veh_traces(place):
