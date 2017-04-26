@@ -341,7 +341,7 @@ def main():
         utils.debug(time_start)
         time_start = utils.debug(None, 'Loading vehicle traces')
         veh_traces = sumo.simple_wrapper(
-            place, which_result=which_result, directory='sumo_traces')
+            place, which_result=which_result, directory='sumo_data')
         utils.debug(time_start)
 
         time_start = utils.debug(None, 'Plotting animation')
