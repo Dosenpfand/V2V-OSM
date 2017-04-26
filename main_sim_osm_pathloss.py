@@ -340,7 +340,8 @@ def main():
                                 which_result=static_params['which_result'])
         utils.debug(time_start)
         time_start = utils.debug(None, 'Loading vehicle traces')
-        veh_traces = sumo.simple_wrapper(place, 'sumo_traces')
+        veh_traces = sumo.simple_wrapper(
+            place, which_result=which_result, directory='sumo_traces')
         utils.debug(time_start)
 
         time_start = utils.debug(None, 'Plotting animation')
@@ -350,6 +351,7 @@ def main():
 
     else:
         raise NotImplementedError('Simulation type not supported')
+
 
 if __name__ == '__main__':
     # Change to directory of script
