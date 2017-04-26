@@ -10,7 +10,11 @@ import utils
 import osmnx as ox
 
 
-def simple_wrapper(place, directory='', skip_if_exists=True, veh_class='passenger'):
+def simple_wrapper(place,
+                   which_result=1,
+                   directory='',
+                   skip_if_exists=True,
+                   veh_class='passenger'):
     """Generates and downloads all necessary files, runs a generic SUMO simulation
     and returns the vehicle traces"""
 
@@ -26,7 +30,8 @@ def simple_wrapper(place, directory='', skip_if_exists=True, veh_class='passenge
 
     if not (skip_if_exists and os.path.isfile(path_network)):
         logging.info('Downloading street network from the internet')
-        download_and_build_network(place, directory=directory)
+        download_and_build_network(
+            place, which_result=which_result, directory=directory)
     else:
         logging.info('Skipping street network download')
 
@@ -159,6 +164,7 @@ def create_random_trips(place,
 
 
 def download_and_build_network(place,
+                               which_result=1,
                                prefix=None,
                                directory='',
                                veh_class='passenger',
@@ -172,7 +178,7 @@ def download_and_build_network(place,
         file_prefix = prefix
 
     download_streets_from_name(
-        place, file_prefix, directory, debug, script_path)
+        place, which_result, file_prefix, directory, debug, script_path)
     build_network(file_prefix + '_city.osm.xml',
                   veh_class, file_prefix, directory, debug, script_path)
 
@@ -233,6 +239,7 @@ def download_streets_from_id(area_id,
 
 
 def download_streets_from_name(place,
+                               which_result=1,
                                prefix=None,
                                directory='',
                                debug=False,
@@ -242,10 +249,12 @@ def download_streets_from_name(place,
 
     # TODO: does not always work. e.g. 'Upper Westside - New York - USA'. Use
     # other api? check osmnx!
-    api_resp = ox.osm_polygon_download(place, polygon_geojson=0)
-    if len(api_resp) == 0:
+
+    api_resp = ox.osm_polygon_download(
+        place, limit=which_result, polygon_geojson=0)
+    if not api_resp:
         raise RuntimeError('Place not found')
-    area_id = api_resp[0]['osm_id']
+    area_id = api_resp[which_result - 1]['osm_id']
     exit_code = download_streets_from_id(
         area_id, prefix, directory, debug, script_dir)
     return exit_code
