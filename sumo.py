@@ -8,6 +8,7 @@ import logging
 import numpy as np
 import utils
 import osmnx as ox
+import osm_xml
 
 
 def simple_wrapper(place,
@@ -169,7 +170,7 @@ def download_and_build_network(place,
                                directory='',
                                veh_class='passenger',
                                debug=False,
-                               script_path='/usr/lib/sumo/tools'):
+                               script_dir='/usr/lib/sumo/tools'):
     """Donloads the street data from OpenStreetMap and builds a SUMO street network file"""
 
     if prefix is None:
@@ -178,9 +179,17 @@ def download_and_build_network(place,
         file_prefix = prefix
 
     download_streets_from_name(
-        place, which_result, file_prefix, directory, debug, script_path)
+        place,
+        which_result=which_result,
+        prefix=file_prefix,
+        directory=directory,
+        debug=debug)
     build_network(file_prefix + '_city.osm.xml',
-                  veh_class, file_prefix, directory, debug, script_path)
+                  veh_class=veh_class,
+                  prefix=file_prefix,
+                  directory=directory,
+                  debug=debug,
+                  script_dir=script_dir)
 
 
 def build_network(filename,
@@ -243,21 +252,34 @@ def download_streets_from_name(place,
                                prefix=None,
                                directory='',
                                debug=False,
+                               use_sumo_downloader=False,
                                script_dir='/usr/lib/sumo/tools'):
-    """Downloads a street data defined by it's name from OpennStreetMap
-    with the SUMO helper script"""
+    """Downloads a street data defined by it's name from OpennStreetMap"""
 
-    # TODO: does not always work. e.g. 'Upper Westside - New York - USA'. Use
-    # other api? check osmnx!
+    if use_sumo_downloader:
+        api_resp = ox.osm_polygon_download(
+            place, limit=which_result, polygon_geojson=0)
+        if not api_resp:
+            raise RuntimeError('Place not found')
+        area_id = api_resp[which_result - 1]['osm_id']
+        exit_code = download_streets_from_id(
+            area_id, prefix, directory, debug, script_dir)
+        return exit_code
 
-    api_resp = ox.osm_polygon_download(
-        place, limit=which_result, polygon_geojson=0)
-    if not api_resp:
-        raise RuntimeError('Place not found')
-    area_id = api_resp[which_result - 1]['osm_id']
-    exit_code = download_streets_from_id(
-        area_id, prefix, directory, debug, script_dir)
-    return exit_code
+    else:
+        if prefix is None:
+            prefix = 'osm'
+
+        file_name = prefix + '_city.osm.xml'
+        file_path = os.path.join(directory, file_name)
+
+        gdf_place = ox.gdf_from_place(place, which_result=which_result)
+        polygon = gdf_place['geometry'].unary_union
+        response = osm_xml.osm_net_download(polygon, network_type='drive')
+
+        with open(file_path, 'wb') as file:
+            return_code = file.write(response[0])
+        return return_code
 
 
 def load_veh_traces(place, directory=''):

@@ -1,4 +1,4 @@
-""" Get street networks from OpenStreetMap in XML format"""
+"""Get street networks from OpenStreetMap in XML format"""
 
 import time
 import requests
@@ -13,7 +13,7 @@ def osm_net_download(polygon,
     """Download OSM ways and nodes within a polygon from the Overpass API"""
 
     osm_filter = osmnx.get_osm_filter(network_type)
-    response_jsons = []
+    response_xmls = []
 
     if memory is None:
         maxsize = ''
@@ -33,10 +33,10 @@ def osm_net_download(polygon,
             '(way["highway"]{filters}(poly:"{polygon}");>;);out;'
         query_str = query_template.format(
             polygon=polygon_coord_str, filters=osm_filter, timeout=timeout, maxsize=maxsize)
-        response_json = overpass_request(
+        response_xml = overpass_request(
             data={'data': query_str}, timeout=timeout)
-        response_jsons.append(response_json)
-    return response_jsons
+        response_xmls.append(response_xml)
+    return response_xmls
 
 
 def overpass_request(data, pause_duration=None, timeout=180, error_pause_duration=None):
