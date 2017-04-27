@@ -1,18 +1,263 @@
 """Interface to SUMO – Simulation of Urban MObility, sumo.dlr.de"""
 
+import sys
 import os
+import subprocess as sproc
 import xml.etree.cElementTree as ET
+import logging
 import numpy as np
 import utils
+import osmnx as ox
 
 
-def load_veh_traces(place):
+def simple_wrapper(place, directory='', skip_if_exists=True, veh_class='passenger'):
+    """Generates and downloads all necessary files, runs a generic SUMO simulation
+    and returns the vehicle traces"""
+
+    # TODO: use more of the arguments
+    # TODO: check if result files of each function is already present
+
+    filename_place = utils.string_to_filename(place)
+    path_network = os.path.join(directory, filename_place + '.net.xml')
+    path_trips = os.path.join(
+        directory, filename_place + '.' + veh_class + '.trips.xml')
+    path_cfg = os.path.join(directory, filename_place + '.sumocfg')
+    path_traces = os.path.join(directory, filename_place + '.traces.xml')
+
+    if not (skip_if_exists and os.path.isfile(path_network)):
+        logging.info('Downloading street network from the internet')
+        download_and_build_network(place, directory=directory)
+    else:
+        logging.info('Skipping street network download')
+
+    if not (skip_if_exists and os.path.isfile(path_trips)):
+        logging.info('Generating trips')
+        create_random_trips(place, directory=directory)
+    else:
+        logging.info('Skipping trip generation')
+
+    if not (skip_if_exists and os.path.isfile(path_cfg)):
+        logging.info('Generating SUMO simulation configuration')
+        gen_simulation_conf(place, directory=directory)
+    else:
+        logging.info('Skipping SUMO simulation configuration generation')
+
+    if not (skip_if_exists and os.path.isfile(path_traces)):
+        logging.info('Running SUMO simulation')
+        run_simulation(place, directory=directory)
+    else:
+        logging.info('Skipping SUMO simulation run')
+
+    logging.info('Loading and parsing vehicle traces')
+    traces = load_veh_traces(place, directory=directory)
+
+    return traces
+
+
+def gen_simulation_conf(place, directory='', veh_class='passenger', debug=False, bin_dir=''):
+    """Generates a SUMO simulation configuration file"""
+
+    filename_place = utils.string_to_filename(place)
+    path_cfg = os.path.join(directory, filename_place + '.sumocfg')
+    path_network = filename_place + '.net.xml'
+    path_trips = filename_place + '.' + veh_class + '.trips.xml'
+    path_bin = os.path.join(bin_dir, 'sumo')
+
+    arguments = [path_bin,
+                 '-n', path_network,
+                 '--duration-log.statistics',
+                 '--device.rerouting.adaptation-steps', '180',
+                 '--no-step-log',
+                 '--save-configuration', path_cfg,
+                 '--ignore-route-errors',
+                 '-r', path_trips]
+    working_dir = os.path.dirname(os.path.abspath(__file__))
+
+    proc = sproc.Popen(arguments, cwd=working_dir,
+                       stdout=sproc.PIPE, stderr=sproc.PIPE)
+    out_text, err_text = proc.communicate()
+    exit_code = proc.returncode
+
+    if debug:
+        utils.print_nnl(out_text.decode())
+    utils.print_nnl(err_text.decode(), file=sys.stderr)
+
+    return exit_code
+
+
+def run_simulation(place, directory='', debug=False, bin_dir=''):
+    """Runs a SUMO simulations and saves the vehicle traces"""
+
+    filename_place = utils.string_to_filename(place)
+    path_cfg = os.path.join(directory, filename_place + '.sumocfg')
+    path_traces = os.path.join(directory, filename_place + '.traces.xml')
+    path_bin = os.path.join(bin_dir, 'sumo')
+
+    arguments = [path_bin,
+                 '-c', path_cfg,
+                 '--fcd-output', path_traces]
+    working_dir = os.path.dirname(os.path.abspath(__file__))
+
+    proc = sproc.Popen(arguments, cwd=working_dir,
+                       stdout=sproc.PIPE, stderr=sproc.PIPE)
+    out_text, err_text = proc.communicate()
+    exit_code = proc.returncode
+
+    if debug:
+        utils.print_nnl(out_text.decode())
+    utils.print_nnl(err_text.decode(), file=sys.stderr)
+
+    return exit_code
+
+
+def create_random_trips(place,
+                        directory='',
+                        random_seed=42,
+                        seconds_end=3600,
+                        fringe_factor=5,
+                        veh_period=1,
+                        veh_class='passenger',
+                        prefix='veh',
+                        min_dist=300,
+                        debug=False,
+                        script_dir='/usr/lib/sumo/tools'):
+    """Creates random vehicle trips on a street network"""
+
+    filename_place = utils.string_to_filename(place)
+    path_network = os.path.join(
+        directory, filename_place + '.net.xml')
+    path_routes = os.path.join(
+        directory, filename_place + '.' + veh_class + '.rou.xml')
+    path_trips = os.path.join(
+        directory, filename_place + '.' + veh_class + '.trips.xml')
+
+    arguments = [os.path.join(script_dir, 'randomTrips.py'),
+                 '-n', path_network,
+                 '-s', str(random_seed),
+                 '-e', str(seconds_end),
+                 '-p', str(veh_period),
+                 '--fringe-factor', str(fringe_factor),
+                 '-r', path_routes,
+                 '-o', path_trips,
+                 '--vehicle-class', veh_class,
+                 '--vclass', veh_class,
+                 '--prefix', prefix,
+                 '--min-distance', str(min_dist),
+                 '--validate']
+    working_dir = os.path.dirname(os.path.abspath(__file__))
+
+    proc = sproc.Popen(arguments, cwd=working_dir,
+                       stdout=sproc.PIPE, stderr=sproc.PIPE)
+    out_text, err_text = proc.communicate()
+    exit_code = proc.returncode
+
+    if debug:
+        utils.print_nnl(out_text.decode())
+    utils.print_nnl(err_text.decode(), file=sys.stderr)
+
+    return exit_code
+
+
+def download_and_build_network(place,
+                               prefix=None,
+                               directory='',
+                               veh_class='passenger',
+                               debug=False,
+                               script_path='/usr/lib/sumo/tools'):
+    """Donloads the street data from OpenStreetMap and builds a SUMO street network file"""
+
+    if prefix is None:
+        file_prefix = utils.string_to_filename(place)
+    else:
+        file_prefix = prefix
+
+    download_streets_from_name(
+        place, file_prefix, directory, debug, script_path)
+    build_network(file_prefix + '_city.osm.xml',
+                  veh_class, file_prefix, directory, debug, script_path)
+
+
+def build_network(filename,
+                  veh_class='passenger',
+                  prefix=None,
+                  directory='',
+                  debug=False,
+                  script_dir='/usr/lib/sumo/tools'):
+    """Converts a OpenStreetMap files to a SUMO street network file"""
+
+    filepath = os.path.join(directory, filename)
+    arguments = [script_dir + '/osmBuild.py', '-f', filepath, '-c', veh_class]
+    if prefix is not None:
+        arguments += ['-p', prefix]
+    if directory != '':
+        arguments += ['-d', directory]
+    working_dir = os.path.dirname(os.path.abspath(__file__))
+
+    proc = sproc.Popen(arguments, cwd=working_dir,
+                       stdout=sproc.PIPE, stderr=sproc.PIPE)
+    out_text, err_text = proc.communicate()
+    exit_code = proc.returncode
+
+    if debug:
+        utils.print_nnl(out_text.decode())
+    utils.print_nnl(err_text.decode(), file=sys.stderr)
+
+    return exit_code
+
+
+def download_streets_from_id(area_id,
+                             prefix=None,
+                             directory='',
+                             debug=False,
+                             script_dir='/usr/lib/sumo/tools'):
+    """Downloads a street data defined by it's id from OpennStreetMap
+    with the SUMO helper script"""
+
+    arguments = [script_dir + '/osmGet.py', '-a', str(area_id)]
+    if prefix is not None:
+        arguments += ['-p', prefix]
+    if directory != '':
+        arguments += ['-d', directory]
+    working_dir = os.path.dirname(os.path.abspath(__file__))
+
+    proc = sproc.Popen(arguments, cwd=working_dir,
+                       stdout=sproc.PIPE, stderr=sproc.PIPE)
+    out_text, err_text = proc.communicate()
+    exit_code = proc.returncode
+
+    if debug:
+        utils.print_nnl(out_text.decode())
+    utils.print_nnl(err_text.decode(), file=sys.stderr)
+
+    return exit_code
+
+
+def download_streets_from_name(place,
+                               prefix=None,
+                               directory='',
+                               debug=False,
+                               script_dir='/usr/lib/sumo/tools'):
+    """Downloads a street data defined by it's name from OpennStreetMap
+    with the SUMO helper script"""
+
+    # TODO: does not always work. e.g. 'Upper Westside - New York - USA'. Use
+    # other api? check osmnx!
+    api_resp = ox.osm_polygon_download(place, polygon_geojson=0)
+    if len(api_resp) == 0:
+        raise RuntimeError('Place not found')
+    area_id = api_resp[0]['osm_id']
+    exit_code = download_streets_from_id(
+        area_id, prefix, directory, debug, script_dir)
+    return exit_code
+
+
+def load_veh_traces(place, directory=''):
     """Load parsed traces if they are available otherwise parse, return and save them"""
 
-    file_prefix = 'sumo_traces/{}'.format(utils.string_to_filename(place))
-    filename_traces_npy = file_prefix + '.traces.npy'
-    filename_traces_xml = file_prefix + '.traces.xml'
-    filename_network = file_prefix + '.net.xml'
+    path_and_prefix = os.path.join(directory, utils.string_to_filename(place))
+    filename_traces_npy = path_and_prefix + '.traces.npy'
+    filename_traces_xml = path_and_prefix + '.traces.xml'
+    filename_network = path_and_prefix + '.net.xml'
 
     if os.path.isfile(filename_traces_npy):
         traces = np.load(filename_traces_npy)

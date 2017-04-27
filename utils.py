@@ -1,5 +1,6 @@
 """ Various uncomplex functionality"""
 
+import sys
 import time
 import smtplib
 from email.mime.text import MIMEText
@@ -21,10 +22,10 @@ def string_to_filename(string):
     return filename
 
 
-def print_nnl(text):
+def print_nnl(text, file=sys.stdout):
     """Print without adding a new line """
 
-    print(text, end='', flush=True)
+    print(text, file=file, end='', flush=True)
 
 
 def debug(time_start=None, text=None):

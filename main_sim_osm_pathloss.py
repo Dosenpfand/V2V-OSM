@@ -220,8 +220,8 @@ def main_sim_multiprocess(iteration, densities_veh, static_params):
 def main():
     """Main simulation function"""
 
-    sim_mode = 'multiprocess'  # 'single', 'multi', 'multiprocess'
-    place = 'Upper West Side - New York - USA'
+    sim_mode = 'sumo'  # 'single', 'multi', 'multiprocess', 'sumo'
+    place = 'Landstrasse - Wien - Austria'
     use_pathloss = False  # TODO: Implement functions to use use_pathloss
     which_result = 1
     densities_veh = np.concatenate([np.arange(10, 90, 10), [120, 160]]) * 1e-6
@@ -340,7 +340,7 @@ def main():
                                 which_result=static_params['which_result'])
         utils.debug(time_start)
         time_start = utils.debug(None, 'Loading vehicle traces')
-        veh_traces = sumo.load_veh_traces(place)
+        veh_traces = sumo.simple_wrapper(place, 'sumo_traces')
         utils.debug(time_start)
 
         time_start = utils.debug(None, 'Plotting animation')
