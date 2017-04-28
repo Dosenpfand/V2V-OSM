@@ -87,6 +87,9 @@ def download_place(place, network_type='drive', file_prefix=None, which_result=1
     if file_prefix is None:
         file_prefix = 'data/{}'.format(utils.string_to_filename(place))
 
+    if which_result is None:
+        which_result = which_result_polygon(place)
+
     # Streets
     streets = ox.graph_from_place(
         place, network_type=network_type, which_result=which_result)
@@ -174,3 +177,13 @@ def line_route_between_nodes(node_from, node_to, graph):
 
     line = ops.linemerge(lines)
     return line
+
+
+def which_result_polygon(query, limit=5):
+    """Determines the first which_result value that returns a polygon from the nominatim API"""
+
+    response = ox.osm_polygon_download(query, limit=limit, polygon_geojson=1)
+    for index, result in enumerate(response):
+        if result['geojson']['type'] == 'Polygon':
+            return index + 1
+    return None
