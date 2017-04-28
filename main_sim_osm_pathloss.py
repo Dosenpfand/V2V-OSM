@@ -222,22 +222,22 @@ def main():
     """Main simulation function"""
 
     sim_mode = 'sumo'  # 'single', 'multi', 'multiprocess', 'sumo'
-    place = 'Landstrasse - Wien - Austria'
-    use_pathloss = False  # TODO: Implement functions to use use_pathloss
-    which_result = 1
-    densities_veh = np.concatenate([np.arange(10, 90, 10), [120, 160]]) * 1e-6
-    density_type = 'area'
+    place = 'Innere Stadt - Vienna - Austria'
+    which_result = None
+    # densities_veh = np.concatenate([np.arange(10, 90, 10), [120, 160]]) * 1e-6
+    densities_veh = 10
+    density_type = 'absolute'
     max_dist_olos_los = 250
     max_dist_nlos = 140
     iterations = 100
     max_pl = 150
-    show_plot = False
+    sumo_sim_duration = 1800
+    show_plot = True
     send_mail = True
     mail_to = 'markus.gasser@nt.tuwien.ac.at'
     loglevel = logging.DEBUG
 
     # Logger setup
-    # TODO: loglevel does not propagate to modules!
     logger = logging.getLogger()
     logger.setLevel(loglevel)
 
@@ -339,13 +339,35 @@ def main():
 
     elif sim_mode == 'sumo':
         # TODO: expand!
+
+        if np.size(densities_veh) > 1:
+            raise ValueError(
+                'Single simulation mode can only simulate 1 density value')
+        density_veh = densities_veh
+
         time_start = utils.debug(None, 'Loading street network')
         net = ox_a.load_network(static_params['place'],
                                 which_result=static_params['which_result'])
+        graph_streets = net['graph_streets']
         utils.debug(time_start)
+
+        if density_type == 'absolute':
+            count_veh = int(density_veh)
+        elif density_type == 'length':
+            street_lengths = geom_o.get_street_lengths(graph_streets)
+            count_veh = int(round(density_veh * np.sum(street_lengths)))
+        elif density_type == 'area':
+            area = net['gdf_boundary'].area
+            count_veh = int(round(density_veh * area))
+        else:
+            raise ValueError('Density type not supported')
+
         time_start = utils.debug(None, 'Loading vehicle traces')
-        veh_traces = sumo.simple_wrapper(
-            place, which_result=which_result, directory='sumo_data')
+        veh_traces = sumo.simple_wrapper(place,
+                                         which_result=which_result,
+                                         max_count_veh=count_veh,
+                                         duration=sumo_sim_duration,
+                                         directory='sumo_data')
         utils.debug(time_start)
 
         time_start = utils.debug(None, 'Plotting animation')
