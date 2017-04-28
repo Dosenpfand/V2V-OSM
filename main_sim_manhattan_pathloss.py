@@ -234,7 +234,7 @@ def main_sim():
     successfull_iter = False
 
     for i_rep in np.arange(reps):
-        # y info
+        # Debug info
         print(i_rep)
 
         # Street and vehicle generation
