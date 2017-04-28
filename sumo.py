@@ -14,6 +14,8 @@ import osm_xml
 
 def simple_wrapper(place,
                    which_result=1,
+                   max_count_veh=None,
+                   duration=3600,
                    directory='',
                    skip_if_exists=True,
                    veh_class='passenger'):
@@ -43,13 +45,14 @@ def simple_wrapper(place,
 
     if not (skip_if_exists and os.path.isfile(path_trips)):
         logging.info('Generating trips')
-        create_random_trips(place, directory=directory)
+        create_random_trips(place, seconds_end=duration, directory=directory)
     else:
         logging.info('Skipping trip generation')
 
     if not (skip_if_exists and os.path.isfile(path_cfg)):
         logging.info('Generating SUMO simulation configuration')
-        gen_simulation_conf(place, directory=directory)
+        gen_simulation_conf(
+            place, directory=directory, seconds_end=duration, max_count_veh=max_count_veh)
     else:
         logging.info('Skipping SUMO simulation configuration generation')
 
@@ -65,7 +68,13 @@ def simple_wrapper(place,
     return traces
 
 
-def gen_simulation_conf(place, directory='', veh_class='passenger', debug=False, bin_dir=''):
+def gen_simulation_conf(place,
+                        directory='',
+                        seconds_end=None,
+                        veh_class='passenger',
+                        max_count_veh=None,
+                        debug=False,
+                        bin_dir=''):
     """Generates a SUMO simulation configuration file"""
 
     filename_place = utils.string_to_filename(place)
@@ -82,6 +91,13 @@ def gen_simulation_conf(place, directory='', veh_class='passenger', debug=False,
                  '--save-configuration', path_cfg,
                  '--ignore-route-errors',
                  '-r', path_trips]
+
+    if max_count_veh is not None:
+        arguments += ['--max-num-vehicles', str(max_count_veh)]
+
+    if seconds_end is not None:
+        arguments += ['--end', str(seconds_end)]
+
     working_dir = os.path.dirname(os.path.abspath(__file__))
 
     proc = sproc.Popen(arguments, cwd=working_dir,
@@ -130,6 +146,7 @@ def create_random_trips(place,
                         veh_class='passenger',
                         prefix='veh',
                         min_dist=300,
+                        intermediate_points=None,
                         debug=False,
                         script_dir='/usr/lib/sumo/tools'):
     """Creates random vehicle trips on a street network"""
@@ -155,6 +172,10 @@ def create_random_trips(place,
                  '--prefix', prefix,
                  '--min-distance', str(min_dist),
                  '--validate']
+
+    if intermediate_points is not None:
+        arguments += ['--intermediate', str(intermediate_points)]
+
     working_dir = os.path.dirname(os.path.abspath(__file__))
 
     proc = sproc.Popen(arguments, cwd=working_dir,
