@@ -10,21 +10,8 @@ import utils
 import propagation as prop
 
 
-def setup(debug=False):
-    """ Sets osmnx up"""
-    if debug:
-        ox.config(log_console=True, use_cache=True)
-    else:
-        ox.config(log_console=False, use_cache=False)
-
-
-def load_network(place, which_result=1, debug=False):
+def load_network(place, which_result=1):
     """Generates streets and buildings"""
-
-    # TODO: eliminate debug parameter
-
-    # Setup
-    setup(debug)
 
     # Load data
     file_prefix = 'data/{}'.format(utils.string_to_filename(place))
