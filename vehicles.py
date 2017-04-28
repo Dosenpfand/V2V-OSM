@@ -43,6 +43,8 @@ class Vehicles:
         else:
             return self.coordinates[self.idxs[key]]
 
+
+
     def get_points(self, key=None):
         """"Get the geometry points of a set of vehicles specified by a key"""
 
