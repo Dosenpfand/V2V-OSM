@@ -13,6 +13,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import scipy.spatial.distance as dist
 import networkx as nx
+import osmnx as ox
 
 # Local imports
 import pathloss
@@ -246,6 +247,9 @@ def main():
                      'density_type': density_type,
                      'max_dist_olos_los': max_dist_olos_los,
                      'max_dist_nlos': max_dist_nlos}
+
+    # Setup OSMnx
+    ox.config(log_console=True, log_level=loglevel, use_cache=True)
 
     # Switch to selected simulation mode
     if sim_mode == 'multi':
