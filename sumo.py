@@ -8,6 +8,7 @@ import logging
 import numpy as np
 import utils
 import osmnx as ox
+import osmnx_addons as ox_a
 import osm_xml
 
 
@@ -31,6 +32,10 @@ def simple_wrapper(place,
 
     if not (skip_if_exists and os.path.isfile(path_network)):
         logging.info('Downloading street network from the internet')
+
+        if which_result is None:
+            which_result = ox_a.which_result_polygon(place)
+
         download_and_build_network(
             place, which_result=which_result, directory=directory)
     else:
