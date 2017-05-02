@@ -10,11 +10,29 @@
         "place": "Neubau - Vienna - Austria",
         "which_result": null, 
         "density_type": "absolute",
-        "densities_veh": 10,
+        "densities_veh": 25,
         "max_dist_olos_los": 250, 
         "max_dist_nlos": 140,
         "max_pl": 150,
-        "sumo_sim_duration": 1800
+        "sumo_sim_duration": 900
+    },
+    "viriyasitavat_comparison_dynamic": {
+        "place": "Upper West Side - New York - USA",
+        "which_result": null, 
+        "density_type": "area",
+        "densities_veh": [
+            { "start": 10e-6, "stop": 80e-6, "step": 10e-6 },
+            { "start": 120e-6, "stop": 160e-6, "step": 40e-6 }
+        ],
+        "max_dist_olos_los": 250, 
+        "max_dist_nlos": 140,
+        "sumo": {
+            "sim_duration": 3000,
+            "warmup_duration": 1000,
+            "tls_cycle_time": 45,
+            "tls_green_time": 22.5,
+            "tls_yellow_time": 2
+        }
     },
     "graz": {
         "place": "Graz - Steiermark - \u00d6sterreich",

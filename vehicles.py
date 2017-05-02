@@ -43,8 +43,6 @@ class Vehicles:
         else:
             return self.coordinates[self.idxs[key]]
 
-
-
     def get_points(self, key=None):
         """"Get the geometry points of a set of vehicles specified by a key"""
 
@@ -166,8 +164,8 @@ def generate_vehs(graph_streets, street_idxs=None, points_vehs_in=None):
     count_veh = np.size(street_idxs)
     graphs_vehs = np.zeros(count_veh, dtype=object)
     points_vehs = np.zeros(count_veh, dtype=object)
-    for iteration, index in enumerate(street_idxs):
 
+    for iteration, index in enumerate(street_idxs):
         street = graph_streets.edges(data=True)[index]
         point_veh = points_vehs_in[iteration]
         points_vehs[iteration] = point_veh
