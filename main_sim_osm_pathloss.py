@@ -24,6 +24,7 @@ import geometry as geom_o
 import vehicles
 import propagation as prop
 import sumo
+import network_parser as nw_p
 
 
 def main_sim_multi(network, max_dist_olos_los=250, max_dist_nlos=140):
@@ -221,114 +222,97 @@ def main_sim_multiprocess(iteration, densities_veh, static_params):
 def main():
     """Main simulation function"""
 
-    sim_mode = 'sumo'  # 'single', 'multi', 'multiprocess', 'sumo'
-    place = 'Innere Stadt - Vienna - Austria'
-    which_result = None
-    # densities_veh = np.concatenate([np.arange(10, 90, 10), [120, 160]]) * 1e-6
-    densities_veh = 10
-    density_type = 'absolute'
-    max_dist_olos_los = 250
-    max_dist_nlos = 140
-    iterations = 100
-    max_pl = 150
-    sumo_sim_duration = 1800
-    show_plot = True
-    send_mail = True
-    mail_to = 'markus.gasser@nt.tuwien.ac.at'
-    loglevel = logging.DEBUG
+    config_key = 'default'
+    config = nw_p.params_from_conf()
+    config.update(nw_p.params_from_conf(config_key))
 
     # Logger setup
+    loglevel = logging.DEBUG  # TODO: move to config file!
     logger = logging.getLogger()
     logger.setLevel(loglevel)
-
-    # Adapt static input parameters
-    static_params = {'place': place,
-                     'which_result': which_result,
-                     'density_type': density_type,
-                     'max_dist_olos_los': max_dist_olos_los,
-                     'max_dist_nlos': max_dist_nlos}
 
     # Setup OSMnx
     ox.config(log_console=True, log_level=loglevel, use_cache=True)
 
     # Switch to selected simulation mode
-    if sim_mode == 'multi':
-        net_connectivities = np.zeros([iterations, np.size(densities_veh)])
-        for iteration in np.arange(iterations):
-            for idx_density, density in enumerate(densities_veh):
+    if config['sim_mode'] == 'multi':
+        net_connectivities = np.zeros(
+            [config['iterations'], np.size(config['densities_veh'])])
+        for iteration in np.arange(config['iterations']):
+            for idx_density, density in enumerate(config['densities_veh']):
                 logging.info('Started simulation with densitiy {:.2E}, iteration: {:d}'.format(
                     density, iteration))
-                net = ox_a.load_network(static_params['place'],
-                                        which_result=static_params['which_result'])
+                net = ox_a.load_network(config['place'],
+                                        which_result=config['which_result'])
                 vehicles.place_vehicles_in_network(net, density_veh=density,
-                                                   density_type=static_params['density_type'])
+                                                   density_type=config['density_type'])
                 net_connectivity, path_redundancy = \
-                    main_sim_multi(net, max_dist_olos_los=max_dist_olos_los,
-                                   max_dist_nlos=max_dist_nlos)
+                    main_sim_multi(net, max_dist_olos_los=config['max_dist_olos_los'],
+                                   max_dist_nlos=config['max_dist_nlos'])
                 net_connectivities[iteration, idx_density] = net_connectivity
             # TODO: Adapt filename and saved variable structure from
             # multiprocess!
             np.save('results/net_connectivities',
                     net_connectivities[:iteration + 1])
 
-        if show_plot:
+        if config['show_plot']:
             plot.plot_cluster_max(net['graph_streets'], net['gdf_buildings'],
-                                  net['vehs'], show=False, place=place)
+                                  net['vehs'], show=False, place=config['place'])
             plt.show()
 
-    elif sim_mode == 'multiprocess':
+    elif config['sim_mode'] == 'multiprocess':
         time_start = time.time()
 
         # Prepare one network realization to download missing files
-        ox_a.load_network(static_params['place'],
-                          which_result=static_params['which_result'])
+        ox_a.load_network(config['place'],
+                          which_result=config['which_result'])
 
         with mp.Pool() as pool:
             sim_results = pool.starmap(main_sim_multiprocess, zip(
-                range(iterations), repeat(densities_veh), repeat(static_params)))
+                range(config['iterations']), repeat(config['densities_veh']), repeat(config)))
 
         # Network connectivity results
-        net_connectivities = np.zeros([iterations, np.size(densities_veh)])
+        net_connectivities = np.zeros(
+            [config['iterations'], np.size(config['densities_veh'])])
         for iter_index, iter_result in enumerate(sim_results):
             net_connectivities[iter_index, :] = iter_result[0]
 
         # Path redundancy results
         sim_results_arr = np.array(sim_results)
-        path_redundancies = np.zeros(np.size(densities_veh), dtype=object)
-        for idx_density, density in enumerate(densities_veh):
+        path_redundancies = np.zeros(
+            np.size(config['densities_veh']), dtype=object)
+        for idx_density, density in enumerate(config['densities_veh']):
             path_redundancies[idx_density] = np.concatenate(
                 sim_results_arr[:, 1, idx_density])
 
         # Save in and outputs
         time_finish = time.time()
-        in_vars = static_params
-        in_vars['iterations'] = iterations
-        in_vars['densities_veh'] = densities_veh
+        in_vars = config
         out_vars = {'net_connectivities': net_connectivities,
                     'path_redundancies': path_redundancies}
         info_vars = {'time_start': time_start, 'time_finish': time_finish}
         save_vars = {'in': in_vars, 'out': out_vars, 'info': info_vars}
         filepath_res = 'results/{:.0f}_{}.pickle'.format(
-            time_finish, utils.string_to_filename(place))
+            time_finish, utils.string_to_filename(config['place']))
         with open(filepath_res, 'wb') as file:
             pickle.dump(save_vars, file)
 
         # Send mail
-        if send_mail:
-            utils.send_mail_finish(mail_to, time_start=time_start)
+        if config['send_mail']:
+            utils.send_mail_finish(config['mail_to'], time_start=time_start)
 
-    elif sim_mode == 'single':
-        if np.size(densities_veh) > 1:
+    elif config['sim_mode'] == 'single':
+        if np.size(config['densities_veh']) > 1:
             raise ValueError(
                 'Single simulation mode can only simulate 1 density value')
 
-        net = ox_a.load_network(static_params['place'],
-                                which_result=static_params['which_result'])
-        vehicles.place_vehicles_in_network(net, density_veh=densities_veh,
-                                           density_type=static_params['density_type'])
-        main_sim_single(net, max_pl=max_pl)
+        net = ox_a.load_network(config['place'],
+                                which_result=config['which_result'])
+        vehicles.place_vehicles_in_network(net, density_veh=config['densities_veh'],
+                                           density_type=config['density_type'])
+        main_sim_single(net, max_pl=config['max_pl'])
 
-        if show_plot:
+        if config['show_plot']:
             plot.plot_prop_cond(net['graph_streets'], net['gdf_buildings'],
                                 net['vehs'], show=False)
             plot.plot_pathloss(net['graph_streets'], net['gdf_buildings'],
@@ -337,36 +321,36 @@ def main():
                                  net['vehs'], show=False)
             plt.show()
 
-    elif sim_mode == 'sumo':
+    elif config['sim_mode'] == 'sumo':
         # TODO: expand!
 
-        if np.size(densities_veh) > 1:
+        if np.size(config['densities_veh']) > 1:
             raise ValueError(
                 'Single simulation mode can only simulate 1 density value')
-        density_veh = densities_veh
+        density_veh = config['densities_veh']
 
         time_start = utils.debug(None, 'Loading street network')
-        net = ox_a.load_network(static_params['place'],
-                                which_result=static_params['which_result'])
+        net = ox_a.load_network(config['place'],
+                                which_result=config['which_result'])
         graph_streets = net['graph_streets']
         utils.debug(time_start)
 
-        if density_type == 'absolute':
+        if config['density_type'] == 'absolute':
             count_veh = int(density_veh)
-        elif density_type == 'length':
+        elif config['density_type'] == 'length':
             street_lengths = geom_o.get_street_lengths(graph_streets)
             count_veh = int(round(density_veh * np.sum(street_lengths)))
-        elif density_type == 'area':
+        elif config['density_type'] == 'area':
             area = net['gdf_boundary'].area
             count_veh = int(round(density_veh * area))
         else:
             raise ValueError('Density type not supported')
 
         time_start = utils.debug(None, 'Loading vehicle traces')
-        veh_traces = sumo.simple_wrapper(place,
-                                         which_result=which_result,
+        veh_traces = sumo.simple_wrapper(config['place'],
+                                         which_result=config['which_result'],
                                          max_count_veh=count_veh,
-                                         duration=sumo_sim_duration,
+                                         duration=config['sumo_sim_duration'],
                                          directory='sumo_data')
         utils.debug(time_start)
 

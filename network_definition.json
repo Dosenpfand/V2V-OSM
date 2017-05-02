@@ -1,63 +1,74 @@
 {
     "global_config":{
-    "mailto" : "tblazek@nt.tuwien.ac.at",
+    "mail_to" : "mgasser@nt.tuwien.ac.at",
     "send_mail": false,
-    "iterations": 1,
-    "sim_mode": "single"
+    "show_plot": true,
+    "iterations": 100,
+    "sim_mode": "sumo"
+    },
+    "default": {
+        "place": "Neubau - Vienna - Austria",
+        "which_result": null, 
+        "density_type": "absolute",
+        "densities_veh": 10,
+        "max_dist_olos_los": 250, 
+        "max_dist_nlos": 140,
+        "max_pl": 150,
+        "sumo_sim_duration": 1800
     },
     "graz": {
         "place": "Graz - Steiermark - \u00d6sterreich",
         "which_result": 2, 
-        "desnity_type": "area", 
+        "density_type": "area", 
         "max_dist_olos_los": 300, 
         "max_dist_nlos": 200
     }, 
      "graz100": {
         "place": "Graz - Steiermark - \u00d6sterreich",
         "which_result": 2, 
-        "desnity_type": "area", 
+        "density_type": "area", 
         "max_dist_olos_los": 100, 
         "max_dist_nlos": 200
     }, 
     "linz": {
         "place": "Linz Stadt - Austria",
         "which_result": 2, 
-        "desnity_type": "area", 
+        "density_type": "area", 
         "max_dist_olos_los": 300, 
         "max_dist_nlos": 200
     },    
     "wien": {
         "place": "Vienna - Austria",
         "which_result": 2, 
-        "desnity_type": "area", 
+        "density_type": "area", 
         "max_dist_olos_los": 300, 
         "max_dist_nlos": 200
     },
     "hamburg": {
         "place": "Hamburg - Germany",
         "which_result": 2, 
-        "desnity_type": "area", 
+        "density_type": "area", 
         "max_dist_olos_los": 300, 
         "max_dist_nlos": 200
     },
     "stuttgart" : {
         "place": "Stuttgart - Germany",
         "which_result": 2, 
-        "desnity_type": "area", 
+        "density_type": "area", 
         "max_dist_olos_los": 300, 
         "max_dist_nlos": 200
     },
      "paris" : {
         "place": "Paris - France",
         "which_result": 2, 
-        "desnity_type": "area", 
+        "density_type": "area", 
         "max_dist_olos_los": 300, 
         "max_dist_nlos": 200
     }, 
      "münchen" : {
         "place": "München - Germany",
         "which_result": 2, 
-        "desnity_type": "area", 
+        "density_type": "area", 
         "max_dist_olos_los": 300, 
         "max_dist_nlos": 200
     }
