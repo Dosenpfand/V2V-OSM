@@ -6,10 +6,12 @@ import subprocess as sproc
 import xml.etree.cElementTree as ET
 import logging
 import numpy as np
+import shapely.geometry as geom
 import utils
 import osmnx as ox
 import osmnx_addons as ox_a
 import osm_xml
+import vehicles
 
 
 def simple_wrapper(place,
@@ -23,7 +25,6 @@ def simple_wrapper(place,
     and returns the vehicle traces"""
 
     # TODO: use more of the arguments
-    # TODO: check if result files of each function is already present
 
     filename_place = utils.string_to_filename(place)
     path_network = os.path.join(directory, filename_place + '.net.xml')
@@ -221,6 +222,9 @@ def download_and_build_network(place,
 def build_network(filename,
                   veh_class='passenger',
                   prefix=None,
+                  tls_cycle_time=None,
+                  tls_green_time=None,
+                  tls_yellow_time=None,
                   directory='',
                   debug=False,
                   script_dir='/usr/lib/sumo/tools'):
@@ -228,10 +232,37 @@ def build_network(filename,
 
     filepath = os.path.join(directory, filename)
     arguments = [script_dir + '/osmBuild.py', '-f', filepath, '-c', veh_class]
+
     if prefix is not None:
         arguments += ['-p', prefix]
+
     if directory != '':
         arguments += ['-d', directory]
+
+    # Taken from osmBuild.py
+    netconvert_opts = '--geometry.remove,' + \
+        '--roundabouts.guess,' + \
+        '--ramps.guess,' + \
+        '-v,' + \
+        '--junctions.join,' + \
+        '--tls.guess-signals,' + \
+        '--tls.discard-simple,' + \
+        '--tls.join,' + \
+        '--output.original-names,' + \
+        '--junctions.corner-detail,5,' + \
+        '--output.street-names'
+
+    if tls_cycle_time is not None:
+        netconvert_opts += '--tls.cycle.time,' + str(tls_cycle_time) + ','
+
+    if tls_green_time is not None:
+        netconvert_opts += '--tls.green.time' + str(tls_green_time) + ','
+
+    if tls_yellow_time is not None:
+        netconvert_opts += '--tls.yellow.time' + str(tls_yellow_time) + ','
+
+    arguments += ['--netconvert-options', netconvert_opts]
+
     working_dir = os.path.dirname(os.path.abspath(__file__))
 
     proc = sproc.Popen(arguments, cwd=working_dir,
@@ -333,7 +364,7 @@ def parse_veh_traces(filename, offsets=(0, 0)):
 
     traces = np.zeros(len(root), dtype=object)
     for idx_timestep, timestep in enumerate(root):
-        trace_timestep = np.zeros(
+        traces_snapshot = np.zeros(
             len(timestep),
             dtype=[('time', 'float'),
                    ('id', 'uint'),
@@ -342,14 +373,30 @@ def parse_veh_traces(filename, offsets=(0, 0)):
         for idx_veh_node, veh_node in enumerate(timestep):
             veh = veh_node.attrib
             veh_id = int(veh['id'][3:])
-            trace_timestep[idx_veh_node]['time'] = timestep.attrib['time']
-            trace_timestep[idx_veh_node]['id'] = veh_id
-            trace_timestep[idx_veh_node]['x'] = float(veh['x'])
-            trace_timestep[idx_veh_node]['y'] = float(veh['y'])
-        trace_timestep['x'] -= offsets[0]
-        trace_timestep['y'] -= offsets[1]
-        traces[idx_timestep] = trace_timestep
+            traces_snapshot[idx_veh_node]['time'] = timestep.attrib['time']
+            traces_snapshot[idx_veh_node]['id'] = veh_id
+            traces_snapshot[idx_veh_node]['x'] = float(veh['x'])
+            traces_snapshot[idx_veh_node]['y'] = float(veh['y'])
+        traces_snapshot['x'] -= offsets[0]
+        traces_snapshot['y'] -= offsets[1]
+        traces[idx_timestep] = traces_snapshot
     return traces
+
+
+def vehicles_from_traces(graph_streets, traces, time_idx):
+    """ Builds a vehicles objects from the street graph, the SUMO traces and a time index"""
+
+    snapshot = traces[time_idx]
+    count_veh = snapshot.size
+    points_vehs = np.zeros(count_veh, dtype=object)
+
+    for veh_idx, vehicle in enumerate(snapshot):
+        points_vehs[veh_idx] = geom.Point(vehicle['x'], vehicle['y'])
+
+    vehs = vehicles.generate_vehs(
+        graph_streets, street_idxs=None, points_vehs_in=points_vehs)
+
+    return vehs
 
 
 def get_coordinates_offset(filename):
