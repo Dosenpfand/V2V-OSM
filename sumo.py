@@ -233,13 +233,17 @@ def build_network(filename,
             '--junctions.corner-detail,5,' + \
             '--output.street-names'
 
+        if ('cycle_time' in tls_settings) and ('green_time' in tls_settings):
+            raise RuntimeError(
+                'Cycle time and green time can not be set simultaneosly')
+
         if 'cycle_time' in tls_settings:
             netconvert_opts += ',--tls.cycle.time,' + \
                 str(round(tls_settings['cycle_time']))
 
-        # if 'green_time' in tls_settings:
-        #     netconvert_opts += ',--tls.green.time,' + \
-        #         str(round(tls_settings['green_time']))
+        if 'green_time' in tls_settings:
+            netconvert_opts += ',--tls.green.time,' + \
+                str(round(tls_settings['green_time']))
 
         if 'yellow_time' in tls_settings:
             netconvert_opts += ',--tls.yellow.time,' + \
