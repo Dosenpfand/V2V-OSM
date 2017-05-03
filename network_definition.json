@@ -33,7 +33,8 @@
             "tls_settings": {
                 "cycle_time": 45,
                 "yellow_time": 2
-            }
+            },
+            "intermediate_points": 100
         }
     },
     "graz": {
