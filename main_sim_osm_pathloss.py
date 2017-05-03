@@ -362,14 +362,35 @@ def main():
         if 'fringe_factor' not in config['sumo']:
             config['sumo']['fringe_factor'] = None
 
+        if 'intermediate_points' not in config['sumo']:
+            config['sumo']['intermediate_points'] = None
+
+        if 'warmup_duration' not in config['sumo']:
+            traces_start_idx = 0
+        else:
+            traces_start_idx = config['sumo']['warmup_duration']
+
         time_start = utils.debug(None, 'Loading vehicle traces')
         veh_traces = sumo.simple_wrapper(config['place'],
                                          which_result=config['which_result'],
                                          max_count_veh=count_veh,
+                                         total_count_veh=count_veh,
                                          duration=config['sumo']['sim_duration'],
                                          tls_settings=config['sumo']['tls_settings'],
                                          fringe_factor=config['sumo']['fringe_factor'],
+                                         intermediate_points=config['sumo']['intermediate_points'],
                                          directory='sumo_data')
+        # Delete warmup period traces
+        veh_traces = veh_traces[traces_start_idx:]
+
+        # Delete snapshots with wrong number of vehicles
+        # TODO: performance improvement!
+        retain_mask = np.ones(veh_traces.size, dtype=bool)
+        for idx, snapshot in enumerate(veh_traces):
+            if snapshot.size != count_veh:
+                retain_mask[idx] = False
+        veh_traces = veh_traces[retain_mask]
+
         utils.debug(time_start)
 
         time_start = utils.debug(None, 'Plotting animation')
