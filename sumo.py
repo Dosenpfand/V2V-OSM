@@ -18,31 +18,41 @@ def simple_wrapper(place,
                    which_result=1,
                    max_count_veh=None,
                    duration=3600,
+                   tls_settings=None,
                    directory='',
                    skip_if_exists=True,
                    veh_class='passenger'):
     """Generates and downloads all necessary files, runs a generic SUMO simulation
     and returns the vehicle traces"""
 
-    # TODO: use more of the arguments
-
     filename_place = utils.string_to_filename(place)
-    path_network = os.path.join(directory, filename_place + '.net.xml')
+    path_network_sumo = os.path.join(directory, filename_place + '.net.xml')
+    filename_network_osm = filename_place + '_city.osm.xml'
+    path_network_osm = os.path.join(
+        directory, filename_network_osm)
     path_trips = os.path.join(
         directory, filename_place + '.' + veh_class + '.trips.xml')
     path_cfg = os.path.join(directory, filename_place + '.sumocfg')
     path_traces = os.path.join(directory, filename_place + '.traces.xml')
 
-    if not (skip_if_exists and os.path.isfile(path_network)):
-        logging.info('Downloading street network from the internet')
+    if not (skip_if_exists and os.path.isfile(path_network_osm)):
+        logging.info('Downloading street network from OpenStreetMap')
 
         if which_result is None:
             which_result = ox_a.which_result_polygon(place)
 
-        download_and_build_network(
-            place, which_result=which_result, directory=directory)
+        download_streets_from_name(
+            place, which_result=which_result, prefix=filename_place, directory=directory)
+
     else:
-        logging.info('Skipping street network download')
+        logging.info('Skipping street network download from OpenStreetMap')
+
+    if not (skip_if_exists and os.path.isfile(path_network_sumo)):
+        logging.info('Generating SUMO street network')
+        build_network(filename_network_osm, veh_class=veh_class,
+                      prefix=filename_place, tls_settings=tls_settings, directory=directory)
+    else:
+        logging.info('Skipping SUMO street network generation')
 
     if not (skip_if_exists and os.path.isfile(path_trips)):
         logging.info('Generating trips')
@@ -191,40 +201,10 @@ def create_random_trips(place,
     return exit_code
 
 
-def download_and_build_network(place,
-                               which_result=1,
-                               prefix=None,
-                               directory='',
-                               veh_class='passenger',
-                               debug=False,
-                               script_dir='/usr/lib/sumo/tools'):
-    """Donloads the street data from OpenStreetMap and builds a SUMO street network file"""
-
-    if prefix is None:
-        file_prefix = utils.string_to_filename(place)
-    else:
-        file_prefix = prefix
-
-    download_streets_from_name(
-        place,
-        which_result=which_result,
-        prefix=file_prefix,
-        directory=directory,
-        debug=debug)
-    build_network(file_prefix + '_city.osm.xml',
-                  veh_class=veh_class,
-                  prefix=file_prefix,
-                  directory=directory,
-                  debug=debug,
-                  script_dir=script_dir)
-
-
 def build_network(filename,
                   veh_class='passenger',
                   prefix=None,
-                  tls_cycle_time=None,
-                  tls_green_time=None,
-                  tls_yellow_time=None,
+                  tls_settings=None,
                   directory='',
                   debug=False,
                   script_dir='/usr/lib/sumo/tools'):
@@ -239,29 +219,33 @@ def build_network(filename,
     if directory != '':
         arguments += ['-d', directory]
 
-    # Taken from osmBuild.py
-    netconvert_opts = '--geometry.remove,' + \
-        '--roundabouts.guess,' + \
-        '--ramps.guess,' + \
-        '-v,' + \
-        '--junctions.join,' + \
-        '--tls.guess-signals,' + \
-        '--tls.discard-simple,' + \
-        '--tls.join,' + \
-        '--output.original-names,' + \
-        '--junctions.corner-detail,5,' + \
-        '--output.street-names'
+    if isinstance(tls_settings, dict):
+        # Taken from osmBuild.py
+        netconvert_opts = '--geometry.remove,' + \
+            '--roundabouts.guess,' + \
+            '--ramps.guess,' + \
+            '-v,' + \
+            '--junctions.join,' + \
+            '--tls.guess-signals,' + \
+            '--tls.discard-simple,' + \
+            '--tls.join,' + \
+            '--output.original-names,' + \
+            '--junctions.corner-detail,5,' + \
+            '--output.street-names'
 
-    if tls_cycle_time is not None:
-        netconvert_opts += '--tls.cycle.time,' + str(tls_cycle_time) + ','
+        if 'cycle_time' in tls_settings:
+            netconvert_opts += ',--tls.cycle.time,' + \
+                str(round(tls_settings['cycle_time']))
 
-    if tls_green_time is not None:
-        netconvert_opts += '--tls.green.time' + str(tls_green_time) + ','
+        # if 'green_time' in tls_settings:
+        #     netconvert_opts += ',--tls.green.time,' + \
+        #         str(round(tls_settings['green_time']))
 
-    if tls_yellow_time is not None:
-        netconvert_opts += '--tls.yellow.time' + str(tls_yellow_time) + ','
+        if 'yellow_time' in tls_settings:
+            netconvert_opts += ',--tls.yellow.time,' + \
+                str(round(tls_settings['yellow_time']))
 
-    arguments += ['--netconvert-options', netconvert_opts]
+        arguments += ['--netconvert-options', netconvert_opts]
 
     working_dir = os.path.dirname(os.path.abspath(__file__))
 

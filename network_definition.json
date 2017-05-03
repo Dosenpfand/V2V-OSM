@@ -29,9 +29,11 @@
         "sumo": {
             "sim_duration": 3000,
             "warmup_duration": 1000,
-            "tls_cycle_time": 45,
-            "tls_green_time": 22.5,
-            "tls_yellow_time": 2
+            "tls_settings": {
+                "cycle_time": 45,
+                "green_time": 22,
+                "yellow_time": 2
+            }
         }
     },
     "graz": {

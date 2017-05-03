@@ -356,11 +356,15 @@ def main():
         else:
             raise ValueError('Density type not supported')
 
+        if 'tls_settings' not in config['sumo']:
+            config['sumo']['tls_settings'] = None
+
         time_start = utils.debug(None, 'Loading vehicle traces')
         veh_traces = sumo.simple_wrapper(config['place'],
                                          which_result=config['which_result'],
                                          max_count_veh=count_veh,
                                          duration=config['sumo']['sim_duration'],
+                                         tls_settings=config['sumo']['tls_settings'],
                                          directory='sumo_data')
         utils.debug(time_start)
 
