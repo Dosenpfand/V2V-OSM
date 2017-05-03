@@ -359,12 +359,16 @@ def main():
         if 'tls_settings' not in config['sumo']:
             config['sumo']['tls_settings'] = None
 
+        if 'fringe_factor' not in config['sumo']:
+            config['sumo']['fringe_factor'] = None
+
         time_start = utils.debug(None, 'Loading vehicle traces')
         veh_traces = sumo.simple_wrapper(config['place'],
                                          which_result=config['which_result'],
                                          max_count_veh=count_veh,
                                          duration=config['sumo']['sim_duration'],
                                          tls_settings=config['sumo']['tls_settings'],
+                                         fringe_factor=config['sumo']['fringe_factor'],
                                          directory='sumo_data')
         utils.debug(time_start)
 
