@@ -19,6 +19,7 @@ def simple_wrapper(place,
                    max_count_veh=None,
                    duration=3600,
                    tls_settings=None,
+                   fringe_factor=None,
                    directory='',
                    skip_if_exists=True,
                    veh_class='passenger'):
@@ -56,7 +57,8 @@ def simple_wrapper(place,
 
     if not (skip_if_exists and os.path.isfile(path_trips)):
         logging.info('Generating trips')
-        create_random_trips(place, seconds_end=duration, directory=directory)
+        create_random_trips(place, directory=directory,
+                            fringe_factor=fringe_factor)
     else:
         logging.info('Skipping trip generation')
 
