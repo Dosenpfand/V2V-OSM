@@ -19,6 +19,7 @@ def simple_wrapper(place,
                    max_count_veh=None,
                    total_count_veh=None,
                    duration=3600,
+                   max_speed=None,
                    tls_settings=None,
                    fringe_factor=None,
                    intermediate_points=None,
@@ -65,7 +66,7 @@ def simple_wrapper(place,
     if not (skip_if_exists and os.path.isfile(path_trips)):
         logging.info('Generating trips')
         if total_count_veh is not None:
-            # Generate 1.5 more trips than needed because validation will throw
+            # Generate double the trips than needed because validation will throw
             # some away
             # TODO: check if necessary
             veh_rate = duration / total_count_veh / 2
@@ -80,7 +81,8 @@ def simple_wrapper(place,
                      directory=directory,
                      start_all_at_zero=start_veh_simult,
                      rename_ids=True,
-                     limit_veh_count=total_count_veh)
+                     limit_veh_count=total_count_veh,
+                     max_speed=max_speed)
     else:
         logging.info('Skipping trip generation')
 
@@ -204,6 +206,8 @@ def modify_trips(place,
                  start_all_at_zero=False,
                  rename_ids=False,
                  limit_veh_count=None,
+                 max_speed=None,
+                 modify_routes=True,
                  veh_class='passenger',
                  prefix='veh'):
     """Modifies the randomly generated trips according to the parameters"""
@@ -211,7 +215,10 @@ def modify_trips(place,
     filename_place = utils.string_to_filename(place)
     path_trips = os.path.join(
         directory, filename_place + '.' + veh_class + '.trips.xml')
+    path_routes = os.path.join(
+        directory, filename_place + '.' + veh_class + '.rou.xml')
 
+    # Modify trips file
     tree = ET.parse(path_trips)
     root = tree.getroot()
 
@@ -227,7 +234,36 @@ def modify_trips(place,
         for idx, trip in enumerate(root.findall('trip')):
             trip.attrib['id'] = prefix + str(idx)
 
+    if max_speed is not None:
+        for vtype in root.findall('vType'):
+            vtype.attrib['maxSpeed'] = str(max_speed)
+
     tree.write(path_trips, 'UTF-8')
+
+    # Modify routes file
+    if not modify_routes:
+        return
+
+    tree = ET.parse(path_routes)
+    root = tree.getroot()
+
+    if limit_veh_count is not None:
+        for trip in root.findall('vehicle')[limit_veh_count:]:
+            root.remove(trip)
+
+    if start_all_at_zero:
+        for trip in root.findall('vehicle'):
+            trip.attrib['depart'] = '0.00'
+
+    if rename_ids:
+        for idx, trip in enumerate(root.findall('vehicle')):
+            trip.attrib['id'] = prefix + str(idx)
+
+    if max_speed is not None:
+        for vtype in root.findall('vType'):
+            vtype.attrib['maxSpeed'] = str(max_speed)
+
+    tree.write(path_routes, 'UTF-8')
 
 
 def create_random_trips(place,

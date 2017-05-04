@@ -34,6 +34,7 @@
                 "cycle_time": 45,
                 "yellow_time": 2
             },
+            "max_speed": 15,
             "intermediate_points": 100
         }
     },

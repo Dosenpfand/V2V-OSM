@@ -362,6 +362,9 @@ def main():
         if 'fringe_factor' not in config['sumo']:
             config['sumo']['fringe_factor'] = None
 
+        if 'max_speed' not in config['sumo']:
+            config['sumo']['max_speed'] = None
+
         if 'intermediate_points' not in config['sumo']:
             config['sumo']['intermediate_points'] = None
 
@@ -376,6 +379,7 @@ def main():
                                          max_count_veh=count_veh,
                                          total_count_veh=count_veh,
                                          duration=config['sumo']['sim_duration'],
+                                         max_speed=config['sumo']['max_speed'],
                                          tls_settings=config['sumo']['tls_settings'],
                                          fringe_factor=config['sumo']['fringe_factor'],
                                          intermediate_points=config['sumo']['intermediate_points'],
@@ -384,11 +388,12 @@ def main():
         veh_traces = veh_traces[traces_start_idx:]
 
         # Delete snapshots with wrong number of vehicles
-        # TODO: performance improvement!
         retain_mask = np.ones(veh_traces.size, dtype=bool)
         for idx, snapshot in enumerate(veh_traces):
             if snapshot.size != count_veh:
                 retain_mask[idx] = False
+                logging.warning(
+                    'Vehicle traces snapshot {:d} has wrong size, discarding'.format(idx))
         veh_traces = veh_traces[retain_mask]
 
         utils.debug(time_start)
