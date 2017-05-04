@@ -125,25 +125,26 @@ def gen_simulation_conf(place,
                         veh_class='passenger',
                         max_count_veh=None,
                         coordinate_tls=True,
+                        use_route_file=True,
                         debug=False,
                         bin_dir=''):
     """Generates a SUMO simulation configuration file"""
 
     filename_place = utils.string_to_filename(place)
     path_cfg = os.path.join(directory, filename_place + '.sumocfg')
-    path_network = filename_place + '.net.xml'
-    path_trips = filename_place + '.' + veh_class + '.trips.xml'
-    path_tls = filename_place + '.' + veh_class + '.tls.xml'
     path_bin = os.path.join(bin_dir, 'sumo')
+    filename_network = filename_place + '.net.xml'
+    filename_trips = filename_place + '.' + veh_class + '.trips.xml'
+    filename_tls = filename_place + '.' + veh_class + '.tls.xml'
+    filename_routes = filename_place + '.' + veh_class + '.rou.xml'
 
     arguments = [path_bin,
-                 '-n', path_network,
+                 '-n', filename_network,
                  '--duration-log.statistics',
                  '--device.rerouting.adaptation-steps', '180',
                  '--no-step-log',
                  '--save-configuration', path_cfg,
-                 '--ignore-route-errors',
-                 '-r', path_trips]
+                 '--ignore-route-errors']
 
     if max_count_veh is not None:
         arguments += ['--max-num-vehicles', str(max_count_veh)]
@@ -152,7 +153,12 @@ def gen_simulation_conf(place,
         arguments += ['--end', str(seconds_end)]
 
     if coordinate_tls:
-        arguments += ['-a', path_tls]
+        arguments += ['-a', filename_tls]
+
+    if use_route_file:
+        arguments += ['-r', filename_routes]
+    else:
+        arguments += ['-r', filename_trips]
 
     working_dir = os.path.dirname(os.path.abspath(__file__))
 
