@@ -27,12 +27,11 @@ import sumo
 import network_parser as nw_p
 
 
-def main_sim_multi(network, max_dist_olos_los=250, max_dist_nlos=140):
-    """Simulates all combinations of connections using only distances (not pathlosses) """
+def gen_connection_graph(vehs, gdf_buildings, max_dist_olos_los=250, max_dist_nlos=140):
+    """Simulates all combinations of connections using only
+    distances (not pathlosses) and determine which vehicles are connected"""
 
     # Initialize
-    vehs = network['vehs']
-    gdf_buildings = network['gdf_buildings']
     count_veh = vehs.count
     max_dist = max(max_dist_nlos, max_dist_olos_los)
     count_cond = count_veh * (count_veh - 1) // 2
@@ -65,20 +64,36 @@ def main_sim_multi(network, max_dist_olos_los=250, max_dist_nlos=140):
     # TODO: check if node names correspond to same indices as in vehs?
     graph_cons = nx.from_numpy_matrix(is_in_range_matrix)
 
+    return graph_cons
+
+
+def calc_net_connectivity(graph_cons, vehs=None):
+    """Calculates the network connectivity (relative size of the biggest connected cluster)"""
+
     # Find biggest cluster
+    time_start = utils.debug(None, 'Finding biggest cluster')
+    count_veh = graph_cons.order()
     clusters = nx.connected_component_subgraphs(graph_cons)
     cluster_max = max(clusters, key=len)
     net_connectivity = cluster_max.order() / count_veh
-    vehs.add_key('cluster_max', cluster_max.nodes())
-    not_cluster_max_nodes = np.arange(count_veh)[~np.in1d(
-        np.arange(count_veh), cluster_max.nodes())]
-    vehs.add_key('not_cluster_max', not_cluster_max_nodes)
-    utils.debug(time_start)
+    if vehicles is not None:
+        vehs.add_key('cluster_max', cluster_max.nodes())
+        not_cluster_max_nodes = np.arange(count_veh)[~np.in1d(
+            np.arange(count_veh), cluster_max.nodes())]
+        vehs.add_key('not_cluster_max', not_cluster_max_nodes)
 
-    logging.info('Simulation result: Network connectivity {:.2f}%'.format(
+    utils.debug(time_start)
+    logging.info('Network connectivity {:.2f}%'.format(
         net_connectivity * 100))
 
+    return net_connectivity
+
+
+def calc_path_redundancy(graph_cons, vehs):
+    """Calculates the path redundancy of the connection graph for the center vehicle"""
+
     # Find center vehicle
+    count_veh = vehs.count
     time_start = utils.debug(None, 'Finding center vehicle')
     idx_center_veh = geom_o.find_center_veh(vehs.get())
     idxs_other_vehs = np.where(np.arange(count_veh) != idx_center_veh)[0]
@@ -91,13 +106,13 @@ def main_sim_multi(network, max_dist_olos_los=250, max_dist_nlos=140):
     # the maximum)
     node_center_veh = idx_center_veh  # TODO: this does not seem to be the center?
     time_start = utils.debug(None, 'Determining path redundancy')
-
+    distances = dist.pdist(vehs.coordinates)
     path_redundancy = prop.path_redundancy(
         graph_cons, node_center_veh, distances)
 
     utils.debug(time_start)
 
-    return net_connectivity, path_redundancy
+    return path_redundancy
 
 
 def main_sim_single(network, max_pl=150):
@@ -210,9 +225,14 @@ def main_sim_multiprocess(iteration, densities_veh, static_params):
 
         vehicles.place_vehicles_in_network(net_iter, density_veh=density,
                                            density_type=static_params['density_type'])
-        net_connectivity, path_redundancy = \
-            main_sim_multi(net_iter, max_dist_olos_los=static_params['max_dist_olos_los'],
-                           max_dist_nlos=static_params['max_dist_nlos'])
+        graph_cons = \
+            gen_connection_graph(
+                net_iter['vehs'],
+                net_iter['gdf_buildings'],
+                max_dist_olos_los=static_params['max_dist_olos_los'],
+                max_dist_nlos=static_params['max_dist_nlos'])
+        net_connectivity = calc_net_connectivity(graph_cons, net_iter['vehs'])
+        path_redundancy = calc_path_redundancy(graph_cons, net['vehs'])
         net_connectivities[idx_density] = net_connectivity
         path_redundancies[idx_density] = path_redundancy
 
@@ -222,7 +242,7 @@ def main_sim_multiprocess(iteration, densities_veh, static_params):
 def main():
     """Main simulation function"""
 
-    config_key = 'viriyasitavat_comparison_dynamic'
+    config_key = 'sumo_test'
     config = nw_p.params_from_conf()
     config.update(nw_p.params_from_conf(config_key))
 
@@ -259,9 +279,17 @@ def main():
                                         which_result=config['which_result'])
                 vehicles.place_vehicles_in_network(net, density_veh=density,
                                                    density_type=config['density_type'])
-                net_connectivity, path_redundancy = \
-                    main_sim_multi(net, max_dist_olos_los=config['max_dist_olos_los'],
-                                   max_dist_nlos=config['max_dist_nlos'])
+                graph_cons_snapshot = \
+                    gen_connection_graph(
+                        net['vehs'],
+                        net['gdf_buildings'],
+                        max_dist_olos_los=config['max_dist_olos_los'],
+                        max_dist_nlos=config['max_dist_nlos'])
+                net_connectivity = calc_net_connectivity(
+                    graph_cons_snapshot, net['vehs'])
+                # TODO: !
+                # path_redundancy = calc_path_redundancy(graph_cons, net['vehs'])
+
                 net_connectivities[iteration, idx_density] = net_connectivity
             # TODO: Adapt filename and saved variable structure from
             # multiprocess!
@@ -370,7 +398,7 @@ def main():
             if 'warmup_duration' not in config['sumo']:
                 config['sumo']['warmup_duration'] = None
 
-            time_start = utils.debug(None, 'Loading vehicle traces')
+            time_start = utils.debug(None, 'Running SUMO interface')
             veh_traces = sumo.simple_wrapper(
                 config['place'],
                 which_result=config['which_result'],
@@ -382,13 +410,45 @@ def main():
                 fringe_factor=config['sumo']['fringe_factor'],
                 intermediate_points=config['sumo']['intermediate_points'],
                 directory='sumo_data')
+            utils.debug(time_start)
 
-        utils.debug(time_start)
+            graphs_cons = np.zeros(veh_traces.size, dtype=object)
+            for idx, snapshot in enumerate(veh_traces):
+                time_start = utils.debug(
+                    None, 'Analyzing snapshot {:d}'.format(idx))
+                # TODO: too much distance between SUMO vehicle positions and
+                # OSMnx streets?
+                vehs = sumo.vehicles_from_traces(
+                    net['graph_streets'], snapshot)
+                graph_cons_snapshot = gen_connection_graph(
+                    vehs,
+                    net['gdf_buildings'],
+                    max_dist_olos_los=config['max_dist_olos_los'],
+                    max_dist_nlos=config['max_dist_nlos'])
 
-        time_start = utils.debug(None, 'Plotting animation')
-        plot.plot_veh_traces_animation(
-            veh_traces, net['graph_streets'], net['gdf_buildings'])
-        utils.debug(time_start)
+                graphs_cons[idx] = graph_cons_snapshot
+
+                # TODO: here!
+                utils.debug(time_start)
+
+            # Save in and outputs
+            in_vars = config
+            out_vars = {'graphs_cons': graphs_cons}
+            # TODO: !
+            # info_vars = {'time_start': time_start, 'time_finish': time_finish}
+            # save_vars = {'in': in_vars, 'out': out_vars, 'info': info_vars}
+            save_vars = {'in': in_vars, 'out': out_vars}
+            filepath_res = 'results/sumo_{}.{:d}.pickle'.format(
+                utils.string_to_filename(config['place']), count_veh)
+            with open(filepath_res, 'wb') as file:
+                pickle.dump(save_vars, file)
+
+        # TODO: modify?
+        if config['show_plot']:
+            time_start = utils.debug(None, 'Plotting animation')
+            plot.plot_veh_traces_animation(
+                veh_traces, net['graph_streets'], net['gdf_buildings'])
+            utils.debug(time_start)
 
     else:
         raise NotImplementedError('Simulation type not supported')
