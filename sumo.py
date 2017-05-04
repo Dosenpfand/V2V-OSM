@@ -619,10 +619,10 @@ def parse_veh_traces(filename, offsets=(0, 0), sort=True):
     return traces
 
 
-def vehicles_from_traces(graph_streets, traces, time_idx):
-    """ Builds a vehicles objects from the street graph, the SUMO traces and a time index"""
+def vehicles_from_traces(graph_streets, snapshot):
+    """ Builds a vehicles objects from the street graph
+    and a snapshot of the SUMO vehicle traces"""
 
-    snapshot = traces[time_idx]
     count_veh = snapshot.size
     points_vehs = np.zeros(count_veh, dtype=object)
 
