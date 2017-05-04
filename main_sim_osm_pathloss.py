@@ -382,25 +382,26 @@ def main():
                 intermediate_points=config['sumo']['intermediate_points'],
                 directory='sumo_data')
 
-            # TODO: !
-            # # Delete warmup period traces
-            # veh_traces = veh_traces[traces_start_idx:]
+        # TODO: snap to grid, simulate connections, ...
 
-            # # Delete snapshots with wrong number of vehicles
-            # retain_mask = np.ones(veh_traces.size, dtype=bool)
-            # for idx, snapshot in enumerate(veh_traces):
-            #     if snapshot.size != count_veh:
-            #         retain_mask[idx] = False
-            #         logging.warning(
-            #             'Vehicle traces snapshot {:d} has wrong size, discarding'.format(idx))
-            # veh_traces = veh_traces[retain_mask]
+        # Delete warmup period traces
+        veh_traces = veh_traces[traces_start_idx:]
 
-            # utils.debug(time_start)
+        # Delete snapshots with wrong number of vehicles
+        retain_mask = np.ones(veh_traces.size, dtype=bool)
+        for idx, snapshot in enumerate(veh_traces):
+            if snapshot.size != count_veh:
+                retain_mask[idx] = False
+                logging.warning(
+                    'Vehicle traces snapshot {:d} has wrong size, discarding'.format(idx))
+        veh_traces = veh_traces[retain_mask]
 
-            # time_start = utils.debug(None, 'Plotting animation')
-            # plot.plot_veh_traces_animation(
-            #     veh_traces, net['graph_streets'], net['gdf_buildings'])
-            # utils.debug(time_start)
+        utils.debug(time_start)
+
+        time_start = utils.debug(None, 'Plotting animation')
+        plot.plot_veh_traces_animation(
+            veh_traces, net['graph_streets'], net['gdf_buildings'])
+        utils.debug(time_start)
 
     else:
         raise NotImplementedError('Simulation type not supported')
