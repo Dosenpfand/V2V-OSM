@@ -334,74 +334,73 @@ def main():
     elif config['sim_mode'] == 'sumo':
         # TODO: implement warmup_duration
 
-        if np.size(config['densities_veh']) > 1:
-            raise ValueError(
-                'Single simulation mode can only simulate 1 density value')
-        density_veh = config['densities_veh']
-
         time_start = utils.debug(None, 'Loading street network')
         net = ox_a.load_network(config['place'],
                                 which_result=config['which_result'])
         graph_streets = net['graph_streets']
         utils.debug(time_start)
 
-        if config['density_type'] == 'absolute':
-            count_veh = int(density_veh)
-        elif config['density_type'] == 'length':
-            street_lengths = geom_o.get_street_lengths(graph_streets)
-            count_veh = int(round(density_veh * np.sum(street_lengths)))
-        elif config['density_type'] == 'area':
-            area = net['gdf_boundary'].area
-            count_veh = int(round(density_veh * area))
-        else:
-            raise ValueError('Density type not supported')
+        for density_veh in config['densities_veh']:
 
-        if 'tls_settings' not in config['sumo']:
-            config['sumo']['tls_settings'] = None
+            if config['density_type'] == 'absolute':
+                count_veh = int(density_veh)
+            elif config['density_type'] == 'length':
+                street_lengths = geom_o.get_street_lengths(graph_streets)
+                count_veh = int(round(density_veh * np.sum(street_lengths)))
+            elif config['density_type'] == 'area':
+                area = net['gdf_boundary'].area
+                count_veh = int(round(density_veh * area))
+            else:
+                raise ValueError('Density type not supported')
 
-        if 'fringe_factor' not in config['sumo']:
-            config['sumo']['fringe_factor'] = None
+            if 'tls_settings' not in config['sumo']:
+                config['sumo']['tls_settings'] = None
 
-        if 'max_speed' not in config['sumo']:
-            config['sumo']['max_speed'] = None
+            if 'fringe_factor' not in config['sumo']:
+                config['sumo']['fringe_factor'] = None
 
-        if 'intermediate_points' not in config['sumo']:
-            config['sumo']['intermediate_points'] = None
+            if 'max_speed' not in config['sumo']:
+                config['sumo']['max_speed'] = None
 
-        if 'warmup_duration' not in config['sumo']:
-            traces_start_idx = 0
-        else:
-            traces_start_idx = config['sumo']['warmup_duration']
+            if 'intermediate_points' not in config['sumo']:
+                config['sumo']['intermediate_points'] = None
 
-        time_start = utils.debug(None, 'Loading vehicle traces')
-        veh_traces = sumo.simple_wrapper(config['place'],
-                                         which_result=config['which_result'],
-                                         max_count_veh=count_veh,
-                                         total_count_veh=count_veh,
-                                         duration=config['sumo']['sim_duration'],
-                                         max_speed=config['sumo']['max_speed'],
-                                         tls_settings=config['sumo']['tls_settings'],
-                                         fringe_factor=config['sumo']['fringe_factor'],
-                                         intermediate_points=config['sumo']['intermediate_points'],
-                                         directory='sumo_data')
-        # Delete warmup period traces
-        veh_traces = veh_traces[traces_start_idx:]
+            if 'warmup_duration' not in config['sumo']:
+                traces_start_idx = 0
+            else:
+                traces_start_idx = config['sumo']['warmup_duration']
 
-        # Delete snapshots with wrong number of vehicles
-        retain_mask = np.ones(veh_traces.size, dtype=bool)
-        for idx, snapshot in enumerate(veh_traces):
-            if snapshot.size != count_veh:
-                retain_mask[idx] = False
-                logging.warning(
-                    'Vehicle traces snapshot {:d} has wrong size, discarding'.format(idx))
-        veh_traces = veh_traces[retain_mask]
+            time_start = utils.debug(None, 'Loading vehicle traces')
+            veh_traces = sumo.simple_wrapper(
+                config['place'],
+                which_result=config['which_result'],
+                count_veh=count_veh,
+                duration=config['sumo']['sim_duration'],
+                max_speed=config['sumo']['max_speed'],
+                tls_settings=config['sumo']['tls_settings'],
+                fringe_factor=config['sumo']['fringe_factor'],
+                intermediate_points=config['sumo']['intermediate_points'],
+                directory='sumo_data')
 
-        utils.debug(time_start)
+            # TODO: !
+            # # Delete warmup period traces
+            # veh_traces = veh_traces[traces_start_idx:]
 
-        time_start = utils.debug(None, 'Plotting animation')
-        plot.plot_veh_traces_animation(
-            veh_traces, net['graph_streets'], net['gdf_buildings'])
-        utils.debug(time_start)
+            # # Delete snapshots with wrong number of vehicles
+            # retain_mask = np.ones(veh_traces.size, dtype=bool)
+            # for idx, snapshot in enumerate(veh_traces):
+            #     if snapshot.size != count_veh:
+            #         retain_mask[idx] = False
+            #         logging.warning(
+            #             'Vehicle traces snapshot {:d} has wrong size, discarding'.format(idx))
+            # veh_traces = veh_traces[retain_mask]
+
+            # utils.debug(time_start)
+
+            # time_start = utils.debug(None, 'Plotting animation')
+            # plot.plot_veh_traces_animation(
+            #     veh_traces, net['graph_streets'], net['gdf_buildings'])
+            # utils.debug(time_start)
 
     else:
         raise NotImplementedError('Simulation type not supported')
