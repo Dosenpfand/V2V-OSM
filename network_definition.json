@@ -21,8 +21,8 @@
         "which_result": null, 
         "density_type": "area",
         "densities_veh": [
-            { "start": 10e-6, "stop": 80e-6, "step": 10e-6 },
-            { "start": 120e-6, "stop": 160e-6, "step": 40e-6 }
+            { "start": 10e-6, "stop": 80e-6, "num": 8 },
+            { "start": 120e-6, "stop": 160e-6, "num": 2 }
         ],
         "max_dist_olos_los": 250, 
         "max_dist_nlos": 140,

@@ -230,7 +230,7 @@ def main():
         densities = np.zeros(0)
         for density_in in config['densities_veh']:
             if isinstance(density_in, dict):
-                density = np.arange(**density_in)
+                density = np.linspace(**density_in)
             else:
                 density = density_in
             densities = np.append(densities, density)
