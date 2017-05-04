@@ -335,7 +335,6 @@ def main():
             plt.show()
 
     elif config['sim_mode'] == 'sumo':
-        # TODO: implement warmup_duration
 
         time_start = utils.debug(None, 'Loading street network')
         net = ox_a.load_network(config['place'],
@@ -369,9 +368,7 @@ def main():
                 config['sumo']['intermediate_points'] = None
 
             if 'warmup_duration' not in config['sumo']:
-                traces_start_idx = 0
-            else:
-                traces_start_idx = config['sumo']['warmup_duration']
+                config['sumo']['warmup_duration'] = None
 
             time_start = utils.debug(None, 'Loading vehicle traces')
             veh_traces = sumo.simple_wrapper(
@@ -379,25 +376,12 @@ def main():
                 which_result=config['which_result'],
                 count_veh=count_veh,
                 duration=config['sumo']['sim_duration'],
+                warmup_duration=config['sumo']['warmup_duration'],
                 max_speed=config['sumo']['max_speed'],
                 tls_settings=config['sumo']['tls_settings'],
                 fringe_factor=config['sumo']['fringe_factor'],
                 intermediate_points=config['sumo']['intermediate_points'],
                 directory='sumo_data')
-
-        # TODO: snap to grid, simulate connections, ...
-
-        # Delete warmup period traces
-        veh_traces = veh_traces[traces_start_idx:]
-
-        # Delete snapshots with wrong number of vehicles
-        retain_mask = np.ones(veh_traces.size, dtype=bool)
-        for idx, snapshot in enumerate(veh_traces):
-            if snapshot.size != count_veh:
-                retain_mask[idx] = False
-                logging.warning(
-                    'Vehicle traces snapshot {:d} has wrong size, discarding'.format(idx))
-        veh_traces = veh_traces[retain_mask]
 
         utils.debug(time_start)
 

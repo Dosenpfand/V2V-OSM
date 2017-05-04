@@ -18,6 +18,7 @@ def simple_wrapper(place,
                    which_result=1,
                    count_veh=None,
                    duration=3600,
+                   warmup_duration=0,
                    max_speed=None,
                    tls_settings=None,
                    fringe_factor=None,
@@ -120,10 +121,12 @@ def simple_wrapper(place,
     else:
         logging.info('Skipping SUMO simulation run')
 
-    logging.info('Loading and parsing vehicle traces')
+    logging.info('Loading parsing and cleaning vehicle traces')
     traces = load_veh_traces(place,
                              file_suffix=str(count_veh),
-                             directory=directory)
+                             directory=directory,
+                             delete_first_n=warmup_duration,
+                             count_veh=count_veh)
 
     return traces
 
@@ -535,8 +538,9 @@ def download_streets_from_name(place,
         return return_code
 
 
-def load_veh_traces(place, directory='', file_suffix=None):
-    """Load parsed traces if they are available otherwise parse, return and save them"""
+def load_veh_traces(place, directory='', file_suffix=None, delete_first_n=0, count_veh=None):
+    """Load parsed traces if they are available otherwise parse,
+    clean up (if requested) and save them. Return the traces"""
 
     filename_place = utils.string_to_filename(place)
 
@@ -557,8 +561,29 @@ def load_veh_traces(place, directory='', file_suffix=None):
     else:
         coord_offsets = get_coordinates_offset(filename_network)
         traces = parse_veh_traces(filename_traces_xml, coord_offsets)
+        traces = clean_veh_traces(
+            traces, delete_first_n=delete_first_n, count_veh=count_veh)
         np.save(filename_traces_npy, traces)
     return traces
+
+
+def clean_veh_traces(veh_traces, delete_first_n=0, count_veh=None):
+    """Cleans up vehicle traces according to the given parameters"""
+
+    # delete first n snapshots
+    veh_traces = veh_traces[delete_first_n:]
+
+    # Delete snapshots with wrong number of vehicles
+    if count_veh is not None:
+        retain_mask = np.ones(veh_traces.size, dtype=bool)
+        for idx, snapshot in enumerate(veh_traces):
+            if snapshot.size != count_veh:
+                retain_mask[idx] = False
+                logging.warning(
+                    'Vehicle traces snapshot {:d} has wrong size, discarding'.format(idx))
+        veh_traces = veh_traces[retain_mask]
+
+    return veh_traces
 
 
 def parse_veh_traces(filename, offsets=(0, 0), sort=True):
