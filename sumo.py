@@ -40,9 +40,8 @@ def simple_wrapper(place,
         directory, filename_place_count + '.' + veh_class + '.trips.xml')
     path_tls = os.path.join(
         directory, filename_place + '.' + veh_class + '.tls.xml')
-
-    path_cfg = os.path.join(directory, filename_place + '.sumocfg')
-    path_traces = os.path.join(directory, filename_place + '.traces.xml')
+    path_cfg = os.path.join(directory, filename_place_count + '.sumocfg')
+    path_traces = os.path.join(directory, filename_place_count + '.traces.xml')
 
     if not (skip_if_exists and os.path.isfile(path_network_osm)):
         logging.info('Downloading street network from OpenStreetMap')
