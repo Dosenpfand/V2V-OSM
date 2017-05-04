@@ -16,8 +16,7 @@ import vehicles
 
 def simple_wrapper(place,
                    which_result=1,
-                   max_count_veh=None,
-                   total_count_veh=None,
+                   count_veh=None,
                    duration=3600,
                    max_speed=None,
                    tls_settings=None,
@@ -32,12 +31,13 @@ def simple_wrapper(place,
     and returns the vehicle traces"""
 
     filename_place = utils.string_to_filename(place)
+    filename_place_count = filename_place + '.' + str(count_veh)
     path_network_sumo = os.path.join(directory, filename_place + '.net.xml')
     filename_network_osm = filename_place + '_city.osm.xml'
     path_network_osm = os.path.join(
         directory, filename_network_osm)
     path_trips = os.path.join(
-        directory, filename_place + '.' + veh_class + '.trips.xml')
+        directory, filename_place_count + '.' + veh_class + '.trips.xml')
     path_tls = os.path.join(
         directory, filename_place + '.' + veh_class + '.tls.xml')
 
@@ -65,36 +65,41 @@ def simple_wrapper(place,
 
     if not (skip_if_exists and os.path.isfile(path_trips)):
         logging.info('Generating trips')
-        if total_count_veh is not None:
+        if count_veh is not None:
             # Generate double the trips than needed because validation will throw
             # some away
             # TODO: check if necessary
-            veh_rate = duration / total_count_veh / 2
+            veh_rate = duration / count_veh / 2
         else:
             veh_rate = 1
 
-        create_random_trips(place, directory=directory,
+        create_random_trips(place,
+                            directory=directory,
+                            file_suffix=str(count_veh),
                             fringe_factor=fringe_factor,
                             veh_period=veh_rate,
                             intermediate_points=intermediate_points)
         modify_trips(place,
                      directory=directory,
+                     file_suffix=str(count_veh),
                      start_all_at_zero=start_veh_simult,
                      rename_ids=True,
-                     limit_veh_count=total_count_veh,
+                     limit_veh_count=count_veh,
                      max_speed=max_speed)
     else:
         logging.info('Skipping trip generation')
 
     if coordinate_tls and not (skip_if_exists and os.path.isfile(path_tls)):
         logging.info('Generating SUMO TLS coordination')
-        if total_count_veh is not None:
-            count_veh_tls = int(np.ceil(total_count_veh / 10))
+        if count_veh is not None:
+            count_veh_tls = int(np.ceil(count_veh / 10))
         else:
             count_veh_tls = None
 
-        generate_tls_coordination(
-            place, directory=directory, count_veh=count_veh_tls)
+        generate_tls_coordination(place,
+                                  directory=directory,
+                                  file_suffix=str(count_veh),
+                                  count_veh=count_veh_tls)
     else:
         logging.info('Skipping SUMO TLS coordination')
 
@@ -103,26 +108,30 @@ def simple_wrapper(place,
         gen_simulation_conf(
             place,
             directory=directory,
+            file_suffix=str(count_veh),
             seconds_end=duration,
-            max_count_veh=max_count_veh,
+            max_count_veh=count_veh,
             coordinate_tls=coordinate_tls)
     else:
         logging.info('Skipping SUMO simulation configuration generation')
 
     if not (skip_if_exists and os.path.isfile(path_traces)):
         logging.info('Running SUMO simulation')
-        run_simulation(place, directory=directory)
+        run_simulation(place, file_suffix=str(count_veh), directory=directory)
     else:
         logging.info('Skipping SUMO simulation run')
 
     logging.info('Loading and parsing vehicle traces')
-    traces = load_veh_traces(place, directory=directory)
+    traces = load_veh_traces(place,
+                             file_suffix=str(count_veh),
+                             directory=directory)
 
     return traces
 
 
 def gen_simulation_conf(place,
                         directory='',
+                        file_suffix=None,
                         seconds_end=None,
                         veh_class='passenger',
                         max_count_veh=None,
@@ -133,12 +142,18 @@ def gen_simulation_conf(place,
     """Generates a SUMO simulation configuration file"""
 
     filename_place = utils.string_to_filename(place)
-    path_cfg = os.path.join(directory, filename_place + '.sumocfg')
+
+    if file_suffix is None:
+        filename_place_suffix = filename_place
+    else:
+        filename_place_suffix = filename_place + '.' + str(file_suffix)
+
+    path_cfg = os.path.join(directory, filename_place_suffix + '.sumocfg')
     path_bin = os.path.join(bin_dir, 'sumo')
     filename_network = filename_place + '.net.xml'
-    filename_trips = filename_place + '.' + veh_class + '.trips.xml'
+    filename_trips = filename_place_suffix + '.' + veh_class + '.trips.xml'
     filename_tls = filename_place + '.' + veh_class + '.tls.xml'
-    filename_routes = filename_place + '.' + veh_class + '.rou.xml'
+    filename_routes = filename_place_suffix + '.' + veh_class + '.rou.xml'
 
     arguments = [path_bin,
                  '-n', filename_network,
@@ -176,12 +191,19 @@ def gen_simulation_conf(place,
     return exit_code
 
 
-def run_simulation(place, directory='', debug=False, bin_dir=''):
+def run_simulation(place, directory='', file_suffix=None, debug=False, bin_dir=''):
     """Runs a SUMO simulations and saves the vehicle traces"""
 
     filename_place = utils.string_to_filename(place)
-    path_cfg = os.path.join(directory, filename_place + '.sumocfg')
-    path_traces = os.path.join(directory, filename_place + '.traces.xml')
+
+    if file_suffix is None:
+        filename_place_suffix = filename_place
+    else:
+        filename_place_suffix = filename_place + '.' + str(file_suffix)
+
+    path_cfg = os.path.join(directory, filename_place_suffix + '.sumocfg')
+    path_traces = os.path.join(
+        directory, filename_place_suffix + '.traces.xml')
     path_bin = os.path.join(bin_dir, 'sumo')
 
     arguments = [path_bin,
@@ -203,6 +225,7 @@ def run_simulation(place, directory='', debug=False, bin_dir=''):
 
 def modify_trips(place,
                  directory='',
+                 file_suffix=None,
                  start_all_at_zero=False,
                  rename_ids=False,
                  limit_veh_count=None,
@@ -213,10 +236,16 @@ def modify_trips(place,
     """Modifies the randomly generated trips according to the parameters"""
 
     filename_place = utils.string_to_filename(place)
+
+    if file_suffix is None:
+        filename_place_suffix = filename_place
+    else:
+        filename_place_suffix = filename_place + '.' + str(file_suffix)
+
     path_trips = os.path.join(
-        directory, filename_place + '.' + veh_class + '.trips.xml')
+        directory, filename_place_suffix + '.' + veh_class + '.trips.xml')
     path_routes = os.path.join(
-        directory, filename_place + '.' + veh_class + '.rou.xml')
+        directory, filename_place_suffix + '.' + veh_class + '.rou.xml')
 
     # Modify trips file
     tree = ET.parse(path_trips)
@@ -268,6 +297,7 @@ def modify_trips(place,
 
 def create_random_trips(place,
                         directory='',
+                        file_suffix=None,
                         random_seed=42,
                         seconds_end=3600,
                         fringe_factor=5,
@@ -281,12 +311,18 @@ def create_random_trips(place,
     """Creates random vehicle trips on a street network"""
 
     filename_place = utils.string_to_filename(place)
+
+    if file_suffix is None:
+        filename_place_suffix = filename_place
+    else:
+        filename_place_suffix = filename_place + '.' + str(file_suffix)
+
     path_network = os.path.join(
         directory, filename_place + '.net.xml')
     path_routes = os.path.join(
-        directory, filename_place + '.' + veh_class + '.rou.xml')
+        directory, filename_place_suffix + '.' + veh_class + '.rou.xml')
     path_trips = os.path.join(
-        directory, filename_place + '.' + veh_class + '.trips.xml')
+        directory, filename_place_suffix + '.' + veh_class + '.trips.xml')
 
     arguments = [os.path.join(script_dir, 'randomTrips.py'),
                  '-n', path_network,
@@ -385,6 +421,7 @@ def build_network(filename,
 
 def generate_tls_coordination(place,
                               directory='',
+                              file_suffix=None,
                               veh_class='passenger',
                               count_veh=None,
                               debug=False,
@@ -392,6 +429,12 @@ def generate_tls_coordination(place,
     """Generates a traffic light system coordination"""
 
     filename_place = utils.string_to_filename(place)
+
+    if file_suffix is None:
+        filename_place_suffix = filename_place
+    else:
+        filename_place_suffix = filename_place + '.' + str(file_suffix)
+
     path_network = os.path.join(
         directory, filename_place + '.net.xml')
     path_tls = os.path.join(
@@ -399,12 +442,12 @@ def generate_tls_coordination(place,
 
     if count_veh is None:
         path_routes = os.path.join(
-            directory, filename_place + '.' + veh_class + '.rou.xml')
+            directory, filename_place_suffix + '.' + veh_class + '.rou.xml')
     else:
         path_routes_full = os.path.join(
-            directory, filename_place + '.' + veh_class + '.rou.xml')
+            directory, filename_place_suffix + '.' + veh_class + '.rou.xml')
         path_routes = os.path.join(
-            directory, filename_place + '.' + veh_class + '.rou_part.xml')
+            directory, filename_place_suffix + '.' + veh_class + '.rou_part.xml')
         tree = ET.parse(path_routes_full)
         root = tree.getroot()
         for vehicle in root.findall('vehicle')[count_veh:]:
@@ -493,12 +536,21 @@ def download_streets_from_name(place,
         return return_code
 
 
-def load_veh_traces(place, directory=''):
+def load_veh_traces(place, directory='', file_suffix=None):
     """Load parsed traces if they are available otherwise parse, return and save them"""
 
-    path_and_prefix = os.path.join(directory, utils.string_to_filename(place))
-    filename_traces_npy = path_and_prefix + '.traces.npy'
-    filename_traces_xml = path_and_prefix + '.traces.xml'
+    filename_place = utils.string_to_filename(place)
+
+    if file_suffix is None:
+        filename_place_suffix = filename_place
+    else:
+        filename_place_suffix = filename_place + '.' + str(file_suffix)
+
+    path_and_prefix = os.path.join(directory, filename_place)
+    path_and_prefix_suffix = os.path.join(directory, filename_place_suffix)
+
+    filename_traces_npy = path_and_prefix_suffix + '.traces.npy'
+    filename_traces_xml = path_and_prefix_suffix + '.traces.xml'
     filename_network = path_and_prefix + '.net.xml'
 
     if os.path.isfile(filename_traces_npy):
