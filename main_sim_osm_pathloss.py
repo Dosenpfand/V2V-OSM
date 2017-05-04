@@ -237,7 +237,10 @@ def main():
         config['densities_veh'] = densities
 
     # Logger setup
-    loglevel = logging.DEBUG  # TODO: move to config file!
+    if 'loglevel' not in config:
+        config['logelevel'] = 'ERROR'
+
+    loglevel = logging.getLevelName(config['loglevel'])
     logger = logging.getLogger()
     logger.setLevel(loglevel)
 

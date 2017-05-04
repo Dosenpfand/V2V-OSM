@@ -4,7 +4,8 @@
     "send_mail": false,
     "show_plot": true,
     "iterations": 100,
-    "sim_mode": "sumo"
+    "sim_mode": "sumo",
+    "loglevel": "DEBUG"
     },
     "default": {
         "place": "Neubau - Vienna - Austria",
