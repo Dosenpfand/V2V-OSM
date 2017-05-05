@@ -24,7 +24,7 @@ def network_from_conf(in_key="default", config_file="network_definition.json"):
     return ox_a.load_network(conf["place"], conf["which_result"])
 
 
-def params_from_conf(in_key="global_config",
+def params_from_conf(in_key="global",
                      config_file="network_definition.json"):
     """Load a parameter set from the given config_file.
 
