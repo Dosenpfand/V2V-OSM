@@ -263,7 +263,7 @@ def main_sim_multiprocess(iteration, densities_veh, static_params):
 def main():
     """Main simulation function"""
 
-    config_key = 'sumo_test'
+    config_key = 'viriyasitavat_comparison_dynamic'
     config = nw_p.params_from_conf()
     config.update(nw_p.params_from_conf(config_key))
 
@@ -419,6 +419,9 @@ def main():
             if 'warmup_duration' not in config['sumo']:
                 config['sumo']['warmup_duration'] = None
 
+            if 'abort_after_sumo' not in config['sumo']:
+                config['sumo']['abort_after_sumo'] = False
+
             if 'multiprocess' not in config:
                 config['multiprocess'] = False
 
@@ -435,6 +438,9 @@ def main():
                 intermediate_points=config['sumo']['intermediate_points'],
                 directory='sumo_data')
             utils.debug(time_start)
+
+            if config['sumo']['abort_after_sumo']:
+                continue
 
             graphs_cons = np.zeros(veh_traces.size, dtype=object)
 
@@ -465,12 +471,16 @@ def main():
 
                     utils.debug(time_start)
 
+            if config['sumo']['abort_after_sumo']:
+                return
+
             # Save in and outputs
             in_vars = config
             out_vars = {'graphs_cons': graphs_cons}
             # TODO: !
             # info_vars = {'time_start': time_start, 'time_finish': time_finish}
             # save_vars = {'in': in_vars, 'out': out_vars, 'info': info_vars}
+            # TODO: maybe not save graphs but matrices to save space?
             save_vars = {'in': in_vars, 'out': out_vars}
             filepath_res = 'results/sumo_{}.{:d}.pickle'.format(
                 utils.string_to_filename(config['place']), count_veh)
