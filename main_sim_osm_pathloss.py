@@ -276,9 +276,9 @@ def main_sim_multiprocess(iteration, densities_veh, static_params):
 def main():
     """Main simulation function"""
 
-    config_key = 'viriyasitavat_comparison_dynamic'
     config = nw_p.params_from_conf()
-    config.update(nw_p.params_from_conf(config_key))
+    config_scenario = nw_p.params_from_conf(config['scenario'])
+    config.update(config_scenario)
 
     if isinstance(config['densities_veh'], (list, tuple)):
         densities = np.zeros(0)

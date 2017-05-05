@@ -1,5 +1,6 @@
 {
-    "global_config": {
+    "global": {
+        "scenario": "viriyasitavat_comparison_dynamic",
         "mail_to": "mgasser@nt.tuwien.ac.at",
         "send_mail": false,
         "show_plot": false,
@@ -35,6 +36,7 @@
         ],
         "max_dist_olos_los": 250,
         "max_dist_nlos": 140,
+        "multiprocess": true,
         "sumo": {
             "sim_duration": 3000,
             "warmup_duration": 1000,
@@ -46,10 +48,6 @@
             "max_speed": 15,
             "intermediate_points": 100,
             "abort_after_sumo": false
-        },
-        "multiprocess": {
-            "enabled": true,
-            "chunk_size": 50
         }
     },
     "graz": {
