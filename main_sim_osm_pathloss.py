@@ -208,6 +208,27 @@ def main_sim_single(network, max_pl=150):
     utils.debug(time_start)
 
 
+def main_sim_multiprocess_sumo(snapshot,
+                               graph_streets,
+                               gdf_buildings,
+                               max_dist_olos_los,
+                               max_dist_nlos):
+    """Runs a single snapshot analysis of a SUMO simulation result.
+    Meant to be run in paralell"""
+
+    # TODO: too much distance between SUMO vehicle positions and
+    # OSMnx streets?
+    vehs = sumo.vehicles_from_traces(
+        graph_streets, snapshot)
+    graph_cons = gen_connection_graph(
+        vehs,
+        gdf_buildings,
+        max_dist_olos_los=max_dist_olos_los,
+        max_dist_nlos=max_dist_nlos)
+
+    return graph_cons
+
+
 def main_sim_multiprocess(iteration, densities_veh, static_params):
     """Runs the simulation using multiple processes"""
 
@@ -398,6 +419,9 @@ def main():
             if 'warmup_duration' not in config['sumo']:
                 config['sumo']['warmup_duration'] = None
 
+            if 'multiprocess' not in config:
+                config['multiprocess'] = False
+
             time_start = utils.debug(None, 'Running SUMO interface')
             veh_traces = sumo.simple_wrapper(
                 config['place'],
@@ -413,23 +437,33 @@ def main():
             utils.debug(time_start)
 
             graphs_cons = np.zeros(veh_traces.size, dtype=object)
-            for idx, snapshot in enumerate(veh_traces):
-                time_start = utils.debug(
-                    None, 'Analyzing snapshot {:d}'.format(idx))
-                # TODO: too much distance between SUMO vehicle positions and
-                # OSMnx streets?
-                vehs = sumo.vehicles_from_traces(
-                    net['graph_streets'], snapshot)
-                graph_cons_snapshot = gen_connection_graph(
-                    vehs,
-                    net['gdf_buildings'],
-                    max_dist_olos_los=config['max_dist_olos_los'],
-                    max_dist_nlos=config['max_dist_nlos'])
 
-                graphs_cons[idx] = graph_cons_snapshot
+            if config['multiprocess']:
+                with mp.Pool() as pool:
+                    graphs_cons = pool.starmap(
+                        main_sim_multiprocess_sumo,
+                        zip(veh_traces,
+                            repeat(net['graph_streets']),
+                            repeat(net['gdf_buildings']),
+                            repeat(config['max_dist_olos_los']),
+                            repeat(config['max_dist_nlos'])))
+            else:
+                for idx, snapshot in enumerate(veh_traces):
+                    time_start = utils.debug(
+                        None, 'Analyzing snapshot {:d}'.format(idx))
+                    # TODO: too much distance between SUMO vehicle positions and
+                    # OSMnx streets?
+                    vehs = sumo.vehicles_from_traces(
+                        net['graph_streets'], snapshot)
+                    graph_cons_snapshot = gen_connection_graph(
+                        vehs,
+                        net['gdf_buildings'],
+                        max_dist_olos_los=config['max_dist_olos_los'],
+                        max_dist_nlos=config['max_dist_nlos'])
 
-                # TODO: here!
-                utils.debug(time_start)
+                    graphs_cons[idx] = graph_cons_snapshot
+
+                    utils.debug(time_start)
 
             # Save in and outputs
             in_vars = config
