@@ -27,9 +27,9 @@ import sumo
 import network_parser as nw_p
 
 
-def gen_connection_graph(vehs, gdf_buildings, max_dist_olos_los=250, max_dist_nlos=140):
-    """Simulates all combinations of connections using only
-    distances (not pathlosses) and determine which vehicles are connected"""
+def gen_connection_matrix(vehs, gdf_buildings, max_dist_olos_los=250, max_dist_nlos=140):
+    """Simulates all combinations of connections using distances (not pathlosses)
+    and determine which vehicles are connected. Returns a matrix"""
 
     # Initialize
     count_veh = vehs.count
@@ -60,9 +60,22 @@ def gen_connection_graph(vehs, gdf_buildings, max_dist_olos_los=250, max_dist_nl
     idxs_in_range = np.append(
         idxs_in_range_olos_los, idxs_in_range_nlos)
     is_in_range = np.in1d(np.arange(count_cond), idxs_in_range)
-    is_in_range_matrix = dist.squareform(is_in_range).astype(bool)
+    matrix_cons = dist.squareform(is_in_range).astype(bool)
+
+    return matrix_cons
+
+
+def gen_connection_graph(vehs, gdf_buildings, max_dist_olos_los=250, max_dist_nlos=140):
+    """Simulates all combinations of connections using distances (not pathlosses)
+    and determine which vehicles are connected. Returns a networkx graph"""
+
+    matrix_cons = gen_connection_matrix(vehs,
+                                        gdf_buildings,
+                                        max_dist_olos_los=max_dist_olos_los,
+                                        max_dist_nlos=max_dist_nlos)
+
     # TODO: check if node names correspond to same indices as in vehs?
-    graph_cons = nx.from_numpy_matrix(is_in_range_matrix)
+    graph_cons = nx.from_numpy_matrix(matrix_cons)
 
     return graph_cons
 
@@ -220,13 +233,13 @@ def main_sim_multiprocess_sumo(snapshot,
     # OSMnx streets?
     vehs = sumo.vehicles_from_traces(
         graph_streets, snapshot)
-    graph_cons = gen_connection_graph(
+    matrix_cons = gen_connection_matrix(
         vehs,
         gdf_buildings,
         max_dist_olos_los=max_dist_olos_los,
         max_dist_nlos=max_dist_nlos)
 
-    return graph_cons
+    return matrix_cons
 
 
 def main_sim_multiprocess(iteration, densities_veh, static_params):
@@ -300,14 +313,14 @@ def main():
                                         which_result=config['which_result'])
                 vehicles.place_vehicles_in_network(net, density_veh=density,
                                                    density_type=config['density_type'])
-                graph_cons_snapshot = \
+                matrix_cons_snapshot = \
                     gen_connection_graph(
                         net['vehs'],
                         net['gdf_buildings'],
                         max_dist_olos_los=config['max_dist_olos_los'],
                         max_dist_nlos=config['max_dist_nlos'])
                 net_connectivity = calc_net_connectivity(
-                    graph_cons_snapshot, net['vehs'])
+                    matrix_cons_snapshot, net['vehs'])
                 # TODO: !
                 # path_redundancy = calc_path_redundancy(graph_cons, net['vehs'])
 
@@ -391,6 +404,22 @@ def main():
         graph_streets = net['graph_streets']
         utils.debug(time_start)
 
+        # Set unset SUMO settings to sane defaults
+        if 'tls_settings' not in config['sumo']:
+            config['sumo']['tls_settings'] = None
+        if 'fringe_factor' not in config['sumo']:
+            config['sumo']['fringe_factor'] = None
+        if 'max_speed' not in config['sumo']:
+            config['sumo']['max_speed'] = None
+        if 'intermediate_points' not in config['sumo']:
+            config['sumo']['intermediate_points'] = None
+        if 'warmup_duration' not in config['sumo']:
+            config['sumo']['warmup_duration'] = None
+        if 'abort_after_sumo' not in config['sumo']:
+            config['sumo']['abort_after_sumo'] = False
+        if 'multiprocess' not in config:
+            config['multiprocess'] = False
+
         for density_veh in config['densities_veh']:
 
             if config['density_type'] == 'absolute':
@@ -403,27 +432,6 @@ def main():
                 count_veh = int(round(density_veh * area))
             else:
                 raise ValueError('Density type not supported')
-
-            if 'tls_settings' not in config['sumo']:
-                config['sumo']['tls_settings'] = None
-
-            if 'fringe_factor' not in config['sumo']:
-                config['sumo']['fringe_factor'] = None
-
-            if 'max_speed' not in config['sumo']:
-                config['sumo']['max_speed'] = None
-
-            if 'intermediate_points' not in config['sumo']:
-                config['sumo']['intermediate_points'] = None
-
-            if 'warmup_duration' not in config['sumo']:
-                config['sumo']['warmup_duration'] = None
-
-            if 'abort_after_sumo' not in config['sumo']:
-                config['sumo']['abort_after_sumo'] = False
-
-            if 'multiprocess' not in config:
-                config['multiprocess'] = False
 
             time_start = utils.debug(None, 'Running SUMO interface')
             veh_traces = sumo.simple_wrapper(
@@ -442,11 +450,11 @@ def main():
             if config['sumo']['abort_after_sumo']:
                 continue
 
-            graphs_cons = np.zeros(veh_traces.size, dtype=object)
+            matrices_cons = np.zeros(veh_traces.size, dtype=object)
 
             if config['multiprocess']:
                 with mp.Pool() as pool:
-                    graphs_cons = pool.starmap(
+                    matrices_cons = pool.starmap(
                         main_sim_multiprocess_sumo,
                         zip(veh_traces,
                             repeat(net['graph_streets']),
@@ -461,31 +469,36 @@ def main():
                     # OSMnx streets?
                     vehs = sumo.vehicles_from_traces(
                         net['graph_streets'], snapshot)
-                    graph_cons_snapshot = gen_connection_graph(
+                    matrix_cons_snapshot = gen_connection_matrix(
                         vehs,
                         net['gdf_buildings'],
                         max_dist_olos_los=config['max_dist_olos_los'],
                         max_dist_nlos=config['max_dist_nlos'])
 
-                    graphs_cons[idx] = graph_cons_snapshot
+                    matrices_cons[idx] = matrix_cons_snapshot
 
                     utils.debug(time_start)
 
-            if config['sumo']['abort_after_sumo']:
-                return
+            if not config['sumo']['abort_after_sumo']:
+                # Save in and outputs
+                # TODO: save only current density!
+                in_vars = config
+                out_vars = {'matrices_cons': matrices_cons}
+                # TODO: !
+                # info_vars = {'time_start': time_start, 'time_finish': time_finish}
+                # save_vars = {'in': in_vars, 'out': out_vars, 'info': info_vars}
+                # TODO: maybe not save graphs but matrices to save space?
+                save_vars = {'in': in_vars, 'out': out_vars}
+                filepath_res = 'results/sumo_{}.{:d}.pickle'.format(
+                    utils.string_to_filename(config['place']), count_veh)
+                with open(filepath_res, 'wb') as file:
+                    pickle.dump(save_vars, file)
 
-            # Save in and outputs
-            in_vars = config
-            out_vars = {'graphs_cons': graphs_cons}
+        # Send mail
+        if config['send_mail']:
             # TODO: !
-            # info_vars = {'time_start': time_start, 'time_finish': time_finish}
-            # save_vars = {'in': in_vars, 'out': out_vars, 'info': info_vars}
-            # TODO: maybe not save graphs but matrices to save space?
-            save_vars = {'in': in_vars, 'out': out_vars}
-            filepath_res = 'results/sumo_{}.{:d}.pickle'.format(
-                utils.string_to_filename(config['place']), count_veh)
-            with open(filepath_res, 'wb') as file:
-                pickle.dump(save_vars, file)
+            # utils.send_mail_finish(config['mail_to'], time_start=time_start)
+            utils.send_mail_finish(config['mail_to'])
 
         # TODO: modify?
         if config['show_plot']:
