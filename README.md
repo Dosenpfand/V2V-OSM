@@ -41,10 +41,14 @@ Applies to Debian 8
 
         python3 main_sim_osm_pathloss.py
 
-10. Get help
+10. Modify the simulation parameters in
 
-        python3 main_sim_osm_pathloss.py -h
+        network_definition.json
 
-11. Optional: For time-varying simulations with vehicle routing install SUMO ( www.sumo.dlr.de )
+    and run the simulation again
+
+        python3 main_sim_osm_pathloss.py
+
+11. Optional: For vehicle routing and movement install SUMO ( www.sumo.dlr.de )
 
         apt-get install sumo
