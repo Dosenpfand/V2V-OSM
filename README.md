@@ -8,7 +8,7 @@ Main software components are:
 - [OSMnx](https://github.com/gboeing/osmnx)
 - [SUMO](http://www.sumo.dlr.de)
 - [NetworkX](https://networkx.github.io/)
-- To see all thirdparty libraries check `requirements.txt`
+- To see all third party libraries check `requirements.txt`
 
 ## Quickstart
 To get started on Debian 8 follow these steps.
