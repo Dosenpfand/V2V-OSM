@@ -2,7 +2,7 @@
     "global": {
         "scenario": "viriyasitavat_comparison_dynamic",
         "mail_to": "mgasser@nt.tuwien.ac.at",
-        "send_mail": false,
+        "send_mail": true,
         "show_plot": false,
         "iterations": 100,
         "sim_mode": "sumo",

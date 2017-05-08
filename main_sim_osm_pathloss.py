@@ -491,8 +491,7 @@ def main():
                 save_vars = {'in': in_vars, 'out': out_vars}
                 filepath_res = 'results/sumo_{}.{:d}.pickle'.format(
                     utils.string_to_filename(config['place']), count_veh)
-                with open(filepath_res, 'wb') as file:
-                    pickle.dump(save_vars, file)
+                utils.save(save_vars, filepath_res)
 
         # Send mail
         if config['send_mail']:
