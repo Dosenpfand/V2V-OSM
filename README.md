@@ -1,6 +1,17 @@
-# Code repository for diploma thesis
+# V2V-OSM
+Simulate Vehicle-to-vehicle (V2V) communication on street networks obtained from [OpenStreetMap](https://www.openstreetmap.org/) (OSM)
+
+## Main Components
+Main software components are:
+
+- This Python package
+- [OSMnx](https://github.com/gboeing/osmnx)
+- [SUMO](http://www.sumo.dlr.de)
+- [NetworkX](https://networkx.github.io/)
+- To see all thirdparty libraries check `requirements.txt`
+
 ## Quickstart
-Applies to Debian 8
+To get started on Debian 8 follow these steps.
 
 1. Install basic tools
 
@@ -49,6 +60,6 @@ Applies to Debian 8
 
         python3 main_sim_osm_pathloss.py
 
-11. Optional: For vehicle routing and movement install SUMO ( www.sumo.dlr.de )
+11. Optional: For vehicle realistic vehicle placement and movement install [SUMO](http://www.sumo.dlr.de)
 
         apt-get install sumo
