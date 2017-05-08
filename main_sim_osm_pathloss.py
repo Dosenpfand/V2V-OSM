@@ -11,8 +11,6 @@ import logging
 # Extension imports
 import numpy as np
 import matplotlib.pyplot as plt
-import scipy.spatial.distance as dist
-import networkx as nx
 import osmnx as ox
 
 # Local imports
@@ -25,111 +23,11 @@ import vehicles
 import propagation as prop
 import sumo
 import network_parser as nw_p
-
-
-def gen_connection_matrix(vehs, gdf_buildings, max_dist_olos_los=250, max_dist_nlos=140):
-    """Simulates all combinations of connections using distances (not pathlosses)
-    and determine which vehicles are connected. Returns a matrix"""
-
-    # Initialize
-    count_veh = vehs.count
-    max_dist = max(max_dist_nlos, max_dist_olos_los)
-    count_cond = count_veh * (count_veh - 1) // 2
-    vehs.allocate(count_cond)
-
-    # Determine NLOS and OLOS/LOS
-    time_start = utils.debug(None, 'Determining propagation conditions')
-    is_nlos = prop.veh_cons_are_nlos_all(
-        vehs.get_points(), gdf_buildings, max_dist=max_dist)
-    is_olos_los = np.invert(is_nlos)
-    idxs_olos_los = np.where(is_olos_los)[0]
-    idxs_nlos = np.where(is_nlos)[0]
-
-    count_cond = count_veh * (count_veh - 1) // 2
-
-    utils.debug(time_start)
-
-    # Determine in range vehicles
-    time_start = utils.debug(None, 'Determining in range vehicles')
-
-    distances = dist.pdist(vehs.coordinates)
-    idxs_in_range_olos_los = idxs_olos_los[
-        distances[idxs_olos_los] < max_dist_olos_los]
-    idxs_in_range_nlos = idxs_nlos[
-        distances[idxs_nlos] < max_dist_nlos]
-    idxs_in_range = np.append(
-        idxs_in_range_olos_los, idxs_in_range_nlos)
-    is_in_range = np.in1d(np.arange(count_cond), idxs_in_range)
-    matrix_cons = dist.squareform(is_in_range).astype(bool)
-
-    return matrix_cons
-
-
-def gen_connection_graph(vehs, gdf_buildings, max_dist_olos_los=250, max_dist_nlos=140):
-    """Simulates all combinations of connections using distances (not pathlosses)
-    and determine which vehicles are connected. Returns a networkx graph"""
-
-    matrix_cons = gen_connection_matrix(vehs,
-                                        gdf_buildings,
-                                        max_dist_olos_los=max_dist_olos_los,
-                                        max_dist_nlos=max_dist_nlos)
-
-    # TODO: check if node names correspond to same indices as in vehs?
-    graph_cons = nx.from_numpy_matrix(matrix_cons)
-
-    return graph_cons
-
-
-def calc_net_connectivity(graph_cons, vehs=None):
-    """Calculates the network connectivity (relative size of the biggest connected cluster)"""
-
-    # Find biggest cluster
-    time_start = utils.debug(None, 'Finding biggest cluster')
-    count_veh = graph_cons.order()
-    clusters = nx.connected_component_subgraphs(graph_cons)
-    cluster_max = max(clusters, key=len)
-    net_connectivity = cluster_max.order() / count_veh
-    if vehicles is not None:
-        vehs.add_key('cluster_max', cluster_max.nodes())
-        not_cluster_max_nodes = np.arange(count_veh)[~np.in1d(
-            np.arange(count_veh), cluster_max.nodes())]
-        vehs.add_key('not_cluster_max', not_cluster_max_nodes)
-
-    utils.debug(time_start)
-    logging.info('Network connectivity {:.2f}%'.format(
-        net_connectivity * 100))
-
-    return net_connectivity
-
-
-def calc_path_redundancy(graph_cons, vehs):
-    """Calculates the path redundancy of the connection graph for the center vehicle"""
-
-    # Find center vehicle
-    count_veh = vehs.count
-    time_start = utils.debug(None, 'Finding center vehicle')
-    idx_center_veh = geom_o.find_center_veh(vehs.get())
-    idxs_other_vehs = np.where(np.arange(count_veh) != idx_center_veh)[0]
-    vehs.add_key('center', idx_center_veh)
-    vehs.add_key('other', idxs_other_vehs)
-    utils.debug(time_start)
-
-    # Determine path redundancy
-    # NOTE: we calculate the minimum number of node independent paths as an approximation (and not
-    # the maximum)
-    node_center_veh = idx_center_veh  # TODO: this does not seem to be the center?
-    time_start = utils.debug(None, 'Determining path redundancy')
-    distances = dist.pdist(vehs.coordinates)
-    path_redundancy = prop.path_redundancy(
-        graph_cons, node_center_veh, distances)
-
-    utils.debug(time_start)
-
-    return path_redundancy
+import connection_analysis as con_ana
 
 
 def main_sim_single(network, max_pl=150):
-    """Simulates the connections from one to all other vehicles using pathloss functions """
+    """Simulates the connections from one to all other vehicles using pathloss functions"""
 
     # Initialize
     vehs = network['vehs']
@@ -233,7 +131,7 @@ def main_sim_multiprocess_sumo(snapshot,
     # OSMnx streets?
     vehs = sumo.vehicles_from_traces(
         graph_streets, snapshot)
-    matrix_cons = gen_connection_matrix(
+    matrix_cons = con_ana.gen_connection_matrix(
         vehs,
         gdf_buildings,
         max_dist_olos_los=max_dist_olos_los,
@@ -260,13 +158,14 @@ def main_sim_multiprocess(iteration, densities_veh, static_params):
         vehicles.place_vehicles_in_network(net_iter, density_veh=density,
                                            density_type=static_params['density_type'])
         graph_cons = \
-            gen_connection_graph(
+            con_ana.gen_connection_graph(
                 net_iter['vehs'],
                 net_iter['gdf_buildings'],
                 max_dist_olos_los=static_params['max_dist_olos_los'],
                 max_dist_nlos=static_params['max_dist_nlos'])
-        net_connectivity = calc_net_connectivity(graph_cons, net_iter['vehs'])
-        path_redundancy = calc_path_redundancy(graph_cons, net['vehs'])
+        net_connectivity = con_ana.calc_net_connectivity(
+            graph_cons, net_iter['vehs'])
+        path_redundancy = con_ana.calc_path_redundancy(graph_cons, net['vehs'])
         net_connectivities[idx_density] = net_connectivity
         path_redundancies[idx_density] = path_redundancy
 
@@ -314,12 +213,12 @@ def main():
                 vehicles.place_vehicles_in_network(net, density_veh=density,
                                                    density_type=config['density_type'])
                 matrix_cons_snapshot = \
-                    gen_connection_graph(
+                    con_ana.gen_connection_graph(
                         net['vehs'],
                         net['gdf_buildings'],
                         max_dist_olos_los=config['max_dist_olos_los'],
                         max_dist_nlos=config['max_dist_nlos'])
-                net_connectivity = calc_net_connectivity(
+                net_connectivity = con_ana.calc_net_connectivity(
                     matrix_cons_snapshot, net['vehs'])
                 # TODO: !
                 # path_redundancy = calc_path_redundancy(graph_cons, net['vehs'])
@@ -469,7 +368,7 @@ def main():
                     # OSMnx streets?
                     vehs = sumo.vehicles_from_traces(
                         net['graph_streets'], snapshot)
-                    matrix_cons_snapshot = gen_connection_matrix(
+                    matrix_cons_snapshot = con_ana.gen_connection_matrix(
                         vehs,
                         net['gdf_buildings'],
                         max_dist_olos_los=config['max_dist_olos_los'],
