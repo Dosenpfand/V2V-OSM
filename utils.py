@@ -6,6 +6,9 @@ import smtplib
 from email.mime.text import MIMEText
 import socket
 import getpass
+import gzip
+import os
+import pickle
 import logging
 import scipy.special as spc
 import scipy.stats as st
@@ -86,3 +89,30 @@ def send_mail_finish(recipient=None, time_start=None):
     else:
         smtp.send_message(msg)
         smtp.quit()
+
+
+def save(obj, file_path, protocol=4, compression_level=1):
+    """Saves an object using gzip compression"""
+
+    with gzip.open(file_path, 'wb', compresslevel=compression_level) as file:
+        pickle.dump(obj, file, protocol=protocol)
+
+
+def load(file_path):
+    """Loads and decompresses a saved object"""
+
+    with gzip.open(file_path, 'rb') as file:
+        return pickle.load(file)
+
+
+def compress_file(file_in_path, protocol=4, compression_level=1, delete_uncompressed=True):
+    """Loads an uncompressed file and saves a compressed copy of it"""
+
+    file_out_path = file_in_path + '.gz'
+    with open(file_in_path, 'rb') as file_in:
+        obj = pickle.load(file_in)
+        save(obj, file_out_path, protocol=protocol,
+             compression_level=compression_level)
+
+    if delete_uncompressed:
+        os.remove(file_in_path)
