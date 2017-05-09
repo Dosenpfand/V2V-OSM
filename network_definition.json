@@ -1,6 +1,6 @@
 {
     "global": {
-        "scenario": "default",
+        "scenario": "test_uniform_pathloss_sequential",
         "mail_to": "mgasser@nt.tuwien.ac.at",
         "send_mail": true,
         "show_plot": false,
@@ -59,6 +59,39 @@
             "intermediate_points": 100,
             "abort_after_sumo": false
         }
+    },
+    "test_uniform_distance_sequential": {
+        "place": "Neubau - Vienna - Austria",
+        "which_result": null,
+        "distribution_veh": "uniform",
+        "iterations": 5,
+        "density_type": "absolute",
+        "densities_veh": [
+            10,
+            50,
+            75
+        ],
+        "connection_metric": "distance",
+        "max_connection_metric": {
+            "olos_los": 250,
+            "nlos": 140
+        },
+        "simulation_mode": "sequential"
+    },
+    "test_uniform_pathloss_sequential": {
+        "place": "Neubau - Vienna - Austria",
+        "which_result": null,
+        "distribution_veh": "uniform",
+        "iterations": 5,
+        "density_type": "absolute",
+        "densities_veh": [
+            10,
+            50,
+            75
+        ],
+        "connection_metric": "pathloss",
+        "max_connection_metric": 116,
+        "simulation_mode": "sequential"
     },
     "graz": {
         "place": "Graz - Steiermark - \u00d6sterreich",
