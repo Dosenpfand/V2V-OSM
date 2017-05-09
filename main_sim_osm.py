@@ -203,7 +203,7 @@ def main():
                                            net['gdf_buildings'],
                                            max_metric=config['max_connection_metric'],
                                            metric=config['connection_metric'])
-                    matrices_cons[idx] = matrix_cons_snapshot
+                    matrices_cons[iteration] = matrix_cons_snapshot
                     utils.debug(time_start)
             else:
                 raise NotImplementedError(
@@ -213,7 +213,7 @@ def main():
             raise NotImplementedError('Simulation mode not supported')
 
         # Save in and outputs
-        config_save = config.deepcopy()
+        config_save = config.copy()
         config_save['density_veh_current'] = density_veh
         config_save['count_veh'] = count_veh
         results = {'matrices_cons': matrices_cons}
