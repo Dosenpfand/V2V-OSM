@@ -116,3 +116,24 @@ def compress_file(file_in_path, protocol=4, compression_level=1, delete_uncompre
 
     if delete_uncompressed:
         os.remove(file_in_path)
+
+
+def fill_config(config):
+    """ Set unset SUMO settings to sane defaults"""
+
+    if 'tls_settings' not in config['sumo']:
+        config['sumo']['tls_settings'] = None
+    if 'fringe_factor' not in config['sumo']:
+        config['sumo']['fringe_factor'] = None
+    if 'max_speed' not in config['sumo']:
+        config['sumo']['max_speed'] = None
+    if 'intermediate_points' not in config['sumo']:
+        config['sumo']['intermediate_points'] = None
+    if 'warmup_duration' not in config['sumo']:
+        config['sumo']['warmup_duration'] = None
+    if 'abort_after_sumo' not in config['sumo']:
+        config['sumo']['abort_after_sumo'] = False
+    if 'multiprocess' not in config:
+        config['multiprocess'] = False
+
+    return config
