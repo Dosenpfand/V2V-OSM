@@ -1,26 +1,29 @@
 {
     "global": {
-        "scenario": "viriyasitavat_comparison_dynamic",
+        "scenario": "viriyasitavat_comparison",
         "mail_to": "mgasser@nt.tuwien.ac.at",
         "send_mail": true,
         "show_plot": false,
-        "iterations": 100,
-        "sim_mode": "sumo",
         "loglevel": "DEBUG"
     },
     "default": {
         "place": "Neubau - Vienna - Austria",
         "which_result": null,
-        "density_type": "absolute",
-        "densities_veh": 25,
-        "max_dist_olos_los": 250,
-        "max_dist_nlos": 140,
-        "max_pl": 150,
-        "sumo_sim_duration": 900
+        "distribution_veh": "uniform",
+        "iterations": 5,
+        "density_type": "total",
+        "densities_veh": [10, 100],
+        "connection_metric": "distance",
+        "max_connection_metric": {
+            "olos_los": 250,
+            "nlos": 140
+        },
+        "simulation_mode": "sequential"
     },
-    "viriyasitavat_comparison_dynamic": {
+    "viriyasitavat_comparison": {
         "place": "Upper West Side - New York - USA",
         "which_result": null,
+        "distribution_veh": "SUMO",
         "density_type": "area",
         "densities_veh": [
             {
@@ -34,9 +37,12 @@
                 "num": 2
             }
         ],
-        "max_dist_olos_los": 250,
-        "max_dist_nlos": 140,
-        "multiprocess": true,
+        "connection_metric": "distance",
+        "max_connection_metric": {
+            "olos_los": 250,
+            "nlos": 140
+        },
+        "simulation_mode": "parallel",
         "sumo": {
             "sim_duration": 3000,
             "warmup_duration": 1000,
