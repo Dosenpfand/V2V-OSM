@@ -19,7 +19,6 @@ def gen_connection_matrix(vehs, gdf_buildings, max_metric, metric='distance'):
         raise NotImplementedError('Metric not supported')
 
     if metric == 'distance':
-        use_dist = True
         if isinstance(max_metric, dict):
             max_dist_nlos = max_metric['nlos']
             max_dist_olos_los = max_metric['olos_los']
@@ -28,9 +27,10 @@ def gen_connection_matrix(vehs, gdf_buildings, max_metric, metric='distance'):
             max_dist_olos_los = max_metric
         max_dist = max(max_dist_nlos, max_dist_olos_los)
     elif metric == 'pathloss':
-        use_pl = True
         # TODO: set a very high max distance?
         max_dist = None
+    else:
+        raise NotImplementedError('Metric not implemented')
 
     count_veh = vehs.count
     count_cond = count_veh * (count_veh - 1) // 2
@@ -52,7 +52,7 @@ def gen_connection_matrix(vehs, gdf_buildings, max_metric, metric='distance'):
     time_start = utils.debug(None, 'Determining in range vehicles')
 
     distances = dist.pdist(vehs.coordinates)
-    if use_dist:
+    if metric == 'distance':
         idxs_in_range_olos_los = idxs_olos_los[
             distances[idxs_olos_los] < max_dist_olos_los]
         idxs_in_range_nlos = idxs_nlos[
@@ -60,9 +60,11 @@ def gen_connection_matrix(vehs, gdf_buildings, max_metric, metric='distance'):
         idxs_in_range = np.append(
             idxs_in_range_olos_los, idxs_in_range_nlos)
         # TODO: add keys?
-    elif use_pl:
+    elif metric == 'pathloss':
         # TODO: !
-        pass
+        raise NotImplementedError('TODO!')
+    else:
+        raise NotImplementedError('Metric not implemented')
 
     is_in_range = np.in1d(np.arange(count_cond), idxs_in_range)
     matrix_cons = dist.squareform(is_in_range).astype(bool)

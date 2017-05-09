@@ -5,12 +5,10 @@ import time
 import os
 import multiprocessing as mp
 from itertools import repeat
-import pickle
 import logging
 
 # Extension imports
 import numpy as np
-import matplotlib.pyplot as plt
 import osmnx as ox
 
 # Local imports
@@ -229,9 +227,7 @@ def main():
 
     # Send mail
     if config['send_mail']:
-        # TODO: !
-        # utils.send_mail_finish(config['mail_to'], time_start=time_start)
-        utils.send_mail_finish(config['mail_to'])
+        utils.send_mail_finish(config['mail_to'], time_start=time_start_total)
 
     # TODO: modify?
     if config['show_plot']:
