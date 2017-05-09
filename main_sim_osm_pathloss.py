@@ -1,5 +1,7 @@
 """ Generates streets, buildings and vehicles from OpenStreetMap data with osmnx"""
 
+# TODO: DEPRECATED, main script is now main_sim_osm.py!
+
 # Standard imports
 import time
 import os
@@ -122,8 +124,8 @@ def main_sim_single(network, max_pl=150):
 def main_sim_multiprocess_sumo(snapshot,
                                graph_streets,
                                gdf_buildings,
-                               max_dist_olos_los,
-                               max_dist_nlos):
+                               max_metric,
+                               metric='distance'):
     """Runs a single snapshot analysis of a SUMO simulation result.
     Meant to be run in paralell"""
 
@@ -134,8 +136,8 @@ def main_sim_multiprocess_sumo(snapshot,
     matrix_cons = con_ana.gen_connection_matrix(
         vehs,
         gdf_buildings,
-        max_dist_olos_los=max_dist_olos_los,
-        max_dist_nlos=max_dist_nlos)
+        max_metric,
+        metric=metric)
 
     return matrix_cons
 
@@ -358,8 +360,8 @@ def main():
                         zip(veh_traces,
                             repeat(net['graph_streets']),
                             repeat(net['gdf_buildings']),
-                            repeat(config['max_dist_olos_los']),
-                            repeat(config['max_dist_nlos'])))
+                            repeat(config['max_connection_metric']),
+                            repeat(config['connection_metric'])))
             else:
                 for idx, snapshot in enumerate(veh_traces):
                     time_start = utils.debug(
@@ -371,26 +373,25 @@ def main():
                     matrix_cons_snapshot = con_ana.gen_connection_matrix(
                         vehs,
                         net['gdf_buildings'],
-                        max_dist_olos_los=config['max_dist_olos_los'],
-                        max_dist_nlos=config['max_dist_nlos'])
+                        max_metric=config['max_connection_metric'],
+                        metric=config['connection_metric'])
 
                     matrices_cons[idx] = matrix_cons_snapshot
 
                     utils.debug(time_start)
 
-            if not config['sumo']['abort_after_sumo']:
-                # Save in and outputs
-                # TODO: save only current density!
-                in_vars = config
-                out_vars = {'matrices_cons': matrices_cons}
-                # TODO: !
-                # info_vars = {'time_start': time_start, 'time_finish': time_finish}
-                # save_vars = {'in': in_vars, 'out': out_vars, 'info': info_vars}
-                # TODO: maybe not save graphs but matrices to save space?
-                save_vars = {'in': in_vars, 'out': out_vars}
-                filepath_res = 'results/sumo_{}.{:d}.pickle'.format(
-                    utils.string_to_filename(config['place']), count_veh)
-                utils.save(save_vars, filepath_res)
+            # Save in and outputs
+            # TODO: save only current density!
+            in_vars = config
+            out_vars = {'matrices_cons': matrices_cons}
+            # TODO: !
+            # info_vars = {'time_start': time_start, 'time_finish': time_finish}
+            # save_vars = {'in': in_vars, 'out': out_vars, 'info': info_vars}
+            # TODO: maybe not save graphs but matrices to save space?
+            save_vars = {'in': in_vars, 'out': out_vars}
+            filepath_res = 'results/sumo_{}.{:d}.pickle'.format(
+                utils.string_to_filename(config['place']), count_veh)
+            utils.save(save_vars, filepath_res)
 
         # Send mail
         if config['send_mail']:
