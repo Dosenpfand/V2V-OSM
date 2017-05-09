@@ -10,6 +10,7 @@ import logging
 # Extension imports
 import numpy as np
 import osmnx as ox
+from scipy.special import comb
 
 # Local imports
 import pathloss
@@ -81,20 +82,12 @@ def sim_single_uniform(random_seed,
 def main():
     """Main simulation function"""
 
+    # General setup
     time_start_total = time.time()
     config = nw_p.params_from_conf()
     config_scenario = nw_p.params_from_conf(config['scenario'])
     config.update(config_scenario)
-
-    if isinstance(config['densities_veh'], (list, tuple)):
-        densities = np.zeros(0)
-        for density_in in config['densities_veh']:
-            if isinstance(density_in, dict):
-                density = np.linspace(**density_in)
-            else:
-                density = density_in
-            densities = np.append(densities, density)
-        config['densities_veh'] = densities
+    densities_veh = utils.convert_config_densities(config['densities_veh'])
 
     # Logger setup
     if 'loglevel' not in config:
@@ -117,20 +110,41 @@ def main():
     # Sanitize config
     config = utils.fill_config(config)
 
+    # Convert vehicle densities to counts
     # Iterate densities
-    for density_veh in config['densities_veh']:
+    counts_veh = np.zeros(densities_veh.size, dtype=int)
 
+    if config['density_type'] == 'length':
+        street_lengths = geom_o.get_street_lengths(graph_streets)
+
+    for idx, density_veh in enumerate(densities_veh):
         # Determine total vehicle count
         if config['density_type'] == 'absolute':
-            count_veh = int(density_veh)
+            counts_veh[idx] = int(density_veh)
         elif config['density_type'] == 'length':
-            street_lengths = geom_o.get_street_lengths(graph_streets)
-            count_veh = int(round(density_veh * np.sum(street_lengths)))
+            counts_veh[idx] = int(round(density_veh * np.sum(street_lengths)))
         elif config['density_type'] == 'area':
             area = net['gdf_boundary'].area
-            count_veh = int(round(density_veh * area))
+            counts_veh[idx] = int(round(density_veh * area))
         else:
             raise ValueError('Density type not supported')
+
+    # Run time estimation
+    if config['distribution_veh'] == 'SUMO':
+        time_steps = config['sumo']['sim_duration'] - \
+            config['sumo']['warmup_duration']
+    elif config['distribution_veh'] == 'uniform':
+        time_steps = config['iterations']
+
+    counts_con = comb(counts_veh, 2) * time_steps
+    count_con = np.sum(counts_con)
+    count_con_done = 0
+    progress = 0
+    time_process_start = time.process_time()
+
+    # Iterate densities
+    for idx_count_veh, count_veh in enumerate(counts_veh):
+        logging.info('Simulating {:d} vehicles'.format(count_veh))
 
         if config['distribution_veh'] == 'SUMO':
             # Run SUMO interface functions
@@ -210,9 +224,18 @@ def main():
         else:
             raise NotImplementedError('Simulation mode not supported')
 
+        # Progress report
+        # TODO: still incaccurate!
+        count_con_done += counts_con[idx_count_veh]
+        progress = count_con_done / count_con
+        time_process_done = time.process_time() - time_process_start
+        time_process_todo = time_process_done / progress * (1 - progress)
+        logging.info(
+            '{:.0f}% total simulation progress, '.format(progress * 100) +
+            '{:.0f} seconds estimated remaining simulation time'.format(time_process_todo))
+
         # Save in and outputs
         config_save = config.copy()
-        config_save['density_veh_current'] = density_veh
         config_save['count_veh'] = count_veh
         results = {'matrices_cons': matrices_cons}
         time_finish_total = time.time()
@@ -221,7 +244,7 @@ def main():
         save_vars = {'config': config_save,
                      'results': results,
                      'info': info_vars}
-        filepath_res = 'results/sumo_{}.{:d}.pickle'.format(
+        filepath_res = 'results/{}.{:d}.pickle.gz'.format(
             utils.string_to_filename(config['place']), count_veh)
         utils.save(save_vars, filepath_res)
 

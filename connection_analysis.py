@@ -41,8 +41,10 @@ def gen_connection_matrix(vehs, gdf_buildings, max_metric, metric='distance'):
     is_nlos = prop.veh_cons_are_nlos_all(
         vehs.get_points(), gdf_buildings, max_dist=max_dist)
     is_olos_los = np.invert(is_nlos)
-    idxs_olos_los = np.where(is_olos_los)[0]
     idxs_nlos = np.where(is_nlos)[0]
+    idxs_olos_los = np.where(is_olos_los)[0]
+    vehs.add_key('nlos', idxs_nlos)
+    vehs.add_key('olos_los', idxs_olos_los)
 
     count_cond = count_veh * (count_veh - 1) // 2
 
@@ -59,7 +61,9 @@ def gen_connection_matrix(vehs, gdf_buildings, max_metric, metric='distance'):
             distances[idxs_nlos] < max_dist_nlos]
         idxs_in_range = np.append(
             idxs_in_range_olos_los, idxs_in_range_nlos)
-        # TODO: add keys?
+        idxs_out_range = np.setdiff1d(np.arange(count_cond), idxs_in_range)
+        vehs.add_key('in_range', idxs_in_range)
+        vehs.add_key('out_range', idxs_out_range)
     elif metric == 'pathloss':
         # TODO: !
         raise NotImplementedError('TODO!')

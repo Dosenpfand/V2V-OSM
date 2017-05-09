@@ -1,10 +1,10 @@
 {
     "global": {
-        "scenario": "test_uniform_pathloss_sequential",
+        "scenario": "test_uniform_distance_sequential",
         "mail_to": "mgasser@nt.tuwien.ac.at",
         "send_mail": true,
         "show_plot": false,
-        "loglevel": "DEBUG"
+        "loglevel": "INFO"
     },
     "default": {
         "place": "Neubau - Vienna - Austria",
@@ -14,8 +14,8 @@
         "density_type": "absolute",
         "densities_veh": [
             10,
-            50,
-            75
+            20,
+            50
         ],
         "connection_metric": "distance",
         "max_connection_metric": {
@@ -67,9 +67,10 @@
         "iterations": 5,
         "density_type": "absolute",
         "densities_veh": [
-            10,
             50,
-            75
+            100,
+            200,
+            300
         ],
         "connection_metric": "distance",
         "max_connection_metric": {

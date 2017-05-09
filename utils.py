@@ -136,3 +136,21 @@ def fill_config(config):
             config['sumo']['abort_after_sumo'] = False
 
     return config
+
+
+def convert_config_densities(config_densities):
+    """Converts the density parameters from the configuration to a simple array"""
+
+    if isinstance(config_densities, (list, tuple)):
+        densities = np.zeros(0)
+        for density_in in config_densities:
+            if isinstance(density_in, dict):
+                density = np.linspace(**density_in)
+            else:
+                density = density_in
+            densities = np.append(densities, density)
+
+    else:
+        densities = config_densities
+
+    return densities
