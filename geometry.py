@@ -37,6 +37,7 @@ def line_intersects_points(line, points, margin=1):
 def get_street_lengths(streets):
     """ Returns the lengths of the streets in a graph"""
 
+    # TODO: use length from stats from OSMnx instead?
     # NOTE: The are small differences in the values of data['geometry'].length
     # and data['length']
     lengths = np.zeros(streets.number_of_edges())

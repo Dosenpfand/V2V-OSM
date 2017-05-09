@@ -10,13 +10,29 @@ import scipy.spatial.distance as dist
 import propagation as prop
 
 
-def gen_connection_matrix(vehs, gdf_buildings, max_dist_olos_los=250, max_dist_nlos=140):
-    """Simulates all combinations of connections using distances (not pathlosses)
-    and determine which vehicles are connected. Returns a matrix"""
+def gen_connection_matrix(vehs, gdf_buildings, max_metric, metric='distance'):
+    """Simulates links between every set of 2 vehicles and determines if they are connected using
+    either distance or pathloss as a metric. Returns a matrix"""
 
     # Initialize
+    if metric not in ['distance', 'pathloss']:
+        raise NotImplementedError('Metric not supported')
+
+    if metric == 'distance':
+        use_dist = True
+        if isinstance(max_metric, dict):
+            max_dist_nlos = max_metric['nlos']
+            max_dist_olos_los = max_metric['olos_los']
+        else:
+            max_dist_nlos = max_metric
+            max_dist_olos_los = max_metric
+        max_dist = max(max_dist_nlos, max_dist_olos_los)
+    elif metric == 'pathloss':
+        use_pl = True
+        # TODO: set a very high max distance?
+        max_dist = None
+
     count_veh = vehs.count
-    max_dist = max(max_dist_nlos, max_dist_olos_los)
     count_cond = count_veh * (count_veh - 1) // 2
     vehs.allocate(count_cond)
 
@@ -36,26 +52,32 @@ def gen_connection_matrix(vehs, gdf_buildings, max_dist_olos_los=250, max_dist_n
     time_start = utils.debug(None, 'Determining in range vehicles')
 
     distances = dist.pdist(vehs.coordinates)
-    idxs_in_range_olos_los = idxs_olos_los[
-        distances[idxs_olos_los] < max_dist_olos_los]
-    idxs_in_range_nlos = idxs_nlos[
-        distances[idxs_nlos] < max_dist_nlos]
-    idxs_in_range = np.append(
-        idxs_in_range_olos_los, idxs_in_range_nlos)
+    if use_dist:
+        idxs_in_range_olos_los = idxs_olos_los[
+            distances[idxs_olos_los] < max_dist_olos_los]
+        idxs_in_range_nlos = idxs_nlos[
+            distances[idxs_nlos] < max_dist_nlos]
+        idxs_in_range = np.append(
+            idxs_in_range_olos_los, idxs_in_range_nlos)
+        # TODO: add keys?
+    elif use_pl:
+        # TODO: !
+        pass
+
     is_in_range = np.in1d(np.arange(count_cond), idxs_in_range)
     matrix_cons = dist.squareform(is_in_range).astype(bool)
 
     return matrix_cons
 
 
-def gen_connection_graph(vehs, gdf_buildings, max_dist_olos_los=250, max_dist_nlos=140):
-    """Simulates all combinations of connections using distances (not pathlosses)
-    and determine which vehicles are connected. Returns a networkx graph"""
+def gen_connection_graph(vehs, gdf_buildings, max_metric, metric='distance'):
+    """Simulates links between every set of 2 vehicles and determines if they are connected using
+    either distance or pathloss as a metric. Returns a networkx graph"""
 
     matrix_cons = gen_connection_matrix(vehs,
                                         gdf_buildings,
-                                        max_dist_olos_los=max_dist_olos_los,
-                                        max_dist_nlos=max_dist_nlos)
+                                        max_metric,
+                                        metric=metric)
 
     # TODO: check if node names correspond to same indices as in vehs?
     graph_cons = nx.from_numpy_matrix(matrix_cons)
