@@ -6,6 +6,7 @@ import os
 import multiprocessing as mp
 from itertools import repeat
 import logging
+import datetime
 
 # Extension imports
 import numpy as np
@@ -23,6 +24,8 @@ import propagation as prop
 import sumo
 import network_parser as nw_p
 import connection_analysis as con_ana
+
+import ipdb
 
 
 def sim_single_sumo(snapshot,
@@ -230,9 +233,15 @@ def main():
         progress = count_con_done / count_con
         time_process_done = time.process_time() - time_process_start
         time_process_todo = time_process_done / progress * (1 - progress)
+        datetime_process_todo = datetime.datetime(
+            1, 1, 1) + datetime.timedelta(seconds=int(time_process_todo))
         logging.info(
             '{:.0f}% total simulation progress, '.format(progress * 100) +
-            '{:.0f} seconds estimated remaining simulation time'.format(time_process_todo))
+            '{:d}:{:02d}:{:02d}:{:02d} remaining simulation time'.format(
+                datetime_process_todo.day - 1,
+                datetime_process_todo.hour,
+                datetime_process_todo.minute,
+                datetime_process_todo.second))
 
         # Save in and outputs
         config_save = config.copy()
