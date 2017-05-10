@@ -58,7 +58,7 @@ def log_progress(c_checkpoint, c_end, t_checkpoint, t_start):
         1, 1, 1) + datetime.timedelta(seconds=int(t_todo))
     logging.info(
         '{:.0f}% total simulation progress, '.format(progress_now * 100) +
-        '{:d}:{:02d}:{:02d}:{:02d} remaining simulation time'.format(
+        '{:02d}:{:02d}:{:02d}:{:02d} remaining simulation time'.format(
             datetime_todo.day - 1,
             datetime_todo.hour,
             datetime_todo.minute,
