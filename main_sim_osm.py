@@ -26,34 +26,43 @@ import sumo
 import network_parser as nw_p
 import connection_analysis as con_ana
 
+# Global variables
+rte_count_con_checkpoint = 0
+rte_count_con_total = 0
+rte_time_start = 0
+rte_time_checkpoint = 0
+
 
 def signal_handler(sig, frame):
     """Outputs simulation progress on SIGINFO"""
 
     if sig == signal.SIGTSTP:
-        log_progress(count_con_done, count_con, time_process_done)
+        log_progress(rte_count_con_checkpoint, rte_count_con_total,
+                     rte_time_checkpoint, rte_time_start)
 
 
-def log_progress(count_con_done, count_con, time_process_done):
+def log_progress(c_checkpoint, c_end, t_checkpoint, t_start):
     """Estimates and logs the progress of the currently running simulation"""
 
-    progress_old = count_con_done / count_con
-    time_process_now = time.process_time()
-    time_process_todo_old = time_process_done / \
-        progress_old * (1 - progress_old)
-    time_process_diff = time_process_now - time_process_done
-    time_process_todo_now = max([time_process_todo_old - time_process_diff, 0])
-    progress_new = progress_old * \
-        (1 + time_process_diff / time_process_todo_old)
-    datetime_process_todo = datetime.datetime(
-        1, 1, 1) + datetime.timedelta(seconds=int(time_process_todo_now))
+    if c_checkpoint == 0:
+        logging.info('No progress and remaining time estimation possible')
+        return
+
+    t_now = time.time() - t_start
+    c_now = c_checkpoint * t_now / t_checkpoint
+    progress_now = min([c_now / c_end, 1])
+    t_end = t_now * c_end / c_now
+    t_todo = max([t_end - t_now, 0])
+
+    datetime_todo = datetime.datetime(
+        1, 1, 1) + datetime.timedelta(seconds=int(t_todo))
     logging.info(
-        '{:.0f}% total simulation progress, '.format(progress_new * 100) +
+        '{:.0f}% total simulation progress, '.format(progress_now * 100) +
         '{:d}:{:02d}:{:02d}:{:02d} remaining simulation time'.format(
-            datetime_process_todo.day - 1,
-            datetime_process_todo.hour,
-            datetime_process_todo.minute,
-            datetime_process_todo.second))
+            datetime_todo.day - 1,
+            datetime_todo.hour,
+            datetime_todo.minute,
+            datetime_todo.second))
 
 
 def sim_single_sumo(snapshot,
@@ -113,6 +122,12 @@ def sim_single_uniform(random_seed,
 def main():
     """Main simulation function"""
 
+    # TODO: why is global keyword needed?
+    global rte_count_con_checkpoint
+    global rte_count_con_total
+    global rte_time_start
+    global rte_time_checkpoint
+
     # General setup
     time_start_total = time.time()
     config = nw_p.params_from_conf()
@@ -167,10 +182,10 @@ def main():
     elif config['distribution_veh'] == 'uniform':
         time_steps = config['iterations']
 
-    counts_con = comb(counts_veh, 2) * time_steps
-    COUNT_CON = np.sum(counts_con)
-    time_process_start = time.process_time()
-    COUNT_CON_DONE = 0
+    rte_counts_con = comb(counts_veh, 2) * time_steps
+    rte_count_con_total = np.sum(rte_counts_con)
+    rte_time_start = time.time()
+    rte_count_con_checkpoint = 0
 
     # Iterate densities
     for idx_count_veh, count_veh in enumerate(counts_veh):
@@ -256,9 +271,10 @@ def main():
 
         # Progress report
         # TODO: still incaccurate!
-        TIME_PROCESS_DONE = time.process_time() - time_process_start
-        COUNT_CON_DONE += counts_con[idx_count_veh]
-        log_progress(COUNT_CON_DONE, COUNT_CON, TIME_PROCESS_DONE)
+        rte_time_checkpoint = time.time() - rte_time_start
+        rte_count_con_checkpoint += rte_counts_con[idx_count_veh]
+        log_progress(rte_count_con_checkpoint, rte_count_con_total,
+                     rte_time_checkpoint, rte_time_start)
 
         # Save in and outputs
         config_save = config.copy()
@@ -287,11 +303,6 @@ def main():
 
 
 if __name__ == '__main__':
-    # Global variables
-    count_con_done = 0
-    count_con = 0
-    time_process_start = 0
-    time_process_done = 0
 
     # Register signal handler
     signal.signal(signal.SIGTSTP, signal_handler)
