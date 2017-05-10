@@ -7,6 +7,7 @@ import multiprocessing as mp
 from itertools import repeat
 import logging
 import datetime
+import signal
 
 # Extension imports
 import numpy as np
@@ -25,7 +26,34 @@ import sumo
 import network_parser as nw_p
 import connection_analysis as con_ana
 
-import ipdb
+
+def signal_handler(sig, frame):
+    """Outputs simulation progress on SIGINFO"""
+
+    if sig == signal.SIGTSTP:
+        log_progress(count_con_done, count_con, time_process_done)
+
+
+def log_progress(count_con_done, count_con, time_process_done):
+    """Estimates and logs the progress of the currently running simulation"""
+
+    progress_old = count_con_done / count_con
+    time_process_now = time.process_time()
+    time_process_todo_old = time_process_done / \
+        progress_old * (1 - progress_old)
+    time_process_diff = time_process_now - time_process_done
+    time_process_todo_now = max([time_process_todo_old - time_process_diff, 0])
+    progress_new = progress_old * \
+        (1 + time_process_diff / time_process_todo_old)
+    datetime_process_todo = datetime.datetime(
+        1, 1, 1) + datetime.timedelta(seconds=int(time_process_todo_now))
+    logging.info(
+        '{:.0f}% total simulation progress, '.format(progress_new * 100) +
+        '{:d}:{:02d}:{:02d}:{:02d} remaining simulation time'.format(
+            datetime_process_todo.day - 1,
+            datetime_process_todo.hour,
+            datetime_process_todo.minute,
+            datetime_process_todo.second))
 
 
 def sim_single_sumo(snapshot,
@@ -140,10 +168,9 @@ def main():
         time_steps = config['iterations']
 
     counts_con = comb(counts_veh, 2) * time_steps
-    count_con = np.sum(counts_con)
-    count_con_done = 0
-    progress = 0
+    COUNT_CON = np.sum(counts_con)
     time_process_start = time.process_time()
+    COUNT_CON_DONE = 0
 
     # Iterate densities
     for idx_count_veh, count_veh in enumerate(counts_veh):
@@ -229,19 +256,9 @@ def main():
 
         # Progress report
         # TODO: still incaccurate!
-        count_con_done += counts_con[idx_count_veh]
-        progress = count_con_done / count_con
-        time_process_done = time.process_time() - time_process_start
-        time_process_todo = time_process_done / progress * (1 - progress)
-        datetime_process_todo = datetime.datetime(
-            1, 1, 1) + datetime.timedelta(seconds=int(time_process_todo))
-        logging.info(
-            '{:.0f}% total simulation progress, '.format(progress * 100) +
-            '{:d}:{:02d}:{:02d}:{:02d} remaining simulation time'.format(
-                datetime_process_todo.day - 1,
-                datetime_process_todo.hour,
-                datetime_process_todo.minute,
-                datetime_process_todo.second))
+        TIME_PROCESS_DONE = time.process_time() - time_process_start
+        COUNT_CON_DONE += counts_con[idx_count_veh]
+        log_progress(COUNT_CON_DONE, COUNT_CON, TIME_PROCESS_DONE)
 
         # Save in and outputs
         config_save = config.copy()
@@ -270,7 +287,17 @@ def main():
 
 
 if __name__ == '__main__':
+    # Global variables
+    count_con_done = 0
+    count_con = 0
+    time_process_start = 0
+    time_process_done = 0
+
+    # Register signal handler
+    signal.signal(signal.SIGTSTP, signal_handler)
+
     # Change to directory of script
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
+
     # Run main function
     main()
