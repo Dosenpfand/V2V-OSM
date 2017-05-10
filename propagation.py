@@ -13,7 +13,7 @@ import utils
 
 
 def path_redundancy(graph, node, distances):
-    """Determines the path redundancy (number of node/edge disjoint paths) 
+    """Determines the path redundancy (number of node/edge disjoint paths)
     from one specific node to all other nodes"""
     # NOTE: we calculate the minimum number of node independent paths as an approximation (and not
     # the maximum)
@@ -73,27 +73,50 @@ def veh_cons_are_nlos_all(points_vehs, buildings, max_dist=None):
     return is_nlos
 
 
-def veh_cons_are_olos(point_own, point_vehs, margin=1):
-    """ Determines for each LOS/OLOS connection if it is OLOS """
+def veh_cons_are_olos(point_own, points_vehs, margin=1):
+    """Determines for each LOS/OLOS connection if it is OLOS """
 
     # TODO: Also use NLOS vehicles!
     # TODO: working properly? still too many LOS vehicles?
 
-    is_olos = np.zeros(np.size(point_vehs), dtype=bool)
+    is_olos = np.zeros(np.size(points_vehs), dtype=bool)
 
-    for index, point in np.ndenumerate(point_vehs):
+    for index, point in np.ndenumerate(points_vehs):
         line = geom.LineString([point_own, point])
-        indices_other = np.ones(np.size(point_vehs), dtype=bool)
+        indices_other = np.ones(np.size(points_vehs), dtype=bool)
         indices_other[index] = False
-        is_olos[index] = geom_o.line_intersects_points(line, point_vehs[indices_other],
+        is_olos[index] = geom_o.line_intersects_points(line, points_vehs[indices_other],
                                                        margin=margin)
 
     return is_olos
 
 
+def veh_cons_are_olos_all(points_vehs, margin=1):
+    """Determines for each possible connection if it is OLOS or not (i.e. LOS)"""
+
+    count_vehs = np.size(points_vehs)
+    count_cond = count_vehs * (count_vehs - 1) // 2
+    is_olos = np.ones(count_cond, dtype=bool)
+
+    index = 0
+    for idx1, point1 in enumerate(points_vehs):
+        for idx2, point2 in enumerate(points_vehs[idx1 + 1:]):
+            line = geom.LineString([point1, point2])
+            indices_other = np.ones(np.size(points_vehs), dtype=bool)
+            indices_other[[idx1, idx1 + 1 + idx2]] = False
+            is_olos[index] = \
+                geom_o.line_intersects_points(line,
+                                              points_vehs[indices_other],
+                                              margin=margin)
+            index += 1
+
+    return is_olos
+
+
 def check_if_cons_orthogonal(streets_wave, graph_veh_own, graphs_veh_other, max_angle=np.pi):
-    """Determines if the condition is NLOS on an orthogonal street for every possible connection to
-    one node """
+    """Determines if the propagation condition is NLOS on an orthogonal street for every possible
+    connection to one node"""
+
     node_own = graph_veh_own.graph['node_veh']
     streets_wave_local = nx.compose(graph_veh_own, streets_wave)
     count_veh_other = np.size(graphs_veh_other)
