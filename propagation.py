@@ -40,10 +40,7 @@ def veh_cons_are_nlos_all(points_vehs, buildings, max_dist=None):
 
 
 def veh_cons_are_olos(point_own, points_vehs, margin=1):
-    """Determines for each LOS/OLOS connection if it is OLOS """
-
-    # TODO: Also use NLOS vehicles!
-    # TODO: working properly? still too many LOS vehicles?
+    """Determines for each LOS/OLOS connection if it is OLOS"""
 
     is_olos = np.zeros(np.size(points_vehs), dtype=bool)
 
@@ -101,7 +98,7 @@ def check_if_cons_orthogonal(streets_wave, graph_veh_own, graphs_veh_other, max_
         angles_wrapped = np.pi - np.abs(geom_o.wrap_to_pi(angles))
 
         sum_angles = sum(angles_wrapped)
-        if sum_angles < max_angle:
+        if sum_angles <= max_angle:
             is_orthogonal[index] = True
         else:
             is_orthogonal[index] = False
