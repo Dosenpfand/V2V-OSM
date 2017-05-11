@@ -143,6 +143,71 @@ class TestPropagation(unittest.TestCase):
 
         self.assertTrue(np.array_equal(result, expected_result))
 
+    def test_veh_cons_are_nlos_all(self):
+        """Tests the function of veh_cons_are_nlos_all"""
+
+        network = DemoNetwork()
+        graph_streets = network.build_graph_streets()
+        gdf_buildings = network.build_gdf_buildings()
+        graph_streets_wave = graph_streets.to_undirected()
+        prop.add_edges_if_los(graph_streets_wave,
+                              gdf_buildings,
+                              max_distance=70)
+
+        vehs_coords = [[40, 0], [120, 0], [80, 40], [40, 80],
+                       [120, 80], [80, 120], [120, 140],
+                       [80, 170], [120, 200]]
+        is_nlos_expected = np.array([
+            0, 1, 1, 1, 1, 1, 1, 1,
+            1, 1, 1, 1, 1, 1, 1,
+            1, 1, 0, 1, 0, 1,
+            0, 0, 0, 0, 1,
+            1, 1, 1, 1,
+            0, 0, 1,
+            0, 1,
+            0], dtype=bool)
+
+        vehs_points = np.zeros(len(vehs_coords), dtype=object)
+        for idx, veh_coords in enumerate(vehs_coords):
+            veh_point = geom.Point(veh_coords)
+            vehs_points[idx] = veh_point
+
+        is_nlos_generated = prop.veh_cons_are_nlos_all(
+            vehs_points, gdf_buildings)
+
+        result_correct = np.array_equal(is_nlos_generated, is_nlos_expected)
+
+        self.assertTrue(result_correct)
+
+    def test_veh_cons_are_nlos(self):
+        """Tests the function veh_cons_are_nlos"""
+
+        network = DemoNetwork()
+        graph_streets = network.build_graph_streets()
+        gdf_buildings = network.build_gdf_buildings()
+        graph_streets_wave = graph_streets.to_undirected()
+        prop.add_edges_if_los(graph_streets_wave,
+                              gdf_buildings,
+                              max_distance=70)
+
+        vehs_coords = [[40, 0], [120, 0], [80, 40], [40, 80],
+                       [120, 80], [80, 120], [120, 140],
+                       [80, 170], [120, 200]]
+        is_nlos_expected = np.array([1, 1, 0, 0, 0, 0, 1, 0, 1], dtype=bool)
+        point_own = geom.Point(80, 80)
+
+        vehs_points = np.zeros(len(vehs_coords), dtype=object)
+        for idx, veh_coords in enumerate(vehs_coords):
+            veh_point = geom.Point(veh_coords)
+            vehs_points[idx] = veh_point
+
+        is_nlos_generated = prop.veh_cons_are_nlos(
+            point_own, vehs_points, gdf_buildings)
+
+        result_correct = np.array_equal(is_nlos_generated, is_nlos_expected)
+
+        self.assertTrue(result_correct)
+
 
 if __name__ == '__main__':
     unittest.main()
