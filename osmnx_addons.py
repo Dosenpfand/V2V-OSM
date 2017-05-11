@@ -53,7 +53,6 @@ def load_network(place, which_result=1):
         # Generate
         time_start = utils.debug(None, 'Generating graph for wave propagation')
         graph_streets_wave = graph_streets.to_undirected()
-        # TODO: check if add_edges_if_los() is really working!!!
         prop.add_edges_if_los(graph_streets_wave, gdf_buildings)
         with open(filename_data_wave, 'wb') as file:
             pickle.dump(graph_streets_wave, file)
