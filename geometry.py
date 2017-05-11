@@ -19,23 +19,21 @@ def line_intersects_buildings(line, buildings):
 
 
 def line_intersects_points(line, points, margin=1):
-    """ Checks if a line intersects with any of the points within a margin """
+    """Checks if a line intersects with any of the points within a margin"""
 
     intersects = False
 
     for point in points:
-        proj = line.project(point)
-        point_in_roi = (proj > 0) and (proj < line.length)
-        distance_small = line.distance(point) < margin
-        if point_in_roi and distance_small:
-            intersects = True
+        circle = point.buffer(margin)
+        intersects = circle.intersects(line)
+        if intersects:
             break
 
     return intersects
 
 
 def get_street_lengths(streets):
-    """ Returns the lengths of the streets in a graph"""
+    """Returns the lengths of the streets in a graph"""
 
     # TODO: use length from stats from OSMnx instead?
     # NOTE: The are small differences in the values of data['geometry'].length
