@@ -4,15 +4,14 @@ derive further results from them"""
 import logging
 import utils
 import networkx as nx
-import numpy as np
-import geometry as geom_o
-import scipy.spatial.distance as dist
-import propagation as prop
 from networkx.algorithms.approximation.connectivity import \
     local_node_connectivity as nx_local_node_connectivity
 from networkx.algorithms.connectivity import \
     local_edge_connectivity as nx_local_edge_connectivity
-
+import numpy as np
+import geometry as geom_o
+import scipy.spatial.distance as dist
+import propagation as prop
 
 
 def gen_connection_matrix(vehs, gdf_buildings, max_metric, metric='distance'):
@@ -70,6 +69,8 @@ def gen_connection_matrix(vehs, gdf_buildings, max_metric, metric='distance'):
         vehs.add_key('in_range', idxs_in_range)
         vehs.add_key('out_range', idxs_out_range)
     elif metric == 'pathloss':
+        # Determine OLOS and LOS
+        is_olos = prop.veh_cons_are_olos_all(vehs.get_points(), margin=2)
         # TODO: !
         raise NotImplementedError('TODO!')
     else:
