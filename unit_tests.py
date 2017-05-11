@@ -3,6 +3,7 @@
 import unittest
 import propagation as prop
 import shapely.geometry as geom
+import geometry as geom_o
 import numpy as np
 import networkx as nx
 import geopandas as gpd
@@ -56,6 +57,52 @@ class DemoNetwork:
         gdf_buildings = gpd.GeoDataFrame(buildings).T
 
         return gdf_buildings
+
+
+class TestGeometry(unittest.TestCase):
+    """Provides unit tests for the geometry module"""
+
+    def test_line_intersects_buildings(self):
+        """Tests the function line_intersects_buildings"""
+
+        network = DemoNetwork()
+        gdf_buildings = network.build_gdf_buildings()
+
+        lines_coords = [[[0, 0], [160, 200]],
+                        [[0, 0], [0, 80]],
+                        [[0, 40], [40, 0]],
+                        [[0, 40 - 1e-10], [40, 0]]]
+        intersect_flags = [True, False, True, False]
+
+        for line_coords, intersect_flag in zip(lines_coords, intersect_flags):
+            line = geom.LineString(line_coords)
+            intersects = geom_o.line_intersects_buildings(line, gdf_buildings)
+            result_correct = intersects == intersect_flag
+            self.assertTrue(result_correct)
+
+    def test_line_intersects_points(self):
+        """Tests the function line_intersects_points"""
+
+        points_coords = [[0, 0], [2, 0], [0, 2], [2, 2]]
+        lines_coords = [[[-1, -1], [1, 1]],
+                        [[0, 1], [2, 1]],
+                        [[0, 0], [2, 0]],
+                        [[0, 0.5], [2, 0.5]],
+                        [[0, 0.5 + 1e10], [2, 0.5 + 1e10]]]
+        intersect_flags = [True, False, True, True, False]
+        margin = 0.5
+
+        points = []
+        for point_coords in points_coords:
+            points.append(geom.Point(point_coords))
+
+        for line_coords, intersect_flag in zip(lines_coords, intersect_flags):
+            line = geom.LineString(line_coords)
+            intersects = geom_o.line_intersects_points(
+                line, points, margin=margin)
+
+            result_correct = intersects == intersect_flag
+            self.assertTrue(result_correct)
 
 
 class TestPropagation(unittest.TestCase):
