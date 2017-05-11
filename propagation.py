@@ -5,40 +5,6 @@ import shapely.geometry as geom
 import osmnx_addons
 import geometry as geom_o
 import networkx as nx
-from networkx.algorithms.approximation.connectivity import \
-    local_node_connectivity as nx_local_node_connectivity
-from networkx.algorithms.connectivity import \
-    local_edge_connectivity as nx_local_edge_connectivity
-import utils
-
-
-def path_redundancy(graph, node, distances):
-    """Determines the path redundancy (number of node/edge disjoint paths)
-    from one specific node to all other nodes"""
-    # NOTE: we calculate the minimum number of node independent paths as an approximation (and not
-    # the maximum)
-
-    count_nodes = graph.number_of_nodes()
-    path_redundancy = np.zeros(
-        count_nodes - 1,
-        dtype=[('distance', 'float'),
-               ('count_node_disjoint_paths', 'uint'),
-               ('count_edge_disjoint_paths', 'uint')])
-    iter_veh = 0
-    for node_iter_veh in graph.nodes():
-        if node_iter_veh == node:
-            continue
-        idx_cond = utils.square2cond(
-            count_nodes, node, node_iter_veh)
-        path_redundancy[iter_veh]['distance'] = distances[idx_cond]
-
-        path_redundancy[iter_veh]['count_node_disjoint_paths'] = nx_local_node_connectivity(
-            graph, source=node, target=node_iter_veh)
-        path_redundancy[iter_veh]['count_edge_disjoint_paths'] = nx_local_edge_connectivity(
-            graph, node, node_iter_veh)
-        iter_veh += 1
-
-    return path_redundancy
 
 
 def veh_cons_are_nlos(point_own, points_vehs, buildings, max_dist=None):
