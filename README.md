@@ -63,3 +63,8 @@ To get started on Debian 8 follow these steps.
 11. Optional: For vehicle realistic vehicle placement and movement install [SUMO](http://www.sumo.dlr.de)
 
         apt-get install sumo
+
+## Tests
+To run the included unit tests execute
+
+    python3 unit_tests.py
