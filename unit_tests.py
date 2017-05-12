@@ -5,6 +5,7 @@ import propagation as prop
 import shapely.geometry as geom
 import geometry as geom_o
 import numpy as np
+import numpy.matlib
 import networkx as nx
 import geopandas as gpd
 import vehicles
@@ -119,6 +120,59 @@ class TestGeometry(unittest.TestCase):
 class TestPropagation(unittest.TestCase):
     """Provides unit tests for the propagation module"""
 
+    def test_gen_prop_cond_matrix(self):
+        """Tests the function gen_prop_cond_matrix"""
+
+        vehs_coords = [[40, 0], [120, 0], [80, 40], [40, 80],
+                       [120, 80], [80, 110], [120, 140], [80, 170], [120, 200]]
+
+        nlos_o = prop.Cond.NLOS_ort
+        nlos_p = prop.Cond.NLOS_par
+        olos = prop.Cond.OLOS
+        los = prop.Cond.LOS
+
+        prop_cond_matrix_expected = np.array([
+            los, nlos_o, nlos_p, nlos_p, nlos_o, nlos_p, nlos_o, nlos_p,
+            nlos_o, nlos_p, nlos_p, nlos_o, nlos_p, nlos_o, nlos_p,
+            nlos_o, nlos_o, los, nlos_o, olos, nlos_o,
+            los, los, olos, los, nlos_p,
+            los, nlos_p, nlos_o, nlos_p,
+            los, los, nlos_o,
+            los, nlos_p,
+            los
+        ], dtype=prop.Cond)
+
+        network = DemoNetwork()
+        graph_streets = network.build_graph_streets()
+        gdf_buildings = network.build_gdf_buildings()
+        graph_streets_wave = graph_streets.to_undirected()
+        prop.add_edges_if_los(graph_streets_wave,
+                              gdf_buildings,
+                              max_distance=70)
+
+        vehs_points = np.zeros(len(vehs_coords), dtype=object)
+        for idx, veh_coords in enumerate(vehs_coords):
+            veh_point = geom.Point(veh_coords)
+            vehs_points[idx] = veh_point
+
+        vehs = vehicles.generate_vehs(
+            graph_streets, points_vehs_in=vehs_points)
+
+        prop_cond_matrix_generated = prop.gen_prop_cond_matrix(
+            vehs_points,
+            gdf_buildings,
+            graph_streets_wave=graph_streets_wave,
+            graphs_vehs=vehs.get_graph(),
+            fully_determine=True,
+            max_dist=None,
+            car_radius=2,
+            max_angle=np.pi / 2)
+
+        result_correct = np.array_equal(
+            prop_cond_matrix_generated,
+            prop_cond_matrix_expected)
+        self.assertTrue(result_correct)
+
     def test_veh_cons_are_olos(self):
         """Tests the function veh_cons_are_olos"""
 
@@ -168,14 +222,14 @@ class TestPropagation(unittest.TestCase):
                               max_distance=70)
 
         vehs_coords = [[40, 0], [120, 0], [80, 40], [40, 80],
-                       [120, 80], [80, 120], [120, 140],
+                       [120, 80], [80, 110], [120, 140],
                        [80, 170], [120, 200]]
         is_nlos_expected = np.array([
             0, 1, 1, 1, 1, 1, 1, 1,
             1, 1, 1, 1, 1, 1, 1,
             1, 1, 0, 1, 0, 1,
             0, 0, 0, 0, 1,
-            1, 1, 1, 1,
+            0, 1, 1, 1,
             0, 0, 1,
             0, 1,
             0], dtype=bool)
@@ -204,7 +258,7 @@ class TestPropagation(unittest.TestCase):
                               max_distance=70)
 
         vehs_coords = [[40, 0], [120, 0], [80, 40], [40, 80],
-                       [120, 80], [80, 120], [120, 140],
+                       [120, 80], [80, 110], [120, 140],
                        [80, 170], [120, 200]]
         is_nlos_expected = np.array([1, 1, 0, 0, 0, 0, 1, 0, 1], dtype=bool)
         point_own = geom.Point(80, 80)
@@ -225,7 +279,7 @@ class TestPropagation(unittest.TestCase):
         """Tests the function check_if_cons_orthogonal"""
 
         vehs_coords = [[40, 0], [120, 0], [80, 40], [40, 80],
-                       [120, 80], [80, 120], [120, 140], [80, 170], [120, 200]]
+                       [120, 80], [80, 110], [120, 140], [80, 170], [120, 200]]
         idx_own = 0
         is_orthogonal_expected = np.array([1, 1, 0, 0, 1, 0, 1, 0], dtype=bool)
         coords_max_angle_expected = np.matlib.repmat([80, 0], 8, 1)
@@ -250,10 +304,10 @@ class TestPropagation(unittest.TestCase):
         vehs.add_key('other', idxs_other)
 
         is_orthogonal_generated, coords_max_angle_generated = \
-            prop.check_if_cons_orthogonal(graph_streets_wave,
-                                          vehs.get_graph('center'),
-                                          vehs.get_graph('other'),
-                                          max_angle=np.pi / 2)
+            prop.check_if_cons_are_orthogonal(graph_streets_wave,
+                                              vehs.get_graph('center'),
+                                              vehs.get_graph('other'),
+                                              max_angle=np.pi / 2)
 
         result_correct = np.array_equal(
             is_orthogonal_generated,
