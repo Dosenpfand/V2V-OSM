@@ -69,7 +69,8 @@ def sim_single_sumo(snapshot,
                     graph_streets,
                     gdf_buildings,
                     max_metric,
-                    metric='distance'):
+                    metric='distance',
+                    graph_streets_wave=None):
     """Runs a single snapshot analysis of a SUMO simulation result.
     Can be run in paralell"""
 
@@ -84,7 +85,8 @@ def sim_single_sumo(snapshot,
         vehs,
         gdf_buildings,
         max_metric,
-        metric=metric)
+        metric=metric,
+        graph_streets_wave=graph_streets_wave)
 
     return matrix_cons
 
@@ -94,7 +96,8 @@ def sim_single_uniform(random_seed,
                        graph_streets,
                        gdf_buildings,
                        max_metric,
-                       metric='distance'):
+                       metric='distance',
+                       graph_streets_wave=None):
     """Runs a single iteration of a simulation with uniform vehicle distribution.
     Can be run in paralell"""
 
@@ -114,7 +117,8 @@ def sim_single_uniform(random_seed,
         vehs,
         gdf_buildings,
         max_metric,
-        metric=metric)
+        metric=metric,
+        graph_streets_wave=graph_streets_wave)
 
     return matrix_cons
 
@@ -214,23 +218,56 @@ def main():
         if config['simulation_mode'] == 'parallel':
             with mp.Pool() as pool:
                 if config['distribution_veh'] == 'SUMO':
+                    if config['connection_metric'] == 'distance':
+                        sim_param_list = \
+                            zip(veh_traces,
+                                repeat(net['graph_streets']),
+                                repeat(net['gdf_buildings']),
+                                repeat(config['max_connection_metric']),
+                                repeat(config['connection_metric']))
+                    elif config['connection_metric'] == 'pathloss':
+                        sim_param_list = \
+                            zip(veh_traces,
+                                repeat(net['graph_streets']),
+                                repeat(net['gdf_buildings']),
+                                repeat(config['max_connection_metric']),
+                                repeat(config['connection_metric']),
+                                repeat(net['graph_streets_wave']))
+                    else:
+                        raise NotImplementedError(
+                            'Connection metric not supported')
+
                     matrices_cons = pool.starmap(
                         sim_single_sumo,
-                        zip(veh_traces,
-                            repeat(net['graph_streets']),
-                            repeat(net['gdf_buildings']),
-                            repeat(config['max_connection_metric']),
-                            repeat(config['connection_metric'])))
+                        sim_param_list
+                    )
                 elif config['distribution_veh'] == 'uniform':
                     random_seeds = np.arange(config['iterations'])
+
+                    if config['connection_metric'] == 'distance':
+                        sim_param_list = \
+                            zip(random_seeds,
+                                repeat(count_veh),
+                                repeat(net['graph_streets']),
+                                repeat(net['gdf_buildings']),
+                                repeat(config['max_connection_metric']),
+                                repeat(config['connection_metric']))
+                    elif config['connection_metric'] == 'pathloss':
+                        sim_param_list = \
+                            zip(random_seeds,
+                                repeat(count_veh),
+                                repeat(net['graph_streets']),
+                                repeat(net['gdf_buildings']),
+                                repeat(config['max_connection_metric']),
+                                repeat(config['connection_metric']),
+                                repeat(net['graph_streets_wave']))
+                    else:
+                        raise NotImplementedError(
+                            'Connection metric not supported')
+
                     matrices_cons = pool.starmap(
                         sim_single_uniform,
-                        zip(random_seeds,
-                            repeat(count_veh),
-                            repeat(net['graph_streets']),
-                            repeat(net['gdf_buildings']),
-                            repeat(config['max_connection_metric']),
-                            repeat(config['connection_metric'])))
+                        sim_param_list)
                 else:
                     raise NotImplementedError(
                         'Vehicle distribution type not supported')
@@ -240,12 +277,28 @@ def main():
                 for idx, snapshot in enumerate(veh_traces):
                     time_start = utils.debug(
                         None, 'Analyzing snapshot {:d}'.format(idx))
-                    matrix_cons_snapshot = \
-                        sim_single_sumo(snapshot,
-                                        net['graph_streets'],
-                                        net['gdf_buildings'],
-                                        max_metric=config['max_connection_metric'],
-                                        metric=config['connection_metric'])
+
+                    if config['connection_metric'] == 'distance':
+                        matrix_cons_snapshot = \
+                            sim_single_sumo(
+                                snapshot,
+                                net['graph_streets'],
+                                net['gdf_buildings'],
+                                max_metric=config['max_connection_metric'],
+                                metric=config['connection_metric'])
+                    elif config['connection_metric'] == 'pathloss':
+                        matrix_cons_snapshot = \
+                            sim_single_sumo(
+                                snapshot,
+                                net['graph_streets'],
+                                net['gdf_buildings'],
+                                max_metric=config['max_connection_metric'],
+                                metric=config['connection_metric'],
+                                graph_streets_wave=net['graph_streets_wave'])
+                    else:
+                        raise NotImplementedError(
+                            'Connection metric not supported')
+
                     matrices_cons[idx] = matrix_cons_snapshot
                     utils.debug(time_start)
             elif config['distribution_veh'] == 'uniform':
@@ -253,13 +306,30 @@ def main():
                 for iteration in np.arange(config['iterations']):
                     time_start = utils.debug(
                         None, 'Analyzing iteration {:d}'.format(iteration))
-                    matrix_cons_snapshot = \
-                        sim_single_uniform(iteration,
-                                           count_veh,
-                                           net['graph_streets'],
-                                           net['gdf_buildings'],
-                                           max_metric=config['max_connection_metric'],
-                                           metric=config['connection_metric'])
+
+                    if config['connection_metric'] == 'distance':
+                        matrix_cons_snapshot = \
+                            sim_single_uniform(
+                                iteration,
+                                count_veh,
+                                net['graph_streets'],
+                                net['gdf_buildings'],
+                                max_metric=config['max_connection_metric'],
+                                metric=config['connection_metric'])
+                    elif config['connection_metric'] == 'pathloss':
+                        matrix_cons_snapshot = \
+                            sim_single_uniform(
+                                iteration,
+                                count_veh,
+                                net['graph_streets'],
+                                net['gdf_buildings'],
+                                max_metric=config['max_connection_metric'],
+                                metric=config['connection_metric'],
+                                graph_streets_wave=net['graph_streets_wave'])
+                    else:
+                        raise NotImplementedError(
+                            'Connection metric not supported')
+
                     matrices_cons[iteration] = matrix_cons_snapshot
                     utils.debug(time_start)
             else:
