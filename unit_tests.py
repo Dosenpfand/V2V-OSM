@@ -140,7 +140,6 @@ class TestPropagation(unittest.TestCase):
         """Tests the function upper_veh_cons_are_olos_all"""
 
         vehs_coords = [[0, 0, ], [1, 0], [0, 1], [1, 1], [0, 2], [1, 2]]
-        point_own = geom.Point(0, -1)
         margin = 0.5
         expected_result = np.array(
             [0, 0, 0, 1, 1,
@@ -229,6 +228,7 @@ class TestPropagation(unittest.TestCase):
                        [120, 80], [80, 120], [120, 140], [80, 170], [120, 200]]
         idx_own = 0
         is_orthogonal_expected = np.array([1, 1, 0, 0, 1, 0, 1, 0], dtype=bool)
+        coords_max_angle_expected = np.matlib.repmat([80, 0], 8, 1)
 
         network = DemoNetwork()
         graph_streets = network.build_graph_streets()
@@ -258,6 +258,12 @@ class TestPropagation(unittest.TestCase):
         result_correct = np.array_equal(
             is_orthogonal_generated,
             is_orthogonal_expected)
+
+        self.assertTrue(result_correct)
+
+        result_correct = np.array_equal(
+            coords_max_angle_generated,
+            coords_max_angle_expected)
 
         self.assertTrue(result_correct)
 
