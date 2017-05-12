@@ -14,7 +14,11 @@ import scipy.spatial.distance as dist
 import propagation as prop
 
 
-def gen_connection_matrix(vehs, gdf_buildings, max_metric, metric='distance'):
+def gen_connection_matrix(vehs,
+                          gdf_buildings,
+                          max_metric,
+                          metric='distance',
+                          graph_streets_wave=None):
     """Simulates links between every set of 2 vehicles and determines if they are connected using
     either distance or pathloss as a metric. Returns a matrix"""
 
@@ -29,36 +33,32 @@ def gen_connection_matrix(vehs, gdf_buildings, max_metric, metric='distance'):
         else:
             max_dist_nlos = max_metric
             max_dist_olos_los = max_metric
+
         max_dist = max(max_dist_nlos, max_dist_olos_los)
-    elif metric == 'pathloss':
-        # TODO: set a very high max distance?
-        max_dist = None
-    else:
-        raise NotImplementedError('Metric not implemented')
 
-    count_veh = vehs.count
-    count_cond = count_veh * (count_veh - 1) // 2
-    vehs.allocate(count_cond)
+        count_veh = vehs.count
+        count_cond = count_veh * (count_veh - 1) // 2
+        vehs.allocate(count_cond)
 
-    # Determine NLOS and OLOS/LOS
-    time_start = utils.debug(None, 'Determining propagation conditions')
-    is_nlos = prop.veh_cons_are_nlos_all(
-        vehs.get_points(), gdf_buildings, max_dist=max_dist)
-    is_olos_los = np.invert(is_nlos)
-    idxs_nlos = np.where(is_nlos)[0]
-    idxs_olos_los = np.where(is_olos_los)[0]
-    vehs.add_key('nlos', idxs_nlos)
-    vehs.add_key('olos_los', idxs_olos_los)
+        # Determine NLOS and OLOS/LOS
+        time_start = utils.debug(None, 'Determining propagation conditions')
+        is_nlos = prop.veh_cons_are_nlos_all(
+            vehs.get_points(), gdf_buildings, max_dist=max_dist)
+        is_olos_los = np.invert(is_nlos)
+        idxs_nlos = np.where(is_nlos)[0]
+        idxs_olos_los = np.where(is_olos_los)[0]
+        vehs.add_key('nlos', idxs_nlos)
+        vehs.add_key('olos_los', idxs_olos_los)
 
-    count_cond = count_veh * (count_veh - 1) // 2
+        count_cond = count_veh * (count_veh - 1) // 2
 
-    utils.debug(time_start)
+        utils.debug(time_start)
 
-    # Determine in range vehicles
-    time_start = utils.debug(None, 'Determining in range vehicles')
+        # Determine in range vehicles
+        time_start = utils.debug(None, 'Determining in range vehicles')
 
-    distances = dist.pdist(vehs.coordinates)
-    if metric == 'distance':
+        distances = dist.pdist(vehs.coordinates)
+
         idxs_in_range_olos_los = idxs_olos_los[
             distances[idxs_olos_los] < max_dist_olos_los]
         idxs_in_range_nlos = idxs_nlos[
@@ -69,9 +69,22 @@ def gen_connection_matrix(vehs, gdf_buildings, max_metric, metric='distance'):
         vehs.add_key('in_range', idxs_in_range)
         vehs.add_key('out_range', idxs_out_range)
     elif metric == 'pathloss':
-        # Determine OLOS and LOS
-        is_olos = prop.veh_cons_are_olos_all(vehs.get_points(), margin=2)
-        # TODO: !
+        if graph_streets_wave is None:
+            raise RuntimeError('Streets wave propagation graph not given')
+
+        # Determine propagation condition matrix
+        # TODO: check parameters
+        prop_cond_matrix = prop.gen_prop_cond_matrix(
+            vehs.get_points(),
+            gdf_buildings,
+            graph_streets_wave=graph_streets_wave,
+            graphs_vehs=vehs.get_graph(),
+            fully_determine=True,
+            max_dist=None,
+            car_radius=2,
+            max_angle=np.pi)
+
+        # TODO: here!
         raise NotImplementedError('TODO!')
     else:
         raise NotImplementedError('Metric not implemented')
