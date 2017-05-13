@@ -12,5 +12,8 @@ addons:
     - libgdal-dev
     - libspatialindex-dev
     - libgeos-dev
+    - libopenblas-dev
+    - liblapack-dev
+    - gfortran
 script:
   - python -m unittest discover
