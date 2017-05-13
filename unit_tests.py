@@ -70,6 +70,30 @@ class DemoNetwork:
 
         return gdf_buildings
 
+    def build_vehs(self, graph_streets=None, only_coords=False):
+        """ Returns vehicle coordinates if only_coords is True,
+        returns vehicle points if graph_streets is None and only_coords is False
+        returns vehicle object if graph_streets is not None and only_coords is False"""
+
+        vehs_coords = [[40, 0], [120, 0], [80, 40], [40, 80],
+                       [120, 80], [80, 110], [120, 140], [80, 170], [120, 200]]
+
+        if only_coords:
+            return vehs_coords
+
+        vehs_points = np.zeros(len(vehs_coords), dtype=object)
+        for idx, veh_coords in enumerate(vehs_coords):
+            veh_point = geom.Point(veh_coords)
+            vehs_points[idx] = veh_point
+
+        if graph_streets is None:
+            return vehs_points
+
+        vehs = vehicles.generate_vehs(
+            graph_streets, points_vehs_in=vehs_points)
+
+        return vehs
+
 
 class TestGeometry(unittest.TestCase):
     """Provides unit tests for the geometry module"""
@@ -123,9 +147,6 @@ class TestPropagation(unittest.TestCase):
     def test_gen_prop_cond_matrix(self):
         """Tests the function gen_prop_cond_matrix"""
 
-        vehs_coords = [[40, 0], [120, 0], [80, 40], [40, 80],
-                       [120, 80], [80, 110], [120, 140], [80, 170], [120, 200]]
-
         nlos_o = prop.Cond.NLOS_ort
         nlos_p = prop.Cond.NLOS_par
         olos = prop.Cond.OLOS
@@ -150,16 +171,10 @@ class TestPropagation(unittest.TestCase):
                               gdf_buildings,
                               max_distance=70)
 
-        vehs_points = np.zeros(len(vehs_coords), dtype=object)
-        for idx, veh_coords in enumerate(vehs_coords):
-            veh_point = geom.Point(veh_coords)
-            vehs_points[idx] = veh_point
-
-        vehs = vehicles.generate_vehs(
-            graph_streets, points_vehs_in=vehs_points)
+        vehs = network.build_vehs(graph_streets=graph_streets)
 
         prop_cond_matrix_generated = prop.gen_prop_cond_matrix(
-            vehs_points,
+            vehs.get_points(),
             gdf_buildings,
             graph_streets_wave=graph_streets_wave,
             graphs_vehs=vehs.get_graph(),
@@ -176,7 +191,7 @@ class TestPropagation(unittest.TestCase):
     def test_veh_cons_are_olos(self):
         """Tests the function veh_cons_are_olos"""
 
-        vehs_coords = [[0, 0, ], [1, 0], [0, 1], [1, 1], [0, 2], [1, 2]]
+        vehs_coords = [[0, 0], [1, 0], [0, 1], [1, 1], [0, 2], [1, 2]]
         point_own = geom.Point(0, -1)
         margin = 0.5
         expected_result = np.array(
@@ -190,40 +205,9 @@ class TestPropagation(unittest.TestCase):
 
         self.assertTrue(np.array_equal(result, expected_result))
 
-    def test_veh_cons_are_olos_all(self):
-        """Tests the function upper_veh_cons_are_olos_all"""
-
-        vehs_coords = [[0, 0, ], [1, 0], [0, 1], [1, 1], [0, 2], [1, 2]]
-        margin = 0.5
-        expected_result = np.array(
-            [0, 0, 0, 1, 1,
-             0, 0, 1, 1,
-             0, 0, 0,
-             0, 0,
-             0], dtype=bool)
-
-        vehs_points = np.zeros(len(vehs_coords), dtype=object)
-        for idx, veh_coords in enumerate(vehs_coords):
-            vehs_points[idx] = geom.Point(veh_coords)
-
-        result = prop.veh_cons_are_olos_all(vehs_points, margin=margin)
-
-        self.assertTrue(np.array_equal(result, expected_result))
-
     def test_veh_cons_are_nlos_all(self):
         """Tests the function of veh_cons_are_nlos_all"""
 
-        network = DemoNetwork()
-        graph_streets = network.build_graph_streets()
-        gdf_buildings = network.build_gdf_buildings()
-        graph_streets_wave = graph_streets.to_undirected()
-        prop.add_edges_if_los(graph_streets_wave,
-                              gdf_buildings,
-                              max_distance=70)
-
-        vehs_coords = [[40, 0], [120, 0], [80, 40], [40, 80],
-                       [120, 80], [80, 110], [120, 140],
-                       [80, 170], [120, 200]]
         is_nlos_expected = np.array([
             0, 1, 1, 1, 1, 1, 1, 1,
             1, 1, 1, 1, 1, 1, 1,
@@ -233,21 +217,28 @@ class TestPropagation(unittest.TestCase):
             0, 0, 1,
             0, 1,
             0], dtype=bool)
+        max_distance = 70
 
-        vehs_points = np.zeros(len(vehs_coords), dtype=object)
-        for idx, veh_coords in enumerate(vehs_coords):
-            veh_point = geom.Point(veh_coords)
-            vehs_points[idx] = veh_point
+        network = DemoNetwork()
+        graph_streets = network.build_graph_streets()
+        gdf_buildings = network.build_gdf_buildings()
+        graph_streets_wave = graph_streets.to_undirected()
+        prop.add_edges_if_los(graph_streets_wave,
+                              gdf_buildings,
+                              max_distance=max_distance)
+        vehs_points = network.build_vehs()
 
         is_nlos_generated = prop.veh_cons_are_nlos_all(
             vehs_points, gdf_buildings)
-
         result_correct = np.array_equal(is_nlos_generated, is_nlos_expected)
 
         self.assertTrue(result_correct)
 
     def test_veh_cons_are_nlos(self):
         """Tests the function veh_cons_are_nlos"""
+
+        is_nlos_expected = np.array([1, 1, 0, 0, 0, 0, 1, 0, 1], dtype=bool)
+        point_own = geom.Point(80, 80)
 
         network = DemoNetwork()
         graph_streets = network.build_graph_streets()
@@ -256,21 +247,10 @@ class TestPropagation(unittest.TestCase):
         prop.add_edges_if_los(graph_streets_wave,
                               gdf_buildings,
                               max_distance=70)
-
-        vehs_coords = [[40, 0], [120, 0], [80, 40], [40, 80],
-                       [120, 80], [80, 110], [120, 140],
-                       [80, 170], [120, 200]]
-        is_nlos_expected = np.array([1, 1, 0, 0, 0, 0, 1, 0, 1], dtype=bool)
-        point_own = geom.Point(80, 80)
-
-        vehs_points = np.zeros(len(vehs_coords), dtype=object)
-        for idx, veh_coords in enumerate(vehs_coords):
-            veh_point = geom.Point(veh_coords)
-            vehs_points[idx] = veh_point
+        vehs_points = network.build_vehs()
 
         is_nlos_generated = prop.veh_cons_are_nlos(
             point_own, vehs_points, gdf_buildings)
-
         result_correct = np.array_equal(is_nlos_generated, is_nlos_expected)
 
         self.assertTrue(result_correct)
@@ -278,8 +258,6 @@ class TestPropagation(unittest.TestCase):
     def test_check_if_cons_orthogonal(self):
         """Tests the function check_if_cons_orthogonal"""
 
-        vehs_coords = [[40, 0], [120, 0], [80, 40], [40, 80],
-                       [120, 80], [80, 110], [120, 140], [80, 170], [120, 200]]
         idx_own = 0
         is_orthogonal_expected = np.array([1, 1, 0, 0, 1, 0, 1, 0], dtype=bool)
         coords_max_angle_expected = np.matlib.repmat([80, 0], 8, 1)
@@ -292,22 +270,18 @@ class TestPropagation(unittest.TestCase):
                               gdf_buildings,
                               max_distance=70)
 
-        vehs_points = np.zeros(len(vehs_coords), dtype=object)
-        for idx, veh_coords in enumerate(vehs_coords):
-            veh_point = geom.Point(veh_coords)
-            vehs_points[idx] = veh_point
-
-        vehs = vehicles.generate_vehs(
-            graph_streets, points_vehs_in=vehs_points)
-        idxs_other = np.setdiff1d(np.arange(len(vehs_coords)), idx_own)
+        vehs = network.build_vehs(
+            graph_streets=graph_streets, only_coords=False)
+        idxs_other = np.setdiff1d(np.arange(vehs.count), idx_own)
         vehs.add_key('center', idx_own)
         vehs.add_key('other', idxs_other)
 
         is_orthogonal_generated, coords_max_angle_generated = \
-            prop.check_if_cons_are_orthogonal(graph_streets_wave,
-                                              vehs.get_graph('center'),
-                                              vehs.get_graph('other'),
-                                              max_angle=np.pi / 2)
+            prop.check_if_cons_are_orthogonal(
+                graph_streets_wave,
+                vehs.get_graph('center'),
+                vehs.get_graph('other'),
+                max_angle=np.pi / 2)
 
         result_correct = np.array_equal(
             is_orthogonal_generated,
