@@ -15,5 +15,6 @@ addons:
     - libopenblas-dev
     - liblapack-dev
     - gfortran
+cache: pip
 script:
   - python -m unittest discover
