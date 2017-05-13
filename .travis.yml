@@ -3,6 +3,7 @@ python:
   - "3.4"
   - "3.6"
 install:
+  - pip install --upgrade pip
   - pip install -r requirements.txt
 addons:
   apt:
