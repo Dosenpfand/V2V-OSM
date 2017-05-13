@@ -1,6 +1,9 @@
 # V2V-OSM
 Simulate Vehicle-to-vehicle (V2V) communication on street networks obtained from [OpenStreetMap](https://www.openstreetmap.org/) (OSM)
 
+## Status
+[![Build Status](https://travis-ci.com/Dosenpfand/thesis_code.svg?token=q9NYsPfK37J7qYiKq4xe&branch=master)](https://travis-ci.com/Dosenpfand/thesis_code)
+
 ## Main Components
 Main software components are:
 
