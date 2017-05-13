@@ -72,7 +72,7 @@ def sim_single_sumo(snapshot,
                     metric='distance',
                     graph_streets_wave=None):
     """Runs a single snapshot analysis of a SUMO simulation result.
-    Can be run in paralell"""
+    Can be run in parallel"""
 
     # TODO: too much distance between SUMO vehicle positions and
     # OSMnx streets?

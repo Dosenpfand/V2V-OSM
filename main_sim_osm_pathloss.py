@@ -63,10 +63,10 @@ def main_sim_single(network, max_pl=150):
     time_start = utils.debug(None, 'Determining orthogonal and parallel')
 
     is_orthogonal, coords_intersections = \
-        prop.check_if_cons_orthogonal(graph_streets_wave,
-                                      vehs.get_graph('center'),
-                                      vehs.get_graph('nlos'),
-                                      max_angle=np.pi)
+        prop.check_if_cons_are_orthogonal(graph_streets_wave,
+                                          vehs.get_graph('center'),
+                                          vehs.get_graph('nlos'),
+                                          max_angle=np.pi)
     is_parallel = np.invert(is_orthogonal)
     vehs.add_key('orth', vehs.get_idxs('nlos')[is_orthogonal])
     vehs.add_key('par', vehs.get_idxs('nlos')[is_parallel])

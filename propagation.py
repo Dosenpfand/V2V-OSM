@@ -99,6 +99,8 @@ def veh_cons_are_nlos(point_own, points_vehs, buildings, max_dist=None):
 
 def veh_cons_are_nlos_all(points_vehs, buildings, max_dist=None):
     """ Determines for each possible connection if it is NLOS or not (i.e. LOS and OLOS)"""
+    # TODO: delete this function? completele replacable by
+    # gen_prop_cond_matrix?
 
     count_vehs = np.size(points_vehs)
     count_cond = count_vehs * (count_vehs - 1) // 2
