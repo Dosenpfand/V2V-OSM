@@ -12,7 +12,7 @@ commit_coverage_image() {
 }
 
 push_files() {
-  git remote add origin-travis https://${GH_TOKEN}@github.com:Dosenpfand/thesis_code.git > /dev/null 2>&1
+  git remote add origin-travis https://${GH_TOKEN}@github.com/Dosenpfand/thesis_code.git > /dev/null 2>&1
   git push --quiet --set-upstream origin-travis travis
 }
 
