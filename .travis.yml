@@ -18,6 +18,9 @@ addons:
     - liblapack-dev
     - gfortran
 cache: pip
+branches:
+  except:
+  - travis
 script:
   - coverage run --source=. -m unittest discover
 after_success:
