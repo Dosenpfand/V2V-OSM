@@ -3,6 +3,7 @@ Simulate Vehicle-to-vehicle (V2V) communication on street networks obtained from
 
 ## Status
 [![Build Status](https://travis-ci.com/Dosenpfand/thesis_code.svg?token=q9NYsPfK37J7qYiKq4xe&branch=master)](https://travis-ci.com/Dosenpfand/thesis_code)
+[![Coverage](blob/travis/.travis/coverage.svg?raw=true)]
 
 ## Main Components
 Main software components are:
@@ -67,7 +68,27 @@ To get started on Debian 8 follow these steps.
 
         apt-get install sumo
 
-## Tests
+# Tests
+## Unit tests
 To run the included unit tests execute
 
     python3 unit_tests.py
+
+## Coverage
+To determine the coverage of the unit tests install dependencies with
+    
+    pip install -r requirements-test.txt
+
+Then run the tests again with coverage analysis
+
+    coverage run --source=. -m unittest discover
+
+Create a HTML report with
+
+    coverage html
+
+And then open `htmlcov/index.html`.
+
+To create a badge execute
+
+    coverage-badge -f -o .travis/coverage.svg
