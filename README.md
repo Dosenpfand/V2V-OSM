@@ -72,7 +72,7 @@ To get started on Debian 8 follow these steps.
 ## Unit tests
 To run the included unit tests execute
 
-    python3 unit_tests.py
+    python3 -m unittest discover
 
 ## Coverage
 To determine the coverage of the unit tests install dependencies with
