@@ -1,5 +1,9 @@
 #!/bin/sh
 
+convert_image() {
+  convert .travis/coverage.svg .travis/coverage.png
+}
+
 setup_git() {
   git config --global user.email "travis@travis-ci.org"
   git config --global user.name "Travis CI"
@@ -7,7 +11,7 @@ setup_git() {
 
 commit_coverage_image() {
   git checkout -b travis
-  git add .travis/coverage.svg
+  git add .travis/coverage.svg .travis/coverage.png
   git commit --message "Travis coverage update: $TRAVIS_BUILD_NUMBER"
 }
 
@@ -17,5 +21,6 @@ push_files() {
 }
 
 setup_git
+convert_image
 commit_coverage_image
 push_files
