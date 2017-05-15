@@ -3,7 +3,7 @@ Simulate Vehicle-to-vehicle (V2V) communication on street networks obtained from
 
 ## Status
 [![Build Status](https://travis-ci.com/Dosenpfand/thesis_code.svg?token=q9NYsPfK37J7qYiKq4xe&branch=master)](https://travis-ci.com/Dosenpfand/thesis_code)
-[![Coverage](https://github.com/Dosenpfand/thesis_code/blob/travis/.travis/coverage.svg?raw=true)](https://github.com/Dosenpfand/thesis_code/blob/travis/.travis/coverage.svg)
+![Coverage](https://github.com/Dosenpfand/thesis_code/blob/travis/.travis/coverage.png?raw=true)
 
 ## Main Components
 Main software components are:
