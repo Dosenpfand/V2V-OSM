@@ -12,6 +12,7 @@ import numpy as np
 import geometry as geom_o
 import scipy.spatial.distance as dist
 import propagation as prop
+import pathloss
 
 
 def gen_connection_matrix(vehs,
@@ -26,6 +27,10 @@ def gen_connection_matrix(vehs,
     if metric not in ['distance', 'pathloss']:
         raise NotImplementedError('Metric not supported')
 
+    count_veh = vehs.count
+    count_cond = count_veh * (count_veh - 1) // 2
+    vehs.allocate(count_cond)
+
     if metric == 'distance':
         if isinstance(max_metric, dict):
             max_dist_nlos = max_metric['nlos']
@@ -35,10 +40,6 @@ def gen_connection_matrix(vehs,
             max_dist_olos_los = max_metric
 
         max_dist = max(max_dist_nlos, max_dist_olos_los)
-
-        count_veh = vehs.count
-        count_cond = count_veh * (count_veh - 1) // 2
-        vehs.allocate(count_cond)
 
         # Determine NLOS and OLOS/LOS
         time_start = utils.debug(None, 'Determining propagation conditions')
@@ -68,13 +69,14 @@ def gen_connection_matrix(vehs,
         idxs_out_range = np.setdiff1d(np.arange(count_cond), idxs_in_range)
         vehs.add_key('in_range', idxs_in_range)
         vehs.add_key('out_range', idxs_out_range)
+
     elif metric == 'pathloss':
         if graph_streets_wave is None:
             raise RuntimeError('Streets wave propagation graph not given')
 
         # Determine propagation condition matrix
         # TODO: check parameters
-        prop_cond_matrix = prop.gen_prop_cond_matrix(
+        prop_cond_matrix, coords_max_angle_matrix = prop.gen_prop_cond_matrix(
             vehs.get_points(),
             gdf_buildings,
             graph_streets_wave=graph_streets_wave,
@@ -84,8 +86,28 @@ def gen_connection_matrix(vehs,
             car_radius=2,
             max_angle=np.pi)
 
+        idxs_los = np.nonzero(prop_cond_matrix == prop.Cond.LOS)
+        idxs_olos = np.nonzero(prop_cond_matrix == prop.Cond.OLOS)
+        idxs_nlos_ort = np.nonzero(prop_cond_matrix == prop.Cond.NLOS_ort)
+        idxs_nlos_par = np.nonzero(prop_cond_matrix == prop.Cond.NLOS_par)
+
+        # TODO: add keys?
+
+        distances = dist.pdist(vehs.coordinates)
+
+        pl = pathloss.Pathloss()
+        pathlosses = np.zeros(distances.size)
+        pathlosses[idxs_los] = pl.pathloss_los(distances[idxs_los])
+        pathlosses[idxs_olos] = pl.pathloss_olos(distances[idxs_olos])
+        pathlosses[idxs_nlos_ort] = np.inf # TODO: !
+        pathlosses[idxs_nlos_par] = np.inf
+
+        idxs_in_range = np.nonzero(pathlosses < max_metric)
+        idxs_out_range = np.setdiff1d(np.arange(count_cond), idxs_in_range)
+        vehs.add_key('in_range', idxs_in_range)
+        vehs.add_key('out_range', idxs_out_range)
+
         # TODO: here!
-        raise NotImplementedError('TODO!')
     else:
         raise NotImplementedError('Metric not implemented')
 

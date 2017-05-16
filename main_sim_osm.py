@@ -21,7 +21,6 @@ import utils
 import osmnx_addons as ox_a
 import geometry as geom_o
 import vehicles
-import propagation as prop
 import sumo
 import network_parser as nw_p
 import connection_analysis as con_ana
