@@ -79,7 +79,7 @@ class DemoNetwork:
                        [120, 80], [80, 110], [120, 140], [80, 170], [120, 200]]
 
         if only_coords:
-            return vehs_coords
+            return np.array(vehs_coords)
 
         vehs_points = np.zeros(len(vehs_coords), dtype=object)
         for idx, veh_coords in enumerate(vehs_coords):
@@ -154,6 +154,41 @@ class TestGeometry(unittest.TestCase):
         self.assertTrue(results_correct)
         return
 
+    def test_find_center_veh(self):
+        """Tests the function find_center_veh"""
+
+        index_expected = 5
+
+        network = DemoNetwork()
+        vehs_coords = network.build_vehs(graph_streets=None, only_coords=True)
+        index_generated = geom_o.find_center_veh(vehs_coords)
+
+        self.assertTrue(index_expected == index_generated)
+
+    def test_split_line_at_point(self):
+        """Tests the function split_line_at_point"""
+
+        line = geom.LineString([(0, 0), (0, 1)])
+        point_success = geom.Point(0, 0.5)
+        line_before_expected = geom.LineString([(0, 0), (0, 0.5)])
+        line_after_expected = geom.LineString([(0, 0.5), (0, 1)])
+        point_fail = geom.Point(1e-5, 0.5)
+
+        line_before_generated, line_after_generated = geom_o.split_line_at_point(
+            line, point_success)
+
+        max_diff_before = np.max(
+            np.abs(np.array(line_before_expected) - np.array(line_before_generated)))
+        max_diff_after = np.max(
+            np.abs(np.array(line_after_expected) - np.array(line_after_generated)))
+        max_diff = np.max([max_diff_after, max_diff_before])
+        result_correct = max_diff < 1e-6
+
+        self.assertTrue(result_correct)
+
+        with self.assertRaises(ValueError):
+            geom_o.split_line_at_point(line, point_fail)
+
 
 class TestPropagation(unittest.TestCase):
     """Provides unit tests for the propagation module"""
@@ -165,6 +200,8 @@ class TestPropagation(unittest.TestCase):
         nlos_p = prop.Cond.NLOS_par
         olos = prop.Cond.OLOS
         los = prop.Cond.LOS
+        olos_los = prop.Cond.OLOS_LOS
+        nlos = prop.Cond.NLOS
 
         prop_cond_matrix_expected = np.array([
             los, nlos_o, nlos_p, nlos_p, nlos_o, nlos_p, nlos_o, nlos_p,
@@ -177,6 +214,15 @@ class TestPropagation(unittest.TestCase):
             los
         ], dtype=prop.Cond)
 
+        prop_cond_matrix_red_expected = prop_cond_matrix_expected.copy()
+        prop_cond_matrix_red_expected[numpy.logical_or(
+            prop_cond_matrix_red_expected == nlos_o,
+            prop_cond_matrix_red_expected == nlos_p)] = nlos
+        prop_cond_matrix_red_expected[
+            numpy.logical_or(
+                prop_cond_matrix_red_expected == olos,
+                prop_cond_matrix_red_expected == los)] = olos_los
+
         network = DemoNetwork()
         graph_streets = network.build_graph_streets()
         gdf_buildings = network.build_gdf_buildings()
@@ -187,7 +233,7 @@ class TestPropagation(unittest.TestCase):
 
         vehs = network.build_vehs(graph_streets=graph_streets)
 
-        prop_cond_matrix_generated = prop.gen_prop_cond_matrix(
+        prop_cond_matrix_generated, coords_max_angle_matrix = prop.gen_prop_cond_matrix(
             vehs.get_points(),
             gdf_buildings,
             graph_streets_wave=graph_streets_wave,
@@ -197,9 +243,25 @@ class TestPropagation(unittest.TestCase):
             car_radius=2,
             max_angle=np.pi / 2)
 
+        prop_cond_matrix_red_generated, coords_max_angle_matrix = prop.gen_prop_cond_matrix(
+            vehs.get_points(),
+            gdf_buildings,
+            graph_streets_wave=graph_streets_wave,
+            graphs_vehs=vehs.get_graph(),
+            fully_determine=False,
+            max_dist=None,
+            car_radius=2,
+            max_angle=np.pi / 2)
+
+        # TODO: check also coords_max_angle_matrix!
         result_correct = np.array_equal(
             prop_cond_matrix_generated,
             prop_cond_matrix_expected)
+        self.assertTrue(result_correct)
+
+        result_correct = np.array_equal(
+            prop_cond_matrix_red_generated,
+            prop_cond_matrix_red_expected)
         self.assertTrue(result_correct)
 
     def test_veh_cons_are_olos(self):
