@@ -140,6 +140,20 @@ class TestGeometry(unittest.TestCase):
             result_correct = intersects == intersect_flag
             self.assertTrue(result_correct)
 
+    def test_get_street_lengths(self):
+        """Tests the function get_street_lengths"""
+
+        lengths_expected = np.append([60, 60, 60], np.matlib.repeat(80, 10))
+
+        network = DemoNetwork()
+        graph_streets = network.build_graph_streets()
+        lengths_generated = geom_o.get_street_lengths(graph_streets)
+
+        results_correct = np.array_equal(
+            np.sort(lengths_generated), lengths_expected)
+        self.assertTrue(results_correct)
+        return
+
 
 class TestPropagation(unittest.TestCase):
     """Provides unit tests for the propagation module"""
