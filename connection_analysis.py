@@ -196,8 +196,8 @@ def get_path_redundancy(graph, node, distances):
     for node_iter_veh in graph.nodes():
         if node_iter_veh == node:
             continue
-        idx_cond = utils.square2cond(
-            count_nodes, node, node_iter_veh)
+        idx_cond = utils.square_to_condensed(
+            node, node_iter_veh, count_nodes)
         path_redundancy[iter_veh]['distance'] = distances[idx_cond]
 
         path_redundancy[iter_veh]['count_node_disjoint_paths'] = nx_local_node_connectivity(
