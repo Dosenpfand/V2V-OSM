@@ -33,6 +33,7 @@ def gen_prop_cond_matrix(points_vehs,
     count_vehs = points_vehs.size
     count_cond = count_vehs * (count_vehs - 1) // 2
     prop_cond_matrix = np.zeros(count_cond, dtype=Cond)
+    coords_max_angle_matrix = np.zeros(count_cond, dtype=object)
     range_vehs = np.arange(count_vehs)
 
     index = 0
@@ -55,7 +56,7 @@ def gen_prop_cond_matrix(points_vehs,
                     graphs_vehs_other = graphs_vehs[idxs_other]
 
                     # TODO: use max_angle? is it even necessary?
-                    is_orthogonal, _ = check_if_con_is_orthogonal(
+                    is_orthogonal, coords_max_angle = check_if_con_is_orthogonal(
                         graph_streets_wave,
                         graph_veh1,
                         graph_veh2,
@@ -63,6 +64,7 @@ def gen_prop_cond_matrix(points_vehs,
                         max_angle=max_angle)
                     if is_orthogonal:
                         prop_cond_matrix[index] = Cond.NLOS_ort
+                        coords_max_angle_matrix[index] = coords_max_angle
                     else:
                         prop_cond_matrix[index] = Cond.NLOS_par
 
@@ -81,7 +83,7 @@ def gen_prop_cond_matrix(points_vehs,
 
             index += 1
 
-    return prop_cond_matrix
+    return prop_cond_matrix, coords_max_angle_matrix
 
 
 def veh_cons_are_nlos(point_own, points_vehs, buildings, max_dist=None):
@@ -129,28 +131,6 @@ def veh_cons_are_olos(point_own, points_vehs, margin=1):
         indices_other[index] = False
         is_olos[index] = geom_o.line_intersects_points(line, points_vehs[indices_other],
                                                        margin=margin)
-
-    return is_olos
-
-
-def veh_cons_are_olos_all(points_vehs, margin=1):
-    """Determines for each possible connection if it is OLOS or not (i.e. LOS)"""
-
-    count_vehs = np.size(points_vehs)
-    count_cond = count_vehs * (count_vehs - 1) // 2
-    is_olos = np.ones(count_cond, dtype=bool)
-
-    index = 0
-    for idx1, point1 in enumerate(points_vehs):
-        for idx2, point2 in enumerate(points_vehs[idx1 + 1:]):
-            line = geom.LineString([point1, point2])
-            indices_other = np.ones(np.size(points_vehs), dtype=bool)
-            indices_other[[idx1, idx1 + 1 + idx2]] = False
-            is_olos[index] = \
-                geom_o.line_intersects_points(line,
-                                              points_vehs[indices_other],
-                                              margin=margin)
-            index += 1
 
     return is_olos
 
