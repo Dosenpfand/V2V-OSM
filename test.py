@@ -1,6 +1,8 @@
 """Unit tests for all modules of the package"""
 
 import unittest
+import os
+import pickle
 import propagation as prop
 import shapely.geometry as geom
 import geometry as geom_o
@@ -9,6 +11,7 @@ import numpy.matlib
 import networkx as nx
 import geopandas as gpd
 import vehicles
+import utils
 
 
 class DemoNetwork:
@@ -188,6 +191,44 @@ class TestGeometry(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             geom_o.split_line_at_point(line, point_fail)
+
+
+class TestUtils(unittest.TestCase):
+    """Provides unit tests for the utils module"""
+
+    def test_save_load(self):
+        """Tests the functions save and load"""
+
+        file_path = 'results/TEMP_test_load_save.pickle.gz'
+
+        save_data = np.random.rand(100)
+        utils.save(save_data, file_path)
+
+        load_data = utils.load(file_path)
+
+        result_correct = numpy.array_equal(load_data, save_data)
+        self.assertTrue(result_correct)
+
+        os.remove(file_path)
+
+    def test_compress_file(self):
+        """Tests the function compress_file"""
+
+        file_path_uncomp = 'results/TEMP_test_compress_file.pickle'
+        file_path_comp = file_path_uncomp + '.gz'
+
+        save_data = save_data = np.random.rand(100)
+
+        with open(file_path_uncomp, 'wb') as file:
+            pickle.dump(save_data, file)
+
+        utils.compress_file(file_path_uncomp)
+        load_data = utils.load(file_path_comp)
+
+        result_correct = numpy.array_equal(load_data, save_data)
+        self.assertTrue(result_correct)
+
+        os.remove(file_path_comp)
 
 
 class TestPropagation(unittest.TestCase):
