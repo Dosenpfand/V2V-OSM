@@ -45,12 +45,41 @@ def debug(time_start=None, text=None):
         return time_diff
 
 
-def square2cond(n, i, j):
+def square_to_condensed(idx_i, idx_j, size_n):
     """Converts the squareform indices i and j of the condensed vector with size n to the
     condensed index k. See also: scipy.spatial.distance.squareform"""
 
-    k = int(spc.comb(n, 2) - spc.comb(n - i, 2) + (j - i - 1))
-    return k
+    if idx_i == idx_j:
+        raise ValueError('Diagonal entries are not defined')
+    if idx_i < idx_j:
+        idx_i, idx_j = idx_j, idx_i
+    k = size_n * idx_j - idx_j * (idx_j + 1) / 2 + idx_i - 1 - idx_j
+    return int(k)
+
+
+def condensed_to_square(index_k, size_n):
+    """Converts the condensed index k of the condensed vector with size n to the square indicies i
+    and j. See also scipy.spatial.distance.squareform"""
+
+    def calc_row_idx(index_k, size_n):
+        """Determines the row index"""
+        return int(
+            np.ceil((1 / 2.) *
+                    (- (-8 * index_k + 4 * size_n**2 - 4 * size_n - 7)**0.5
+                     + 2 * size_n - 1) - 1))
+
+    def elem_in_i_rows(index_i, size_n):
+        """Determines the number of elements in the i-th row"""
+        return index_i * (size_n - 1 - index_i) + (index_i * (index_i + 1)) / 2
+
+    def calc_col_idx(index_k, index_i, size_n):
+        """Determines the column index"""
+        return int(size_n - elem_in_i_rows(index_i + 1, size_n) + index_k)
+
+    i = calc_row_idx(index_k, size_n)
+    j = calc_col_idx(index_k, i, size_n)
+
+    return i, j
 
 
 def net_connectivity_stats(net_connectivities, confidence=0.95):

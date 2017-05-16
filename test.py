@@ -12,6 +12,7 @@ import networkx as nx
 import geopandas as gpd
 import vehicles
 import utils
+import scipy.spatial.distance as sp_dist
 
 
 class DemoNetwork:
@@ -229,6 +230,30 @@ class TestUtils(unittest.TestCase):
         self.assertTrue(result_correct)
 
         os.remove(file_path_comp)
+
+    def test_square_to_condensed_condensed_to_square(self):
+        """Tests the functions square_to_condensed and condensed_to_square"""
+
+        size_n = 7
+
+        size_cond = size_n * (size_n - 1) // 2
+        condensed = np.random.rand(size_cond)
+        square = sp_dist.squareform(condensed)
+
+        for idx_cond in range(size_cond):
+            idx_i, idx_j = utils.condensed_to_square(idx_cond, size_n)
+            result_correct = square[idx_i, idx_j] == condensed[idx_cond]
+            self.assertTrue(result_correct)
+
+        for idx_i in range(size_n):
+            for idx_j in range(size_n):
+                if idx_i == idx_j:
+                    self.assertRaises(ValueError)
+                else:
+                    idx_cond = utils.square_to_condensed(idx_i, idx_j, size_n)
+                    result_correct = square[idx_i,
+                                            idx_j] == condensed[idx_cond]
+                    self.assertTrue(result_correct)
 
 
 class TestPropagation(unittest.TestCase):
