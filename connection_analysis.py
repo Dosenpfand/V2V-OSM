@@ -32,6 +32,7 @@ def gen_connection_matrix(vehs,
     vehs.allocate(count_cond)
 
     if metric == 'distance':
+        # TODO: use prop.gen_prop_cond_matrix?
         if isinstance(max_metric, dict):
             max_dist_nlos = max_metric['nlos']
             max_dist_olos_los = max_metric['olos_los']
@@ -86,21 +87,45 @@ def gen_connection_matrix(vehs,
             car_radius=2,
             max_angle=np.pi)
 
-        idxs_los = np.nonzero(prop_cond_matrix == prop.Cond.LOS)
-        idxs_olos = np.nonzero(prop_cond_matrix == prop.Cond.OLOS)
-        idxs_nlos_ort = np.nonzero(prop_cond_matrix == prop.Cond.NLOS_ort)
-        idxs_nlos_par = np.nonzero(prop_cond_matrix == prop.Cond.NLOS_par)
+        idxs_los = np.nonzero(prop_cond_matrix == prop.Cond.LOS)[0]
+        idxs_olos = np.nonzero(prop_cond_matrix == prop.Cond.OLOS)[0]
+        idxs_nlos_ort = np.nonzero(prop_cond_matrix == prop.Cond.NLOS_ort)[0]
+        idxs_nlos_par = np.nonzero(prop_cond_matrix == prop.Cond.NLOS_par)[0]
+        idxs_olos_los = np.sort(np.append(idxs_los, idxs_olos))
+        idxs_nlos = np.sort(np.append(idxs_nlos_ort, idxs_nlos_par))
 
-        # TODO: add keys?
+        vehs.add_key('los', idxs_los)
+        vehs.add_key('olos', idxs_olos)
+        vehs.add_key('nlos_ort', idxs_nlos_ort)
+        vehs.add_key('nlos_par', idxs_nlos_par)
+        vehs.add_key('olos_los', idxs_olos_los)
+        vehs.add_key('nlos', idxs_nlos)
 
         distances = dist.pdist(vehs.coordinates)
 
-        pl = pathloss.Pathloss()
+        ploss = pathloss.Pathloss()
         pathlosses = np.zeros(distances.size)
-        pathlosses[idxs_los] = pl.pathloss_los(distances[idxs_los])
-        pathlosses[idxs_olos] = pl.pathloss_olos(distances[idxs_olos])
-        pathlosses[idxs_nlos_ort] = np.inf # TODO: !
+        pathlosses[idxs_los] = ploss.pathloss_los(distances[idxs_los])
+        pathlosses[idxs_olos] = ploss.pathloss_olos(distances[idxs_olos])
         pathlosses[idxs_nlos_par] = np.inf
+
+        vehs_coords = vehs.get()
+        for idx_nlos_ort in idxs_nlos_ort:
+            coords_max_angle = coords_max_angle_matrix[idx_nlos_ort]
+            idx_veh1, idx_veh2 = utils.condensed_to_square(
+                idx_nlos_ort, count_veh)
+            coords_veh1 = vehs_coords[idx_veh1]
+            coords_veh2 = vehs_coords[idx_veh2]
+
+            dist_1 = np.linalg.norm(coords_veh1 - coords_max_angle)
+            dist_2 = np.linalg.norm(coords_veh2 - coords_max_angle)
+            pathloss_iter1 = ploss.pathloss_nlos(dist_1, dist_2)
+            pathloss_iter2 = ploss.pathloss_nlos(dist_2, dist_1)
+
+            # TODO: taking the mean is not optimal, optimally the graph would be directed!
+            # TODO: alternatively take max/min?
+            pathlosses[idx_nlos_ort] = np.mean(
+                [pathloss_iter1, pathloss_iter2])
 
         idxs_in_range = np.nonzero(pathlosses < max_metric)
         idxs_out_range = np.setdiff1d(np.arange(count_cond), idxs_in_range)
