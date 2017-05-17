@@ -48,8 +48,6 @@ class Pathloss:
         else:
             self.olos_config = olos_config
 
-    # TODO: 3 setter functions for configs
-
     def pathloss_nlos(self, dist_rx, dist_tx):
         """Calculates the pathloss for the non line of sight case in equation (6)"""
 
@@ -61,13 +59,16 @@ class Pathloss:
         slope_selector = dist_rx < self.nlos_config['dist_break']
         pathloss_slope_1 = slope_selector \
             * (3.75 + self.nlos_config['is_sub_urban'] * 2.94 + 10
-               * np.log10((dist_tx ** 0.957 * 4 * np.pi * dist_rx * (self.nlos_config['dist_tx_wall']
-                                                                     * self.nlos_config['width_rx_street']) ** 0.81 / self.nlos_config['wavelength'])
+               * np.log10((dist_tx ** 0.957 * 4 * np.pi * dist_rx *
+                           (self.nlos_config['dist_tx_wall']
+                            * self.nlos_config['width_rx_street']) **
+                           0.81 / self.nlos_config['wavelength'])
                           ** self.nlos_config['pathloss_exp']))
         pathloss_slope_2 = np.invert(slope_selector) \
             * (3.75 + self.nlos_config['is_sub_urban'] * 2.94 + 10
                * np.log10((dist_tx ** 0.957 * 4 * np.pi * dist_rx ** 2
-                           * (self.nlos_config['dist_tx_wall'] * self.nlos_config['width_rx_street']) ** 0.81
+                           * (self.nlos_config['dist_tx_wall'] *
+                              self.nlos_config['width_rx_street']) ** 0.81
                            / (self.nlos_config['wavelength'] * self.nlos_config['dist_break']))
                           ** self.nlos_config['pathloss_exp']))
 
