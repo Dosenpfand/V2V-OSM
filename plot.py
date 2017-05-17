@@ -48,7 +48,7 @@ def plot_prop_cond(streets, buildings, coordinates_vehs, show=True, place=None):
                 zorder=9, alpha=0.75)
     plt.scatter(coordinates_vehs.get('olos')[:, 0], coordinates_vehs.get('olos')[:, 1],
                 label='OLOS', zorder=8, alpha=0.75)
-    plt.scatter(coordinates_vehs.get('orth')[:, 0], coordinates_vehs.get('orth')[:, 1],
+    plt.scatter(coordinates_vehs.get('ort')[:, 0], coordinates_vehs.get('ort')[:, 1],
                 label='NLOS orth', zorder=5, alpha=0.5)
     plt.scatter(coordinates_vehs.get('par')[:, 0], coordinates_vehs.get('par')[:, 1],
                 label='NLOS par', zorder=5, alpha=0.5)
