@@ -10,7 +10,7 @@ def line_intersects_buildings(line, buildings):
     # multipolygon and use it
 
     intersects = False
-    for geometry in buildings['geometry']:
+    for geometry in buildings.geometry:
         if line.intersects(geometry):
             intersects = True
             break

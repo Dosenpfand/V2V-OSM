@@ -107,7 +107,6 @@ def gen_connection_matrix(vehs,
         vehs.add_key('in_range', idxs_in_range)
         vehs.add_key('out_range', idxs_out_range)
 
-        # TODO: here!
     else:
         raise NotImplementedError('Metric not implemented')
 

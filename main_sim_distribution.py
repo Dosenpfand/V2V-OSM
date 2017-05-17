@@ -77,7 +77,6 @@ def execute_main():
     place = 'Upper West Side - New York - USA'
     place = 'Linz Stadt - Austria'
     # place='Neubau - Vienna - Austria'
-    use_pathloss = False  # TODO: Implement functions to use use_pathloss
     which_result = 1
     densities_veh = 50e-3
     density_type = 'area'
@@ -116,8 +115,6 @@ def execute_main():
                 net_connectivity, path_redundancy = main_sim_multi(net, max_dist_olos_los=max_dist_olos_los,
                                                                    max_dist_nlos=max_dist_nlos, debug=True)
                 net_connectivities[iteration, idx_density] = net_connectivity
-            # TODO: Adapt filename and saved variable structure from
-            # multiprocess!
             np.save('results/net_connectivities',
                     net_connectivities[:iteration + 1])
 

@@ -164,6 +164,9 @@ def fill_config(config):
         if 'abort_after_sumo' not in config['sumo']:
             config['sumo']['abort_after_sumo'] = False
 
+    if 'use_building_hulls' not in config:
+        config['use_building_hulls'] = False
+
     return config
 
 

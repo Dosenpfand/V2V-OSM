@@ -55,7 +55,6 @@ def gen_prop_cond_matrix(points_vehs,
                     graph_veh2 = graphs_vehs[idx1 + idx2 + 1]
                     graphs_vehs_other = graphs_vehs[idxs_other]
 
-                    # TODO: use max_angle? is it even necessary?
                     is_orthogonal, coords_max_angle = check_if_con_is_orthogonal(
                         graph_streets_wave,
                         graph_veh1,

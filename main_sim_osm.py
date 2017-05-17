@@ -339,7 +339,6 @@ def main():
             raise NotImplementedError('Simulation mode not supported')
 
         # Progress report
-        # TODO: still incaccurate!
         rte_time_checkpoint = time.time() - rte_time_start
         rte_count_con_checkpoint += rte_counts_con[idx_count_veh]
         log_progress(rte_count_con_checkpoint, rte_count_con_total,
