@@ -13,6 +13,7 @@ import geopandas as gpd
 import vehicles
 import utils
 import scipy.spatial.distance as sp_dist
+import connection_analysis as con_ana
 
 
 class DemoNetwork:
@@ -256,6 +257,48 @@ class TestUtils(unittest.TestCase):
                     result_correct = square[idx_i,
                                             idx_j] == condensed[idx_cond]
                     self.assertTrue(result_correct)
+
+
+class TestConnectionAnalysis(unittest.TestCase):
+    """Provides unit tests for the connection_analysis module"""
+
+    def test_gen_connection_matrix(self):
+        """Tests the function gen_connection_matrix"""
+
+        max_dist = {'nlos': 100, 'olos_los': 150}
+        con_matrix_expected_cond = np.array([
+            1,1,1,0,0,0,0,0,
+            1,0,1,0,0,0,0,
+            1,1,1,0,1,0,
+            1,1,1,1,0,
+            1,1,1,0,
+            1,1,1,
+            1,1,
+            1
+        ], dtype=bool)
+        
+        con_matrix_expected = sp_dist.squareform(con_matrix_expected_cond)
+        network = DemoNetwork()
+        graph_streets = network.build_graph_streets()
+        gdf_buildings = network.build_gdf_buildings()
+        graph_streets_wave = graph_streets.to_undirected()
+        prop.add_edges_if_los(graph_streets_wave,
+                              gdf_buildings,
+                              max_distance=70)
+        vehs = network.build_vehs(
+            graph_streets=graph_streets, only_coords=False)
+
+        con_matrix_generated = con_ana.gen_connection_matrix(
+            vehs,
+            gdf_buildings,
+            max_dist,
+            metric='distance',
+            graph_streets_wave=graph_streets_wave)
+
+        result_correct = np.array_equal(
+            con_matrix_generated,
+            con_matrix_expected)
+        self.assertTrue(result_correct)
 
 
 class TestPropagation(unittest.TestCase):
