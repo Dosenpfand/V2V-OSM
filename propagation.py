@@ -45,21 +45,15 @@ def gen_prop_cond_matrix(points_vehs,
                 is_nlos = geom_o.line_intersects_buildings(
                     line, buildings)
 
-            if fully_determine:
-                idxs_other = np.setdiff1d(
-                    range_vehs, [idx1, idx1 + idx2 + 1])
-
             if is_nlos:
                 if fully_determine:
                     graph_veh1 = graphs_vehs[idx1]
                     graph_veh2 = graphs_vehs[idx1 + idx2 + 1]
-                    graphs_vehs_other = graphs_vehs[idxs_other]
 
                     is_orthogonal, coords_max_angle = check_if_con_is_orthogonal(
                         graph_streets_wave,
                         graph_veh1,
                         graph_veh2,
-                        graphs_vehs_other,
                         max_angle=max_angle)
                     if is_orthogonal:
                         prop_cond_matrix[index] = Cond.NLOS_ort
@@ -71,6 +65,8 @@ def gen_prop_cond_matrix(points_vehs,
                     prop_cond_matrix[index] = Cond.NLOS
             else:
                 if fully_determine:
+                    idxs_other = np.setdiff1d(
+                        range_vehs, [idx1, idx1 + idx2 + 1])
                     is_olos = geom_o.line_intersects_points(line, points_vehs[idxs_other],
                                                             margin=car_radius)
                     if is_olos:
@@ -137,7 +133,6 @@ def veh_cons_are_olos(point_own, points_vehs, margin=1):
 def check_if_con_is_orthogonal(streets_wave,
                                graph_veh_u,
                                graph_veh_v,
-                               graphs_veh_other,
                                max_angle=np.pi):
     """Determines if the propagation condition between two vehicles is NLOS on an orthogonal
     street"""
@@ -173,35 +168,16 @@ def check_if_cons_are_orthogonal(streets_wave,
                                  max_angle=np.pi):
     """Determines if the propagation condition is NLOS on an orthogonal street for every possible
     connection to one node"""
-    # TODO: Use check_if_con_is_orthogonal!
 
-    node_own = graph_veh_own.graph['node_veh']
-    streets_wave_local = nx.compose(graph_veh_own, streets_wave)
     count_veh_other = np.size(graphs_veh_other)
 
     is_orthogonal = np.zeros(count_veh_other, dtype=bool)
     coords_max_angle = np.zeros((count_veh_other, 2))
     for index, graph in enumerate(graphs_veh_other):
 
-        node_v = graph.graph['node_veh']
-        streets_wave_local_iter = nx.compose(graph, streets_wave_local)
-
-        # TODO: Use angles as weight and not length?
-        route = osmnx_addons.line_route_between_nodes(
-            node_own, node_v, streets_wave_local_iter)
-        angles = geom_o.angles_along_line(route)
-        angles_wrapped = np.pi - np.abs(geom_o.wrap_to_pi(angles))
-
-        sum_angles = sum(angles_wrapped)
-        if sum_angles <= max_angle:
-            is_orthogonal[index] = True
-        else:
-            is_orthogonal[index] = False
-
-        # Determine position of max angle
-        index_angle = np.argmax(angles_wrapped)
-        route_coords = np.array(route.xy)
-        coords_max_angle[index, :] = route_coords[:, index_angle + 1]
+        is_orthogonal[index], coords_max_angle[index, :] = \
+            check_if_con_is_orthogonal(
+                streets_wave, graph_veh_own, graph, max_angle=max_angle)
 
     return is_orthogonal, coords_max_angle
 
