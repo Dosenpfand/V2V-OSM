@@ -68,7 +68,7 @@ def main_sim_single(network, max_pl=150):
                                           vehs.get_graph('nlos'),
                                           max_angle=np.pi)
     is_parallel = np.invert(is_orthogonal)
-    vehs.add_key('orth', vehs.get_idxs('nlos')[is_orthogonal])
+    vehs.add_key('ort', vehs.get_idxs('nlos')[is_orthogonal])
     vehs.add_key('par', vehs.get_idxs('nlos')[is_parallel])
     utils.debug(time_start)
 
@@ -94,14 +94,14 @@ def main_sim_single(network, max_pl=150):
     # NOTE: Uses airline vehicle -> intersection -> vehicle and not
     # street route
     distances_orth_tx = np.sqrt(
-        (vehs.get('orth')[:, 0] - coords_intersections[is_orthogonal, 0])**2 +
-        (vehs.get('orth')[:, 1] - coords_intersections[is_orthogonal, 1])**2)
+        (vehs.get('ort')[:, 0] - coords_intersections[is_orthogonal, 0])**2 +
+        (vehs.get('ort')[:, 1] - coords_intersections[is_orthogonal, 1])**2)
     distances_orth_rx = np.sqrt(
         (vehs.get('center')[0] - coords_intersections[is_orthogonal, 0])**2 +
         (vehs.get('center')[1] - coords_intersections[is_orthogonal, 1])**2)
     pathlosses_orth = p_loss.pathloss_nlos(
         distances_orth_rx, distances_orth_tx)
-    vehs.set_pathlosses('orth', pathlosses_orth)
+    vehs.set_pathlosses('ort', pathlosses_orth)
     pathlosses_par = np.Infinity * np.ones(np.sum(is_parallel))
     vehs.set_pathlosses('par', pathlosses_par)
     utils.debug(time_start)
