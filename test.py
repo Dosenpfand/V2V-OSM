@@ -60,7 +60,8 @@ class DemoNetwork:
         """Returns a very simple geodataframe with polygons representing builings"""
 
         buildings_coords = ([[20, 20], [60, 20], [60, 60], [20, 60]],
-                            [[100, 20], [200, 20], [200, 60], [100, 60]],
+                            [[100, 20], [240, 20], [240, 60], [220, 60], [
+                                220, 40], [200, 40], [200, 60], [100, 60]],
                             [[100, 100], [140, 100], [140, 120], [100, 120]],
                             [[100, 160], [200, 160], [200, 180], [100, 180]])
 
@@ -248,7 +249,8 @@ class TestUtils(unittest.TestCase):
         for idx_i in range(size_n):
             for idx_j in range(size_n):
                 if idx_i == idx_j:
-                    self.assertRaises(ValueError)
+                    with self.assertRaises(ValueError):
+                        utils.square_to_condensed(idx_i, idx_j, size_n)
                 else:
                     idx_cond = utils.square_to_condensed(idx_i, idx_j, size_n)
                     result_correct = square[idx_i,
@@ -280,6 +282,18 @@ class TestPropagation(unittest.TestCase):
             los
         ], dtype=prop.Cond)
 
+        arr = np.array
+        coords_angle_expected = np.array([
+            0, arr([80, 0]), 0, 0, arr([80, 0]), 0, arr([80, 0]), 0,
+            arr([80, 0]), 0, 0, arr([80, 0]), 0, arr([80, 0]), 0,
+            arr([80, 80]), arr([80, 80]), 0, arr([80, 140]), 0, arr([80, 200]),
+            0, 0, 0, 0, 0,
+            0, 0, arr([80, 80]), 0,
+            0, 0, arr([80, 200]),
+            0, 0,
+            0
+        ], dtype=object)
+
         prop_cond_matrix_red_expected = prop_cond_matrix_expected.copy()
         prop_cond_matrix_red_expected[numpy.logical_or(
             prop_cond_matrix_red_expected == nlos_o,
@@ -288,6 +302,8 @@ class TestPropagation(unittest.TestCase):
             numpy.logical_or(
                 prop_cond_matrix_red_expected == olos,
                 prop_cond_matrix_red_expected == los)] = olos_los
+        coords_angle_red_expected = np.zeros_like(
+            coords_angle_expected)
 
         network = DemoNetwork()
         graph_streets = network.build_graph_streets()
@@ -299,36 +315,47 @@ class TestPropagation(unittest.TestCase):
 
         vehs = network.build_vehs(graph_streets=graph_streets)
 
-        prop_cond_matrix_generated, coords_max_angle_matrix = prop.gen_prop_cond_matrix(
-            vehs.get_points(),
-            gdf_buildings,
-            graph_streets_wave=graph_streets_wave,
-            graphs_vehs=vehs.get_graph(),
-            fully_determine=True,
-            max_dist=None,
-            car_radius=2,
-            max_angle=np.pi / 2)
+        prop_cond_matrix_generated, coords_angle_generated = \
+            prop.gen_prop_cond_matrix(
+                vehs.get_points(),
+                gdf_buildings,
+                graph_streets_wave=graph_streets_wave,
+                graphs_vehs=vehs.get_graph(),
+                fully_determine=True,
+                max_dist=None,
+                car_radius=2,
+                max_angle=np.pi / 2)
 
-        prop_cond_matrix_red_generated, coords_max_angle_matrix = prop.gen_prop_cond_matrix(
-            vehs.get_points(),
-            gdf_buildings,
-            graph_streets_wave=graph_streets_wave,
-            graphs_vehs=vehs.get_graph(),
-            fully_determine=False,
-            max_dist=None,
-            car_radius=2,
-            max_angle=np.pi / 2)
+        prop_cond_matrix_red_generated, coords_angle_red_generated = \
+            prop.gen_prop_cond_matrix(
+                vehs.get_points(),
+                gdf_buildings,
+                graph_streets_wave=graph_streets_wave,
+                graphs_vehs=vehs.get_graph(),
+                fully_determine=False,
+                max_dist=None,
+                car_radius=2,
+                max_angle=np.pi / 2)
 
-        # TODO: check also coords_max_angle_matrix!
         result_correct = np.array_equal(
             prop_cond_matrix_generated,
             prop_cond_matrix_expected)
         self.assertTrue(result_correct)
 
+        for generated, expected in \
+                zip(coords_angle_generated, coords_angle_expected):
+            result_correct = generated == expected
+            self.assertTrue(numpy.all(result_correct))
+
         result_correct = np.array_equal(
             prop_cond_matrix_red_generated,
             prop_cond_matrix_red_expected)
         self.assertTrue(result_correct)
+
+        for generated, expected in \
+                zip(coords_angle_red_generated, coords_angle_red_expected):
+            result_correct = generated == expected
+            self.assertTrue(numpy.all(result_correct))
 
     def test_veh_cons_are_olos(self):
         """Tests the function veh_cons_are_olos"""
