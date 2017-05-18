@@ -19,7 +19,8 @@ def gen_connection_matrix(vehs,
                           gdf_buildings,
                           max_metric,
                           metric='distance',
-                          graph_streets_wave=None):
+                          graph_streets_wave=None,
+                          metric_config=None):
     """Simulates links between every set of 2 vehicles and determines if they are connected using
     either distance or pathloss as a metric. Returns a matrix"""
 
@@ -75,17 +76,27 @@ def gen_connection_matrix(vehs,
         if graph_streets_wave is None:
             raise RuntimeError('Streets wave propagation graph not given')
 
+        if metric_config is None:
+            metric_config = {}
+        if 'shadowfading_enabled' not in metric_config:
+            metric_config['shadowfading_enabled'] = True
+        if 'max_dist' not in metric_config:
+            metric_config['max_dist'] = None
+        if 'car_radius' not in metric_config:
+            metric_config['car_radius'] = 1.5
+        if 'max_angle' not in metric_config:
+            metric_config['max_angle'] = np.pi
+
         # Determine propagation condition matrix
-        # TODO: check parameters
         prop_cond_matrix, coords_max_angle_matrix = prop.gen_prop_cond_matrix(
             vehs.get_points(),
             gdf_buildings,
             graph_streets_wave=graph_streets_wave,
             graphs_vehs=vehs.get_graph(),
             fully_determine=True,
-            max_dist=None,
-            car_radius=2,
-            max_angle=np.pi)
+            max_dist=metric_config['max_dist'],
+            car_radius=metric_config['car_radius'],
+            max_angle=metric_config['max_angle'])
 
         idxs_los = np.nonzero(prop_cond_matrix == prop.Cond.LOS)[0]
         idxs_olos = np.nonzero(prop_cond_matrix == prop.Cond.OLOS)[0]
@@ -104,6 +115,9 @@ def gen_connection_matrix(vehs,
         distances = dist.pdist(vehs.coordinates)
 
         ploss = pathloss.Pathloss()
+        if not metric_config['shadowfading_enabled']:
+            ploss.disable_shadowfading()
+
         pathlosses = np.zeros(distances.size)
         pathlosses[idxs_los] = ploss.pathloss_los(distances[idxs_los])
         pathlosses[idxs_olos] = ploss.pathloss_olos(distances[idxs_olos])
