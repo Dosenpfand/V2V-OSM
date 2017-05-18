@@ -1,19 +1,21 @@
 """Unit tests for all modules of the package"""
 
-import unittest
 import os
 import pickle
-import propagation as prop
-import shapely.geometry as geom
-import geometry as geom_o
+import unittest
+
+import geopandas as gpd
+import networkx as nx
 import numpy as np
 import numpy.matlib
-import networkx as nx
-import geopandas as gpd
-import vehicles
-import utils
 import scipy.spatial.distance as sp_dist
+import shapely.geometry as geom
+
 import connection_analysis as con_ana
+import geometry as geom_o
+import propagation as prop
+import utils
+import vehicles
 
 
 class DemoNetwork:
@@ -265,19 +267,37 @@ class TestConnectionAnalysis(unittest.TestCase):
     def test_gen_connection_matrix(self):
         """Tests the function gen_connection_matrix"""
 
+        # Distance config
         max_dist = {'nlos': 100, 'olos_los': 150}
-        con_matrix_expected_cond = np.array([
-            1,1,1,0,0,0,0,0,
-            1,0,1,0,0,0,0,
-            1,1,1,0,1,0,
-            1,1,1,1,0,
-            1,1,1,0,
-            1,1,1,
-            1,1,
+        con_matrix_dist_expected_cond = np.array([
+            1, 1, 1, 0, 0, 0, 0, 0,
+            1, 0, 1, 0, 0, 0, 0,
+            1, 1, 1, 0, 1, 0,
+            1, 1, 1, 1, 0,
+            1, 1, 1, 0,
+            1, 1, 1,
+            1, 1,
             1
         ], dtype=bool)
-        
-        con_matrix_expected = sp_dist.squareform(con_matrix_expected_cond)
+
+        # Pathloss config
+        max_pl = 120
+        con_matrix_pl_expected_cond = np.array([
+            1, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0,
+            0, 0, 1, 0, 1, 0,
+            1, 1, 1, 1, 0,
+            1, 0, 0, 0,
+            1, 1, 0,
+            1, 0,
+            1
+        ], dtype=bool)
+
+        # Exception config
+        metric_not_implemented = 'foo_bar_does_not_exist'
+
+        con_matrix_dist_expected = sp_dist.squareform(con_matrix_dist_expected_cond)
+        con_matrix_pl_expected = sp_dist.squareform(con_matrix_pl_expected_cond)
         network = DemoNetwork()
         graph_streets = network.build_graph_streets()
         gdf_buildings = network.build_gdf_buildings()
@@ -288,7 +308,8 @@ class TestConnectionAnalysis(unittest.TestCase):
         vehs = network.build_vehs(
             graph_streets=graph_streets, only_coords=False)
 
-        con_matrix_generated = con_ana.gen_connection_matrix(
+        # Distance based connection matrix
+        con_matrix_dist_generated = con_ana.gen_connection_matrix(
             vehs,
             gdf_buildings,
             max_dist,
@@ -296,9 +317,33 @@ class TestConnectionAnalysis(unittest.TestCase):
             graph_streets_wave=graph_streets_wave)
 
         result_correct = np.array_equal(
-            con_matrix_generated,
-            con_matrix_expected)
+            con_matrix_dist_generated,
+            con_matrix_dist_expected)
         self.assertTrue(result_correct)
+
+        # Pathloss based connection matrix
+        metric_config = {'shadowfading_enabled': False}
+        con_matrix_pl_generated = con_ana.gen_connection_matrix(
+            vehs,
+            gdf_buildings,
+            max_pl,
+            metric='pathloss',
+            graph_streets_wave=graph_streets_wave,
+            metric_config=metric_config)
+
+        result_correct = np.array_equal(
+            con_matrix_pl_generated,
+            con_matrix_pl_expected)
+        self.assertTrue(result_correct)
+
+        # Exception check
+        with self.assertRaises(NotImplementedError):
+            con_ana.gen_connection_matrix(
+                vehs,
+                gdf_buildings,
+                max_dist,
+                metric=metric_not_implemented,
+                graph_streets_wave=graph_streets_wave)
 
 
 class TestPropagation(unittest.TestCase):

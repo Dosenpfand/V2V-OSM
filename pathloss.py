@@ -48,6 +48,13 @@ class Pathloss:
         else:
             self.olos_config = olos_config
 
+    def disable_shadowfading(self):
+        """Deactivates shadow fading (random component) by setting the standard deviation to zero"""
+
+        self.olos_config['standard_dev'] = 0
+        self.los_config['standard_dev'] = 0
+        self.nlos_config['standard_dev'] = 0
+
     def pathloss_nlos(self, dist_rx, dist_tx):
         """Calculates the pathloss for the non line of sight case in equation (6)"""
 
