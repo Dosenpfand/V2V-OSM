@@ -17,6 +17,8 @@ addons:
     - libopenblas-dev
     - liblapack-dev
     - gfortran
+    - sumo
+    - sumo-tools
 cache: pip
 branches:
   except:
