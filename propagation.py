@@ -1,11 +1,13 @@
 """ Determines the propagation conditions (LOS/OLOS/NLOS orthogonal/NLOS paralell) of connections"""
 
 from enum import IntEnum
+
+import networkx as nx
 import numpy as np
 import shapely.geometry as geom
-import osmnx_addons
+
 import geometry as geom_o
-import networkx as nx
+import osmnx_addons
 
 
 class Cond(IntEnum):
@@ -96,8 +98,7 @@ def veh_cons_are_nlos(point_own, points_vehs, buildings, max_dist=None):
 
 def veh_cons_are_nlos_all(points_vehs, buildings, max_dist=None):
     """ Determines for each possible connection if it is NLOS or not (i.e. LOS and OLOS)"""
-    # TODO: delete this function? completele replacable by
-    # gen_prop_cond_matrix?
+    # NOTE: This function is deprecated and is replaced by gen_prop_cond_matrix
 
     count_vehs = np.size(points_vehs)
     count_cond = count_vehs * (count_vehs - 1) // 2
@@ -142,7 +143,7 @@ def check_if_con_is_orthogonal(streets_wave,
     streets_wave_local = nx.compose(graph_veh_u, streets_wave)
     streets_wave_local = nx.compose(graph_veh_v, streets_wave_local)
 
-    # TODO: Use angles as weight and not length?
+    # NOTE: We suboptimally use the length of roads between nodes as weight for routing and not the angle
     route = osmnx_addons.line_route_between_nodes(
         node_u, node_v, streets_wave_local)
     angles = geom_o.angles_along_line(route)
@@ -174,7 +175,6 @@ def check_if_cons_are_orthogonal(streets_wave,
     is_orthogonal = np.zeros(count_veh_other, dtype=bool)
     coords_max_angle = np.zeros((count_veh_other, 2))
     for index, graph in enumerate(graphs_veh_other):
-
         is_orthogonal[index], coords_max_angle[index, :] = \
             check_if_con_is_orthogonal(
                 streets_wave, graph_veh_own, graph, max_angle=max_angle)
