@@ -1,18 +1,18 @@
 """ Various uncomplex functionality"""
 
-import sys
-import time
-import smtplib
-from email.mime.text import MIMEText
-import socket
 import getpass
 import gzip
+import logging
 import os
 import pickle
-import logging
-import scipy.special as spc
-import scipy.stats as st
+import smtplib
+import socket
+import sys
+import time
+from email.mime.text import MIMEText
+
 import numpy as np
+import scipy.stats as st
 
 
 def string_to_filename(string):
@@ -65,7 +65,7 @@ def condensed_to_square(index_k, size_n):
         """Determines the row index"""
         return int(
             np.ceil((1 / 2.) *
-                    (- (-8 * index_k + 4 * size_n**2 - 4 * size_n - 7)**0.5
+                    (- (-8 * index_k + 4 * size_n ** 2 - 4 * size_n - 7) ** 0.5
                      + 2 * size_n - 1) - 1))
 
     def elem_in_i_rows(index_i, size_n):
@@ -145,29 +145,6 @@ def compress_file(file_in_path, protocol=4, compression_level=1, delete_uncompre
 
     if delete_uncompressed:
         os.remove(file_in_path)
-
-
-def fill_config(config):
-    """ Set unset SUMO settings to sane defaults"""
-
-    if config['distribution_veh'] == 'SUMO':
-        if 'tls_settings' not in config['sumo']:
-            config['sumo']['tls_settings'] = None
-        if 'fringe_factor' not in config['sumo']:
-            config['sumo']['fringe_factor'] = None
-        if 'max_speed' not in config['sumo']:
-            config['sumo']['max_speed'] = None
-        if 'intermediate_points' not in config['sumo']:
-            config['sumo']['intermediate_points'] = None
-        if 'warmup_duration' not in config['sumo']:
-            config['sumo']['warmup_duration'] = None
-        if 'abort_after_sumo' not in config['sumo']:
-            config['sumo']['abort_after_sumo'] = False
-
-    if 'use_building_hulls' not in config:
-        config['use_building_hulls'] = False
-
-    return config
 
 
 def convert_config_densities(config_densities):
