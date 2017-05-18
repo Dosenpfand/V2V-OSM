@@ -1,7 +1,9 @@
 """Unit tests for all modules that interact with SUMO and therefore execute slower and need SUMO installed"""
 
 import unittest
+
 import numpy as np
+
 import sumo
 
 
@@ -53,3 +55,6 @@ class TestSumo(unittest.TestCase):
 
         self.assertIsInstance(traces, np.ndarray)
 
+
+if __name__ == '__main__':
+    unittest.main()
