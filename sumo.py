@@ -25,7 +25,7 @@ def simple_wrapper(place,
                    intermediate_points=None,
                    start_veh_simult=True,
                    coordinate_tls=True,
-                   directory='',
+                   directory='sumo_data/',
                    skip_if_exists=True,
                    veh_class='passenger'):
     """Generates and downloads all necessary files, runs a generic SUMO simulation
@@ -302,7 +302,7 @@ def create_random_trips(place,
                         file_suffix=None,
                         random_seed=42,
                         seconds_end=3600,
-                        fringe_factor=5,
+                        fringe_factor=None,
                         veh_period=1,
                         veh_class='passenger',
                         prefix='veh',
@@ -331,7 +331,6 @@ def create_random_trips(place,
                  '-s', str(random_seed),
                  '-e', str(seconds_end),
                  '-p', str(veh_period),
-                 '--fringe-factor', str(fringe_factor),
                  '-r', path_routes,
                  '-o', path_trips,
                  '--vehicle-class', veh_class,
@@ -342,6 +341,9 @@ def create_random_trips(place,
 
     if intermediate_points is not None:
         arguments += ['--intermediate', str(intermediate_points)]
+
+    if fringe_factor is not None:
+        arguments += ['--fringe-factor', str(fringe_factor)]
 
     working_dir = os.path.dirname(os.path.abspath(__file__))
 

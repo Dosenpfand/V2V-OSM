@@ -1,16 +1,18 @@
 """ Additional functions missing in the OSMnx package"""
 
-import pickle
 import os.path
+import pickle
+
 import networkx as nx
-import shapely.ops as ops
-import shapely.geometry as geom
 import osmnx as ox
-import utils
+import shapely.geometry as geom
+import shapely.ops as ops
+
 import propagation as prop
+import utils
 
 
-def load_network(place, which_result=1):
+def load_network(place, which_result=1, overwrite=False):
     """Generates streets and buildings"""
 
     # Load data
@@ -24,7 +26,9 @@ def load_network(place, which_result=1):
     filename_data_wave = 'data/{}_wave.pickle'.format(
         utils.string_to_filename(place))
 
-    if os.path.isfile(filename_data_streets) and os.path.isfile(filename_data_buildings) and \
+    if not overwrite and \
+            os.path.isfile(filename_data_streets) and \
+            os.path.isfile(filename_data_buildings) and \
             os.path.isfile(filename_data_boundary):
         # Load from file
         time_start = utils.debug(None, 'Loading data from disk')
@@ -44,7 +48,7 @@ def load_network(place, which_result=1):
     # Generate wave propagation graph:
     # Vehicles are placed in a undirected version of the graph because electromagnetic
     # waves do not respect driving directions
-    if os.path.isfile(filename_data_wave):
+    if not overwrite and os.path.isfile(filename_data_wave):
         # Load from file
         time_start = utils.debug(None, 'Loading graph for wave propagation')
         with open(filename_data_wave, 'rb') as file:
