@@ -309,7 +309,7 @@ def create_random_trips(place,
                         min_dist=300,
                         intermediate_points=None,
                         debug=False,
-                        script_dir='/usr/lib/sumo/tools'):
+                        script_dir=None):
     """Creates random vehicle trips on a street network"""
 
     filename_place = utils.string_to_filename(place)
@@ -325,6 +325,9 @@ def create_random_trips(place,
         directory, filename_place_suffix + '.' + veh_class + '.rou.xml')
     path_trips = os.path.join(
         directory, filename_place_suffix + '.' + veh_class + '.trips.xml')
+
+    if script_dir is None:
+        script_dir = search_tool_dir()
 
     arguments = [os.path.join(script_dir, 'randomTrips.py'),
                  '-n', path_network,
@@ -365,10 +368,14 @@ def build_network(filename,
                   tls_settings=None,
                   directory='',
                   debug=False,
-                  script_dir='/usr/lib/sumo/tools'):
+                  script_dir=None):
     """Converts a OpenStreetMap files to a SUMO street network file"""
 
     filepath = os.path.join(directory, filename)
+
+    if script_dir is None:
+        script_dir = search_tool_dir()
+
     arguments = [script_dir + '/osmBuild.py', '-f', filepath, '-c', veh_class]
 
     if prefix is not None:
@@ -429,7 +436,7 @@ def generate_tls_coordination(place,
                               veh_class='passenger',
                               count_veh=None,
                               debug=False,
-                              script_dir='/usr/lib/sumo/tools'):
+                              script_dir=None):
     """Generates a traffic light system coordination"""
 
     filename_place = utils.string_to_filename(place)
@@ -459,6 +466,9 @@ def generate_tls_coordination(place,
 
         tree.write(path_routes, 'UTF-8')
 
+    if script_dir is None:
+        script_dir = search_tool_dir()
+
     arguments = [script_dir + '/tlsCoordinator.py',
                  '-n', path_network,
                  '-r', path_routes,
@@ -482,9 +492,12 @@ def download_streets_from_id(area_id,
                              prefix=None,
                              directory='',
                              debug=False,
-                             script_dir='/usr/lib/sumo/tools'):
+                             script_dir=None):
     """Downloads a street data defined by it's id from OpennStreetMap
     with the SUMO helper script"""
+
+    if script_dir is None:
+        script_dir = search_tool_dir()
 
     arguments = [script_dir + '/osmGet.py', '-a', str(area_id)]
     if prefix is not None:
@@ -511,10 +524,13 @@ def download_streets_from_name(place,
                                directory='',
                                debug=False,
                                use_sumo_downloader=False,
-                               script_dir='/usr/lib/sumo/tools'):
+                               script_dir=None):
     """Downloads a street data defined by it's name from OpennStreetMap"""
 
     if use_sumo_downloader:
+        if script_dir is None:
+            script_dir = search_tool_dir()
+
         api_resp = ox.osm_polygon_download(
             place, limit=which_result, polygon_geojson=0)
         if not api_resp:
@@ -673,3 +689,14 @@ def min_max_coords(traces):
             y_max = y_max_iter
 
     return x_min, x_max, y_min, y_max
+
+def search_tool_dir():
+    """Searches for the SUMO tools directory"""
+
+    paths = ['/usr/lib/sumo/tools',
+             'sumo/sumo/tools']
+    for path in paths:
+        if os.path.isdir(path):
+            return path
+
+    raise FileNotFoundError('Could not find the SUMO tools directory')
