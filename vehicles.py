@@ -1,14 +1,16 @@
 """ Distributes vehicles along streets"""
 
-import numpy as np
-import geometry as geom_o
 import networkx as nx
+import numpy as np
+
+import geometry as geom_o
 import utils
 
 
 class Vehicles:
     """Class representing vehicles with their properties and relations
      to each other."""
+
     # TODO: only points as attributes and get coordinates from points when
     # requested?
 
