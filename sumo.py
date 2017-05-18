@@ -1,16 +1,18 @@
 """Interface to SUMO – Simulation of Urban MObility, sumo.dlr.de"""
 
-import sys
+import logging
 import os
 import subprocess as sproc
+import sys
 import xml.etree.cElementTree as ET
-import logging
+
 import numpy as np
-import shapely.geometry as geom
-import utils
 import osmnx as ox
-import osmnx_addons as ox_a
+import shapely.geometry as geom
+
 import osm_xml
+import osmnx_addons as ox_a
+import utils
 import vehicles
 
 
@@ -387,16 +389,16 @@ def build_network(filename,
     if isinstance(tls_settings, dict):
         # Taken from osmBuild.py
         netconvert_opts = '--geometry.remove,' + \
-            '--roundabouts.guess,' + \
-            '--ramps.guess,' + \
-            '-v,' + \
-            '--junctions.join,' + \
-            '--tls.guess-signals,' + \
-            '--tls.discard-simple,' + \
-            '--tls.join,' + \
-            '--output.original-names,' + \
-            '--junctions.corner-detail,5,' + \
-            '--output.street-names'
+                          '--roundabouts.guess,' + \
+                          '--ramps.guess,' + \
+                          '-v,' + \
+                          '--junctions.join,' + \
+                          '--tls.guess-signals,' + \
+                          '--tls.discard-simple,' + \
+                          '--tls.join,' + \
+                          '--output.original-names,' + \
+                          '--junctions.corner-detail,5,' + \
+                          '--output.street-names'
 
         if ('cycle_time' in tls_settings) and ('green_time' in tls_settings):
             raise RuntimeError(
@@ -404,15 +406,15 @@ def build_network(filename,
 
         if 'cycle_time' in tls_settings:
             netconvert_opts += ',--tls.cycle.time,' + \
-                str(round(tls_settings['cycle_time']))
+                               str(round(tls_settings['cycle_time']))
 
         if 'green_time' in tls_settings:
             netconvert_opts += ',--tls.green.time,' + \
-                str(round(tls_settings['green_time']))
+                               str(round(tls_settings['green_time']))
 
         if 'yellow_time' in tls_settings:
             netconvert_opts += ',--tls.yellow.time,' + \
-                str(round(tls_settings['yellow_time']))
+                               str(round(tls_settings['yellow_time']))
 
         arguments += ['--netconvert-options', netconvert_opts]
 
@@ -689,6 +691,7 @@ def min_max_coords(traces):
             y_max = y_max_iter
 
     return x_min, x_max, y_min, y_max
+
 
 def search_tool_dir():
     """Searches for the SUMO tools directory"""
