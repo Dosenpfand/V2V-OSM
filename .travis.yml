@@ -12,6 +12,8 @@ install:
   - git clone --depth 1 https://github.com/planetsumo/sumo.git $TRAVIS_BUILD_DIR/sumo
 addons:
   apt:
+    sources:
+    - 'ppa:sumo/stable'
     packages:
     - libgdal1h
     - gdal-bin
