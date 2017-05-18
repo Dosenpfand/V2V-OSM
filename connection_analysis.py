@@ -220,9 +220,7 @@ def calc_path_redundancy(graph_cons, vehs):
     utils.debug(time_start)
 
     # Determine path redundancy
-    # NOTE: we calculate the minimum number of node independent paths as an approximation (and not
-    # the maximum)
-    node_center_veh = idx_center_veh  # TODO: this does not seem to be the center?
+    node_center_veh = idx_center_veh
     time_start = utils.debug(None, 'Determining path redundancy')
     distances = dist.pdist(vehs.coordinates)
     path_redundancy = get_path_redundancy(
