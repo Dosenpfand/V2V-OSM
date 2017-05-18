@@ -197,6 +197,7 @@ def generate_vehs(graph_streets, street_idxs=None, points_vehs_in=None):
 
 def get_vehicles_from_streets(graph_streets, street_idxs):
     """Generate Random vehicle points according to the street_idxs."""
+
     count_veh = np.size(street_idxs)
     points_vehs = np.zeros(count_veh, dtype=object)
     for iteration, index in enumerate(street_idxs):
@@ -208,6 +209,7 @@ def get_vehicles_from_streets(graph_streets, street_idxs):
 
 def get_streets_from_vehicles(graph_streets, points_vehs):
     """Generate appropriate streets for given vehicular point coordinates."""
+
     street_idxs = np.zeros(len(points_vehs), dtype=object)
     edge_set = graph_streets.edges(data=True)
 

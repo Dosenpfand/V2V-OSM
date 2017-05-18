@@ -78,6 +78,14 @@ class DemoNetwork:
 
         return gdf_buildings
 
+    def build_gdf_boundary(self):
+        """Returns the boundary of the network as a GeoDataFrame"""
+
+        polygon = geom.Polygon([(0, 0), (160, 0), (160, 200), (0, 200)])
+        gdf_boundary = gpd.GeoDataFrame({0: {'id': 0, 'geometry': polygon}}).T
+
+        return gdf_boundary
+
     def build_vehs(self, graph_streets=None, only_coords=False):
         """ Returns vehicle coordinates if only_coords is True,
         returns vehicle points if graph_streets is None and only_coords is False
@@ -101,6 +109,30 @@ class DemoNetwork:
             graph_streets, points_vehs_in=vehs_points)
 
         return vehs
+
+
+class TestVehicles(unittest.TestCase):
+    """Provides unit tests for the vehicles module"""
+
+    def test_place_vehicles_in_network(self):
+        """Tests the function place_vehicles_in_network"""
+
+        densities = [100, 1e-1, 1e-3]
+        density_types = ['absolute', 'length', 'area']
+        counts_vehs_expected = [100, 980 * densities[1], 32000 * densities[2]]
+
+        network = DemoNetwork()
+        graph_streets = network.build_graph_streets()
+        gdf_boundary = network.build_gdf_boundary()
+        net = {'graph_streets': graph_streets,
+               'gdf_boundary': gdf_boundary}
+
+        for density, density_type, count_vehs_expected in \
+                zip(densities, density_types, counts_vehs_expected):
+            vehs = vehicles.place_vehicles_in_network(
+                net, density_veh=density, density_type=density_type)
+            count_correct = vehs.count == count_vehs_expected
+            self.assertTrue(count_correct)
 
 
 class TestGeometry(unittest.TestCase):
@@ -264,8 +296,72 @@ class TestUtils(unittest.TestCase):
 class TestConnectionAnalysis(unittest.TestCase):
     """Provides unit tests for the connection_analysis module"""
 
+    def test_calc_path_redundancy(self):
+        """Tests the function calc_path_redundancy"""
+
+        max_dist = {'nlos': 100, 'olos_los': 150}
+        node_redundancies_expteced = [3, 3, 4, 5, 5, 5, 6, 3]
+        edge_redundancies_expteced = [3, 3, 6, 6, 6, 5, 6, 3]
+        sqrt = np.sqrt
+        distances_expected = [sqrt(40 ** 2 + 110 ** 2),
+                              sqrt(40 ** 2 + 110 ** 2),
+                              70,
+                              sqrt(30 ** 2 + 40 ** 2),
+                              sqrt(30 ** 2 + 40 ** 2),
+                              sqrt(30 ** 2 + 40 ** 2),
+                              60,
+                              sqrt(90 ** 2 + 40 ** 2)]
+
+        network = DemoNetwork()
+        graph_streets = network.build_graph_streets()
+        gdf_buildings = network.build_gdf_buildings()
+        graph_streets_wave = graph_streets.to_undirected()
+        prop.add_edges_if_los(graph_streets_wave,
+                              gdf_buildings,
+                              max_distance=70)
+        vehs = network.build_vehs(
+            graph_streets=graph_streets, only_coords=False)
+
+        graph_cons = con_ana.gen_connection_graph(
+            vehs,
+            gdf_buildings,
+            max_dist,
+            metric='distance',
+            graph_streets_wave=graph_streets_wave)
+
+        path_redundancy = con_ana.calc_path_redundancy(graph_cons, vehs)
+
+        node_redundancy_correct = np.array_equal(
+            path_redundancy['count_node_disjoint_paths'],
+            node_redundancies_expteced)
+        self.assertTrue(node_redundancy_correct)
+
+        edge_redundancy_correct = np.array_equal(
+            path_redundancy['count_edge_disjoint_paths'],
+            edge_redundancies_expteced)
+        self.assertTrue(edge_redundancy_correct)
+
+        distance_correct = np.array_equal(
+            path_redundancy['distance'],
+            distances_expected
+        )
+        self.assertTrue(distance_correct)
+
+    def test_calc_net_connectivity(self):
+        """Tests the function calc_net_connectivity"""
+
+        edges = [(0, 1), (0, 2), (0, 3), (0, 4),
+                 (5, 6), (5, 7), (5, 8)]
+        net_connectivity_expected = 5 / 9
+
+        graph = nx.Graph()
+        graph.add_edges_from(edges)
+        net_connectivity_generated = con_ana.calc_net_connectivity(graph)
+
+        self.assertAlmostEqual(net_connectivity_generated, net_connectivity_expected)
+
     def test_gen_connection_graph(self):
-        """Tests the function test_gen_connection_graph"""
+        """Tests the function gen_connection_graph"""
 
         # Distance config
         max_dist = {'nlos': 100, 'olos_los': 150}
