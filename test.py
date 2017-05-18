@@ -264,6 +264,53 @@ class TestUtils(unittest.TestCase):
 class TestConnectionAnalysis(unittest.TestCase):
     """Provides unit tests for the connection_analysis module"""
 
+    def test_gen_connection_graph(self):
+        """Tests the function test_gen_connection_graph"""
+
+        # Distance config
+        max_dist = {'nlos': 100, 'olos_los': 150}
+        edges_expected = [(0, 1), (0, 2), (0, 3),
+                          (1, 2), (1, 4),
+                          (2, 3), (2, 4), (2, 5), (2, 7),
+                          (3, 4), (3, 5), (3, 6), (3, 7),
+                          (4, 5), (4, 6), (4, 7),
+                          (5, 6), (5, 7), (5, 8),
+                          (6, 7), (6, 8), (6, 9),
+                          (7, 8), (7, 9),
+                          (8, 9)]
+
+        edges_expected_sets = [set(edge) for edge in edges_expected]
+        network = DemoNetwork()
+        graph_streets = network.build_graph_streets()
+        gdf_buildings = network.build_gdf_buildings()
+        graph_streets_wave = graph_streets.to_undirected()
+        prop.add_edges_if_los(graph_streets_wave,
+                              gdf_buildings,
+                              max_distance=70)
+        vehs = network.build_vehs(
+            graph_streets=graph_streets, only_coords=False)
+
+        # Distance based connection matrix
+        con_graph_dist_generated = con_ana.gen_connection_graph(
+            vehs,
+            gdf_buildings,
+            max_dist,
+            metric='distance',
+            graph_streets_wave=graph_streets_wave)
+
+        self.assertIsInstance(con_graph_dist_generated, nx.Graph)
+
+        count_nodes = con_graph_dist_generated.number_of_nodes()
+
+        for node_u in range(count_nodes):
+            for node_v in range(count_nodes):
+                edge_current = (node_u, node_v)
+                if set(edge_current) in edges_expected_sets:
+                    result_correct = con_graph_dist_generated.has_edge(*edge_current)
+                else:
+                    result_correct = not con_graph_dist_generated.has_edge(*edge_current)
+                self.assertTrue(result_correct)
+
     def test_gen_connection_matrix(self):
         """Tests the function gen_connection_matrix"""
 
@@ -298,6 +345,7 @@ class TestConnectionAnalysis(unittest.TestCase):
 
         con_matrix_dist_expected = sp_dist.squareform(con_matrix_dist_expected_cond)
         con_matrix_pl_expected = sp_dist.squareform(con_matrix_pl_expected_cond)
+
         network = DemoNetwork()
         graph_streets = network.build_graph_streets()
         gdf_buildings = network.build_gdf_buildings()

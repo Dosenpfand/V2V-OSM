@@ -2,17 +2,19 @@
 derive further results from them"""
 
 import logging
-import utils
+
 import networkx as nx
+import numpy as np
+import scipy.spatial.distance as dist
 from networkx.algorithms.approximation.connectivity import \
     local_node_connectivity as nx_local_node_connectivity
 from networkx.algorithms.connectivity import \
     local_edge_connectivity as nx_local_edge_connectivity
-import numpy as np
+
 import geometry as geom_o
-import scipy.spatial.distance as dist
-import propagation as prop
 import pathloss
+import propagation as prop
+import utils
 
 
 def gen_connection_matrix(vehs,
@@ -161,16 +163,23 @@ def gen_connection_matrix(vehs,
     return matrix_cons
 
 
-def gen_connection_graph(vehs, gdf_buildings, max_metric, metric='distance'):
+def gen_connection_graph(vehs,
+                         gdf_buildings,
+                         max_metric,
+                         metric='distance',
+                         graph_streets_wave=None,
+                         metric_config=None):
     """Simulates links between every set of 2 vehicles and determines if they are connected using
     either distance or pathloss as a metric. Returns a networkx graph"""
 
     matrix_cons = gen_connection_matrix(vehs,
                                         gdf_buildings,
                                         max_metric,
-                                        metric=metric)
+                                        metric=metric,
+                                        graph_streets_wave=graph_streets_wave,
+                                        metric_config=metric_config
+                                        )
 
-    # TODO: check if node names correspond to same indices as in vehs?
     graph_cons = nx.from_numpy_matrix(matrix_cons)
 
     return graph_cons
