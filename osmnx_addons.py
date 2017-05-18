@@ -153,7 +153,6 @@ def line_route_between_nodes(node_from, node_to, graph):
 
     route = nx.shortest_path(graph, node_from, node_to, weight='length')
     edge_nodes = list(zip(route[:-1], route[1:]))
-    # TODO: preallocate?
     lines = []
     for u_node, v_node in edge_nodes:
         # If there are parallel edges, select the shortest in length

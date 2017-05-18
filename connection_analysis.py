@@ -33,7 +33,6 @@ def gen_connection_matrix(vehs,
     vehs.allocate(count_cond)
 
     if metric == 'distance':
-        # TODO: use prop.gen_prop_cond_matrix?
         if isinstance(max_metric, dict):
             max_dist_nlos = max_metric['nlos']
             max_dist_olos_los = max_metric['olos_los']
@@ -45,11 +44,18 @@ def gen_connection_matrix(vehs,
 
         # Determine NLOS and OLOS/LOS
         time_start = utils.debug(None, 'Determining propagation conditions')
-        is_nlos = prop.veh_cons_are_nlos_all(
-            vehs.get_points(), gdf_buildings, max_dist=max_dist)
-        is_olos_los = np.invert(is_nlos)
-        idxs_nlos = np.where(is_nlos)[0]
-        idxs_olos_los = np.where(is_olos_los)[0]
+
+        # Determine propagation condition matrix
+        prop_cond_matrix, _ = prop.gen_prop_cond_matrix(
+            vehs.get_points(),
+            gdf_buildings,
+            graph_streets_wave=None,
+            graphs_vehs=None,
+            fully_determine=False,
+            max_dist=max_dist)
+
+        idxs_olos_los = np.nonzero(prop_cond_matrix == prop.Cond.OLOS_LOS)[0]
+        idxs_nlos = np.nonzero(prop_cond_matrix == prop.Cond.NLOS)[0]
         vehs.add_key('nlos', idxs_nlos)
         vehs.add_key('olos_los', idxs_olos_los)
 
@@ -71,6 +77,7 @@ def gen_connection_matrix(vehs,
         idxs_out_range = np.setdiff1d(np.arange(count_cond), idxs_in_range)
         vehs.add_key('in_range', idxs_in_range)
         vehs.add_key('out_range', idxs_out_range)
+        utils.debug(time_start)
 
     elif metric == 'pathloss':
         if graph_streets_wave is None:
@@ -136,8 +143,7 @@ def gen_connection_matrix(vehs,
             pathloss_iter1 = ploss.pathloss_nlos(dist_1, dist_2)
             pathloss_iter2 = ploss.pathloss_nlos(dist_2, dist_1)
 
-            # TODO: taking the mean is not optimal, optimally the graph would be directed!
-            # TODO: alternatively take max/min?
+            # TODO: taking the mean is not optimal, optimally the graph would be directed! alternatively take max/min?
             pathlosses[idx_nlos_ort] = np.mean(
                 [pathloss_iter1, pathloss_iter2])
 

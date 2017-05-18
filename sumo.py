@@ -652,7 +652,6 @@ def get_coordinates_offset(filename):
 def min_max_coords(traces):
     """Determines the min and max x and y coordinates of all vehicle traces"""
 
-    # TODO: better performance?
     x_min, x_max = traces[0][0]['x'], traces[0][0]['x']
     y_min, y_max = traces[0][0]['y'], traces[0][0]['y']
     for trace in traces:
