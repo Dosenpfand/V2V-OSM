@@ -1,4 +1,4 @@
-"""Unit tests for all modules of the package"""
+"""Unit tests for all modules that execute fast"""
 
 import os
 import pickle
@@ -19,7 +19,7 @@ import vehicles
 
 
 class DemoNetwork:
-    """Provided functions to generate exemplary street networks and buildings"""
+    """Provides functions to generate exemplary street networks and buildings"""
 
     def build_graph_streets(self):
         """Returns a very simple street network"""

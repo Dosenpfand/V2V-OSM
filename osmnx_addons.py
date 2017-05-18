@@ -139,6 +139,7 @@ def add_geometry(streets):
 
 def check_geometry(streets):
     """ Checks if all edges of the graph have a geometry object"""
+
     complete = True
     for _, _, data in streets.edges(data=True):
         if 'geometry' not in data:

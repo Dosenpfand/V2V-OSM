@@ -21,6 +21,7 @@ cache: pip
 branches:
   except:
   - travis
+  - dev
 script:
   - coverage run --source=. -m unittest discover
 after_success:
