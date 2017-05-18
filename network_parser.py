@@ -33,3 +33,69 @@ def params_from_conf(in_key="global",
     with open(config_file, "r") as file_pointer:
         conf = json.load(file_pointer)
     return conf[in_key]
+
+
+def check_fill_config(config):
+    """Checks mandatory settings and sets unset SUMO settings to defaults"""
+
+    # Mandatory settings
+    if 'scenario' not in config:
+        raise KeyError('Scenario not set')
+
+    if 'place' not in config:
+        raise KeyError('Place not set')
+
+    if 'distribution_veh' not in config:
+        raise KeyError('Distrubution type not set')
+    else:
+        if config['distribution_veh'] == 'uniform':
+            if 'iterations' not in config:
+                raise KeyError('Number of iterations not set')
+
+    if 'densities_veh' not in config:
+        raise KeyError('Vehicle densities not set')
+
+    if 'connection_metric' not in config:
+        raise KeyError('Connection metric not set')
+
+    if 'max_connection_metric' not in config:
+        raise KeyError('Maximum connection metric not set')
+
+    if 'simulation_mode' not in config:
+        raise KeyError('Simulation mode not set')
+
+    # Optional settings
+    if 'send_mail' not in config:
+        config['send_mail'] = False
+    else:
+        if config['send_mail']:
+            if 'mail_to' not in config:
+                raise KeyError('Email address not set')
+
+    if 'show_plot' not in config:
+        config['show_plot'] = False
+
+    if 'loglevel' not in config:
+        config['loglevel'] = 'INFO'
+
+    if 'which_result' not in config:
+        config['which_result'] = None
+
+    # Optional SUMO settings
+    if config['distribution_veh'] == 'SUMO':
+        if 'sumo' not in config:
+            config['sumo'] = {}
+        if 'tls_settings' not in config['sumo']:
+            config['sumo']['tls_settings'] = None
+        if 'fringe_factor' not in config['sumo']:
+            config['sumo']['fringe_factor'] = None
+        if 'max_speed' not in config['sumo']:
+            config['sumo']['max_speed'] = None
+        if 'intermediate_points' not in config['sumo']:
+            config['sumo']['intermediate_points'] = None
+        if 'warmup_duration' not in config['sumo']:
+            config['sumo']['warmup_duration'] = None
+        if 'abort_after_sumo' not in config['sumo']:
+            config['sumo']['abort_after_sumo'] = False
+
+    return config

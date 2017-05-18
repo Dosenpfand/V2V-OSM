@@ -15,6 +15,7 @@ import osmnx as ox
 from scipy.special import comb
 
 # Local imports
+import network_parser
 import pathloss
 import plot
 import utils
@@ -157,7 +158,7 @@ def main():
     utils.debug(time_start)
 
     # Sanitize config
-    config = utils.fill_config(config)
+    config = network_parser.check_fill_config(config)
 
     # Convert vehicle densities to counts
     # Iterate densities

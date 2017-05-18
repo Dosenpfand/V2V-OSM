@@ -6,8 +6,6 @@ import numpy as np
 
 def line_intersects_buildings(line, buildings):
     """ Checks if a line intersects with any of the buildings"""
-    # TODO: check if it's faster to convert sequence of polygons into a
-    # multipolygon and use it
 
     intersects = False
     for geometry in buildings.geometry:
