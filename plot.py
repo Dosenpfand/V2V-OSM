@@ -10,6 +10,10 @@ import utils
 # TODO: define figure and axis for every plot function call?
 # TODO: add option to save figure for every function?
 
+def show():
+    """Shows the figure(s)"""
+
+    plt.show()
 
 def plot_streets_and_buildings(streets, buildings=None, show=True, filename=None, dpi=300):
     """ Plots streets and buildings"""

@@ -145,8 +145,9 @@ def gen_connection_matrix(vehs,
             pathloss_iter1 = ploss.pathloss_nlos(dist_1, dist_2)
             pathloss_iter2 = ploss.pathloss_nlos(dist_2, dist_1)
 
-            # TODO: taking the mean is not optimal, optimally the graph would be directed! alternatively take max/min?
-            pathlosses[idx_nlos_ort] = np.mean(
+            # TODO: Optimally the graph would be directed!
+            # NOTE: Maximum of the 2 pathlosses => Nodes connected if both are below threshold
+            pathlosses[idx_nlos_ort] = np.max(
                 [pathloss_iter1, pathloss_iter2])
 
         idxs_in_range = np.nonzero(pathlosses < max_metric)
