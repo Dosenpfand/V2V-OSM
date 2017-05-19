@@ -48,8 +48,8 @@
         },
         "simulation_mode": "parallel",
         "sumo": {
-            "sim_duration": 3000,
-            "warmup_duration": 1000,
+            "sim_duration": 120,
+            "warmup_duration": 60,
             "fringe_factor": 1,
             "tls_settings": {
                 "cycle_time": 45,
