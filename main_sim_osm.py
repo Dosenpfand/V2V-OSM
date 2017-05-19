@@ -136,7 +136,6 @@ def main():
     config = nw_p.params_from_conf()
     config_scenario = nw_p.params_from_conf(config['scenario'])
     config.update(config_scenario)
-    densities_veh = utils.convert_config_densities(config['densities_veh'])
 
     # Logger setup
     if 'loglevel' not in config:
@@ -158,6 +157,7 @@ def main():
 
     # Sanitize config
     config = network_parser.check_fill_config(config)
+    densities_veh = config['densities_veh']
 
     # Convert vehicle densities to counts
     # Iterate densities
