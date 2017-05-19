@@ -12,6 +12,7 @@ The default filename is network_definition.json.
 """
 
 import json
+
 import osmnx_addons as ox_a
 
 
@@ -48,9 +49,19 @@ def check_fill_config(config):
     if 'distribution_veh' not in config:
         raise KeyError('Distrubution type not set')
     else:
-        if config['distribution_veh'] == 'uniform':
+        if config['distribution_veh'] == 'uniform' and config['simulation_mode'] != 'demo':
             if 'iterations' not in config:
                 raise KeyError('Number of iterations not set')
+
+    if config['simulation_mode'] == 'demo':
+        if isinstance(config['densities_veh'], (list, tuple)):
+            raise KeyError('Only a single density supported in demo mode')
+
+        if config['distribution_veh'] != 'uniform':
+            raise KeyError('Only uniform vehicle distribution supported in demo mode')
+
+        if config['connection_metric'] != 'pathloss':
+            raise KeyError('Only pathloss as connection metric supported in demo mode')
 
     if 'densities_veh' not in config:
         raise KeyError('Vehicle densities not set')

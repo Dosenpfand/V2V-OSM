@@ -1,4 +1,4 @@
-""" Generates streets, buildings and vehicles from OpenStreetMap data with osmnx"""
+"""Demonstration module mainly suited for generating plots"""
 
 import numpy as np
 

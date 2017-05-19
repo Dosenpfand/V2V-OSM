@@ -16,7 +16,6 @@ from scipy.special import comb
 
 # Local imports
 import network_parser
-import pathloss
 import plot
 import utils
 import osmnx_addons as ox_a
@@ -336,6 +335,9 @@ def main():
                 raise NotImplementedError(
                     'Vehicle distribution type not supported')
 
+        elif config['simulation_mode'] == 'demo':
+            # TODO: Here!
+
         else:
             raise NotImplementedError('Simulation mode not supported')
 
@@ -363,12 +365,21 @@ def main():
     if config['send_mail']:
         utils.send_mail_finish(config['mail_to'], time_start=time_start_total)
 
-    # TODO: modify?
+    # TODO: adapt!
     if config['show_plot']:
-        time_start = utils.debug(None, 'Plotting animation')
-        plot.plot_veh_traces_animation(
-            veh_traces, net['graph_streets'], net['gdf_buildings'])
-        utils.debug(time_start)
+        if config['simulation_mode'] == 'demo':
+            plot.plot_prop_cond(net['graph_streets'], net['gdf_buildings'],
+                                net['vehs'], show=False)
+            plot.plot_pathloss(net['graph_streets'], net['gdf_buildings'],
+                               net['vehs'], show=False)
+            plot.plot_con_status(net['graph_streets'], net['gdf_buildings'],
+                                 net['vehs'], show=False)
+            plot.show()
+        elif config['distribution_veh'] == 'SUMO':
+            time_start = utils.debug(None, 'Plotting animation')
+            plot.plot_veh_traces_animation(
+                veh_traces, net['graph_streets'], net['gdf_buildings'])
+            utils.debug(time_start)
 
 
 if __name__ == '__main__':
