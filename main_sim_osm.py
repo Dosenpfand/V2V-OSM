@@ -1,29 +1,30 @@
 """ Generates streets, buildings and vehicles from OpenStreetMap data with osmnx"""
 
+import datetime
+import logging
+import multiprocessing as mp
+import os
+import signal
 # Standard imports
 import time
-import os
-import multiprocessing as mp
 from itertools import repeat
-import logging
-import datetime
-import signal
 
 # Extension imports
 import numpy as np
 import osmnx as ox
 from scipy.special import comb
 
+import connection_analysis as con_ana
+import demo
+import geometry as geom_o
 # Local imports
 import network_parser
-import plot
-import utils
-import osmnx_addons as ox_a
-import geometry as geom_o
-import vehicles
-import sumo
 import network_parser as nw_p
-import connection_analysis as con_ana
+import osmnx_addons as ox_a
+import plot
+import sumo
+import utils
+import vehicles
 
 # Global variables
 rte_count_con_checkpoint = 0
@@ -179,9 +180,11 @@ def main():
             raise ValueError('Density type not supported')
 
     # Run time estimation
-    if config['distribution_veh'] == 'SUMO':
+    if config['simulation_mode'] == 'demo':
+        time_steps = 1
+    elif config['distribution_veh'] == 'SUMO':
         time_steps = config['sumo']['sim_duration'] - \
-            config['sumo']['warmup_duration']
+                     config['sumo']['warmup_duration']
     elif config['distribution_veh'] == 'uniform':
         time_steps = config['iterations']
 
@@ -270,6 +273,10 @@ def main():
                 else:
                     raise NotImplementedError(
                         'Vehicle distribution type not supported')
+
+            # Define which variables to save in a file
+            results = {'matrices_cons': matrices_cons}
+
         elif config['simulation_mode'] == 'sequential':
             if config['distribution_veh'] == 'SUMO':
                 matrices_cons = np.zeros(veh_traces.size, dtype=object)
@@ -335,8 +342,17 @@ def main():
                 raise NotImplementedError(
                     'Vehicle distribution type not supported')
 
+            # Define which variables to save in a file
+            results = {'matrices_cons': matrices_cons}
+
         elif config['simulation_mode'] == 'demo':
-            # TODO: Here!
+            vehs = vehicles.place_vehicles_in_network(net,
+                                                      density_veh=config['densities_veh'],
+                                                      density_type=config['density_type'])
+            demo.simulate(net, max_pl=config['max_connection_metric'])
+
+            # Define which variables to save in a file
+            results = {'vehs': net['vehs']}
 
         else:
             raise NotImplementedError('Simulation mode not supported')
@@ -350,7 +366,7 @@ def main():
         # Save in and outputs
         config_save = config.copy()
         config_save['count_veh'] = count_veh
-        results = {'matrices_cons': matrices_cons}
+
         time_finish_total = time.time()
         info_vars = {'time_start': time_start_total,
                      'time_finish': time_finish_total}
@@ -365,7 +381,7 @@ def main():
     if config['send_mail']:
         utils.send_mail_finish(config['mail_to'], time_start=time_start_total)
 
-    # TODO: adapt!
+    # TODO: other plots?
     if config['show_plot']:
         if config['simulation_mode'] == 'demo':
             plot.plot_prop_cond(net['graph_streets'], net['gdf_buildings'],
@@ -383,7 +399,6 @@ def main():
 
 
 if __name__ == '__main__':
-
     # Register signal handler
     signal.signal(signal.SIGTSTP, signal_handler)
 
