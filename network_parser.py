@@ -12,6 +12,7 @@ The default filename is network_definition.json.
 """
 
 import json
+import numpy as np
 
 import osmnx_addons as ox_a
 
@@ -109,4 +110,24 @@ def check_fill_config(config):
         if 'abort_after_sumo' not in config['sumo']:
             config['sumo']['abort_after_sumo'] = False
 
+    # Convert densities
+    config['densities_veh'] = convert_densities(config['densities_veh'])
+
     return config
+
+
+def convert_densities(config_densities):
+    """Converts the density parameters from the configuration to a simple array"""
+
+    if isinstance(config_densities, (list, tuple)):
+        densities = np.zeros(0)
+        for density_in in config_densities:
+            if isinstance(density_in, dict):
+                density = np.linspace(**density_in)
+            else:
+                density = density_in
+            densities = np.append(densities, density)
+    else:
+        densities = np.array([config_densities])
+
+    return densities
