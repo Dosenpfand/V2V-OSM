@@ -1,28 +1,14 @@
 """ Generates streets, buildings and vehicles from OpenStreetMap data with osmnx"""
 
-# TODO: DEPRECATED, main script is now main_sim_osm.py!
-
-# Standard imports
-import os
-import logging
-
-# Extension imports
 import numpy as np
-import matplotlib.pyplot as plt
-import osmnx as ox
 
-# Local imports
-import pathloss
-import plot
-import utils
-import osmnx_addons as ox_a
 import geometry as geom_o
-import vehicles
+import pathloss
 import propagation as prop
-import network_parser as nw_p
+import utils
 
 
-def main_sim_single(network, max_pl=150):
+def simulate(network, max_pl=150):
     """Simulates the connections from one to all other vehicles using pathloss functions"""
 
     # Initialize
@@ -77,8 +63,8 @@ def main_sim_single(network, max_pl=150):
 
     p_loss = pathloss.Pathloss()
     distances_olos_los = np.sqrt(
-        (vehs.get('olos_los')[:, 0] - vehs.get('center')[0])**2 +
-        (vehs.get('olos_los')[:, 1] - vehs.get('center')[1])**2)
+        (vehs.get('olos_los')[:, 0] - vehs.get('center')[0]) ** 2 +
+        (vehs.get('olos_los')[:, 1] - vehs.get('center')[1]) ** 2)
 
     pathlosses_olos = p_loss.pathloss_olos(distances_olos_los[is_olos])
     vehs.set_pathlosses('olos', pathlosses_olos)
@@ -94,11 +80,11 @@ def main_sim_single(network, max_pl=150):
     # NOTE: Uses airline vehicle -> intersection -> vehicle and not
     # street route
     distances_orth_tx = np.sqrt(
-        (vehs.get('ort')[:, 0] - coords_intersections[is_orthogonal, 0])**2 +
-        (vehs.get('ort')[:, 1] - coords_intersections[is_orthogonal, 1])**2)
+        (vehs.get('ort')[:, 0] - coords_intersections[is_orthogonal, 0]) ** 2 +
+        (vehs.get('ort')[:, 1] - coords_intersections[is_orthogonal, 1]) ** 2)
     distances_orth_rx = np.sqrt(
-        (vehs.get('center')[0] - coords_intersections[is_orthogonal, 0])**2 +
-        (vehs.get('center')[1] - coords_intersections[is_orthogonal, 1])**2)
+        (vehs.get('center')[0] - coords_intersections[is_orthogonal, 0]) ** 2 +
+        (vehs.get('center')[1] - coords_intersections[is_orthogonal, 1]) ** 2)
     pathlosses_orth = p_loss.pathloss_nlos(
         distances_orth_rx, distances_orth_tx)
     vehs.set_pathlosses('ort', pathlosses_orth)
@@ -113,63 +99,3 @@ def main_sim_single(network, max_pl=150):
     vehs.add_key('in_range', vehs.get_idxs('other')[idxs_in_range])
     vehs.add_key('out_range', vehs.get_idxs('other')[idxs_out_range])
     utils.debug(time_start)
-
-
-def main():
-    """Main simulation function"""
-
-    config = nw_p.params_from_conf()
-    config_scenario = nw_p.params_from_conf(config['scenario'])
-    config.update(config_scenario)
-
-    if isinstance(config['densities_veh'], (list, tuple)):
-        densities = np.zeros(0)
-        for density_in in config['densities_veh']:
-            if isinstance(density_in, dict):
-                density = np.linspace(**density_in)
-            else:
-                density = density_in
-            densities = np.append(densities, density)
-        config['densities_veh'] = densities
-
-    # Logger setup
-    if 'loglevel' not in config:
-        config['logelevel'] = 'ERROR'
-
-    loglevel = logging.getLevelName(config['loglevel'])
-    logger = logging.getLogger()
-    logger.setLevel(loglevel)
-
-    # Setup OSMnx
-    ox.config(log_console=True, log_level=loglevel, use_cache=True)
-
-    # Switch to selected simulation mode
-    if config['sim_mode'] == 'single':
-        if np.size(config['densities_veh']) > 1:
-            raise ValueError(
-                'Single simulation mode can only simulate 1 density value')
-
-        net = ox_a.load_network(config['place'],
-                                which_result=config['which_result'])
-        vehicles.place_vehicles_in_network(net, density_veh=config['densities_veh'],
-                                           density_type=config['density_type'])
-        main_sim_single(net, max_pl=config['max_pl'])
-
-        if config['show_plot']:
-            plot.plot_prop_cond(net['graph_streets'], net['gdf_buildings'],
-                                net['vehs'], show=False)
-            plot.plot_pathloss(net['graph_streets'], net['gdf_buildings'],
-                               net['vehs'], show=False)
-            plot.plot_con_status(net['graph_streets'], net['gdf_buildings'],
-                                 net['vehs'], show=False)
-            plt.show()
-
-    else:
-        raise NotImplementedError('Simulation type not supported')
-
-
-if __name__ == '__main__':
-    # Change to directory of script
-    os.chdir(os.path.dirname(os.path.abspath(__file__)))
-    # Run main function
-    main()
