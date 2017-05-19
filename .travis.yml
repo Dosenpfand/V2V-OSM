@@ -4,6 +4,10 @@ language: python
 python:
   - "3.4"
   - "3.6"
+# SUMO ppa can not be added with the apt addon because it is not whitelisted
+before_install:
+  - sudo add-apt-repository ppa:sumo/stable -y
+  - sudo apt-get update -q
 install:
   - pip install --upgrade pip
   - pip install -r requirements.txt
