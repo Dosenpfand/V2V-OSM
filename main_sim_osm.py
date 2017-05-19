@@ -5,11 +5,10 @@ import logging
 import multiprocessing as mp
 import os
 import signal
-# Standard imports
 import time
 from itertools import repeat
+from optparse import OptionParser
 
-# Extension imports
 import numpy as np
 import osmnx as ox
 from scipy.special import comb
@@ -17,7 +16,6 @@ from scipy.special import comb
 import connection_analysis as con_ana
 import demo
 import geometry as geom_o
-# Local imports
 import network_parser
 import network_parser as nw_p
 import osmnx_addons as ox_a
@@ -31,6 +29,22 @@ rte_count_con_checkpoint = 0
 rte_count_con_total = 0
 rte_time_start = 0
 rte_time_checkpoint = 0
+
+
+def parse_cmd_args():
+    """Parses command line options"""
+
+    parser = OptionParser()
+    parser.add_option('-c', '--conf-file', dest='conf_path', default=None,
+                      help='Load configuration from json FILE',
+                      metavar='FILE')
+    parser.add_option('-s', '--scenario', dest="scenario", default=None,
+                      help='Use SCENARIO instead of the one defined in the configuration file',
+                      metavar='SCENARIO')
+
+    (options, args) = parser.parse_args()
+
+    return options, args
 
 
 def signal_handler(sig, frame):
@@ -123,7 +137,7 @@ def sim_single_uniform(random_seed,
     return matrix_cons
 
 
-def main():
+def main(conf_path=None, scenario=None):
     """Main simulation function"""
 
     # TODO: why is global keyword needed?
@@ -132,10 +146,23 @@ def main():
     global rte_time_start
     global rte_time_checkpoint
 
-    # General setup
+    # Save start time
     time_start_total = time.time()
-    config = nw_p.params_from_conf()
-    config_scenario = nw_p.params_from_conf(config['scenario'])
+
+    # Load the configuration
+    if conf_path is None:
+        config = nw_p.params_from_conf()
+        if scenario is None:
+            config_scenario = nw_p.params_from_conf(in_key=config['scenario'])
+        else:
+            config_scenario = nw_p.params_from_conf(in_key=scenario)
+    else:
+        config = nw_p.params_from_conf(config_file=conf_path)
+        if scenario is None:
+            config_scenario = nw_p.params_from_conf(in_key=config['scenario'], config_file=conf_path)
+        else:
+            config_scenario = nw_p.params_from_conf(in_key=scenario, config_file=conf_path)
+
     config.update(config_scenario)
 
     # Logger setup
@@ -399,6 +426,9 @@ def main():
 
 
 if __name__ == '__main__':
+    # Parse command line options
+    (options, _) = parse_cmd_args()
+
     # Register signal handler
     signal.signal(signal.SIGTSTP, signal_handler)
 
@@ -406,4 +436,4 @@ if __name__ == '__main__':
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
     # Run main function
-    main()
+    main(conf_path=options.conf_path, scenario=options.scenario)
