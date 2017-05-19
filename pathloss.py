@@ -13,15 +13,15 @@ class Pathloss:
 
     def __init__(self, nlos_config=None, los_config=None, olos_config=None):
         if nlos_config is None:
-            # NOTE: dis_break assumes a vehicle height of 1.5 m, and a
-            # frequency of 5.9 GHz
+            # NOTE: dist_break assumes a vehicle height of 1.5 m, and a
+            # frequency of 5.9 GHz (d_b = 4*h_t*h_r/lambda)
             self.nlos_config = {
                 'wavelength': 0.050812281,
                 'width_rx_street': 10,
                 'dist_tx_wall': 5,
                 'is_sub_urban': False,
                 'pathloss_exp': 2.69,
-                'dist_break': 44.25,  # TODO: check paper for value
+                'dist_break': 44.25,
                 'standard_dev': 4.1}
         else:
             self.nlos_config = nlos_config
