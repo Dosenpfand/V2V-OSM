@@ -8,6 +8,7 @@ python:
 before_install:
   - sudo add-apt-repository ppa:sumo/stable -y
   - sudo apt-get update -q
+  - sudo apt-get install sumo
 install:
   - pip install --upgrade pip
   - pip install -r requirements.txt
@@ -16,8 +17,6 @@ install:
   - git clone --depth 1 https://github.com/planetsumo/sumo.git $TRAVIS_BUILD_DIR/sumo
 addons:
   apt:
-    sources:
-    - 'ppa:sumo/stable'
     packages:
     - libgdal1h
     - gdal-bin
