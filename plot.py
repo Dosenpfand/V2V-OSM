@@ -152,7 +152,7 @@ def plot_con_status(streets, buildings, coordinates_vehs, show=True, place=None)
 
 
 def plot_cluster_max(streets, buildings, coordinates_vehs, show=True, place=None):
-    """ Plots the biggest cluster and the remainding vehicles"""
+    """ Plots the biggest cluster and the remaining vehicles"""
 
     # Plot streets and buildings
     fig, axi = plot_streets_and_buildings(
