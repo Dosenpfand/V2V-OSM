@@ -573,9 +573,9 @@ class TestConnectionAnalysis(unittest.TestCase):
         # Pathloss config
         max_pl = 120
         con_matrix_pl_expected_cond = np.array([
-            1, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0,
-            0, 0, 1, 0, 1, 0,
+            1, 1, 0, 0, 0, 0, 0, 0,
+            1, 0, 0, 0, 0, 0, 0,
+            1, 1, 1, 0, 1, 0,
             1, 1, 1, 1, 0,
             1, 0, 0, 0,
             1, 1, 0,
