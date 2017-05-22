@@ -79,6 +79,35 @@
         "simulation_mode": "sequential",
         "show_plot": false
     },
+    "sumo_distance_sequential": {
+        "place": "Neubau - Vienna - Austria",
+        "which_result": null,
+        "distribution_veh": "SUMO",
+        "density_type": "absolute",
+        "densities_veh": [
+            50,
+            100
+        ],
+        "connection_metric": "distance",
+        "max_connection_metric": {
+            "olos_los": 250,
+            "nlos": 140
+        },
+        "simulation_mode": "sequential",
+        "show_plot": false,
+        "sumo": {
+            "sim_duration": 200,
+            "warmup_duration": 100,
+            "fringe_factor": 1,
+            "tls_settings": {
+                "cycle_time": 45,
+                "yellow_time": 2
+            },
+            "max_speed": 15,
+            "intermediate_points": 100,
+            "abort_after_sumo": false
+        }
+    },
     "uniform_pathloss_sequential": {
         "place": "Neubau - Vienna - Austria",
         "which_result": null,

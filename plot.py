@@ -39,7 +39,7 @@ def plot_streets_and_buildings(streets, buildings=None, show=True, filename=None
 
 def plot_prop_cond(streets, buildings, coordinates_vehs, show=True, place=None):
     """ Plots vehicles and their respective propagation condition (LOS/OLOS/NLOS parallel/NLOS
-    orthoognal)"""
+    orthogonal)"""
 
     # Plot streets and buildings
     fig, axi = plot_streets_and_buildings(
