@@ -113,7 +113,7 @@ def sim_single_uniform(random_seed,
                        metric='distance',
                        graph_streets_wave=None):
     """Runs a single iteration of a simulation with uniform vehicle distribution.
-    Can be run in paralell"""
+    Can be run in parallel"""
 
     # Seed random number generator
     np.random.seed(random_seed)
@@ -373,9 +373,9 @@ def main(conf_path=None, scenario=None):
             results = {'matrices_cons': matrices_cons}
 
         elif config['simulation_mode'] == 'demo':
-            vehs = vehicles.place_vehicles_in_network(net,
-                                                      density_veh=config['densities_veh'],
-                                                      density_type=config['density_type'])
+            vehicles.place_vehicles_in_network(net,
+                                               density_veh=config['densities_veh'],
+                                               density_type=config['density_type'])
             demo.simulate(net, max_pl=config['max_connection_metric'])
 
             # Define which variables to save in a file

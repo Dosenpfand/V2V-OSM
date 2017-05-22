@@ -50,6 +50,9 @@ def check_fill_config(config):
     if 'distribution_veh' not in config:
         raise KeyError('Distrubution type not set')
     else:
+        if config['distribution_veh'] not in ['SUMO', 'uniform']:
+            raise KeyError('Vehicle distribution method not supported')
+
         if config['distribution_veh'] == 'uniform' and config['simulation_mode'] != 'demo':
             if 'iterations' not in config:
                 raise KeyError('Number of iterations not set')
