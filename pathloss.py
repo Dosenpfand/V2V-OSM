@@ -29,7 +29,7 @@ class Pathloss:
         if los_config is None:
             self.los_config = {
                 'dist_ref': 10,
-                'dist_break': 161,
+                'dist_break': 104,
                 'pathloss_exp_1': -1.81,
                 'pathloss_exp_2': -2.85,
                 'pathloss_ref': -63.9,
@@ -40,7 +40,7 @@ class Pathloss:
         if olos_config is None:
             self.olos_config = {
                 'dist_ref': 10,
-                'dist_break': 161,
+                'dist_break': 104,
                 'pathloss_exp_1': -1.93,
                 'pathloss_exp_2': -2.74,
                 'pathloss_ref': -72.3,
@@ -58,15 +58,14 @@ class Pathloss:
     def pathloss_nlos(self, dist_rx, dist_tx):
         """Calculates the pathloss for the non line of sight case in equation (6)"""
 
-        # TODO: missing in equation?
+        # NOTE: Missing in the equation in the paper
         sf_loss = np.random.normal(
             0, self.nlos_config['standard_dev'], np.size(dist_rx))
 
-        # TODO: check equation again!
         slope_selector = dist_rx < self.nlos_config['dist_break']
         pathloss_slope_1 = slope_selector \
             * (3.75 + self.nlos_config['is_sub_urban'] * 2.94 + 10
-               * np.log10((dist_tx ** 0.957 * 4 * np.pi * dist_rx *
+               * np.log10((dist_tx ** 0.957 * 4 * np.pi * dist_rx /
                            (self.nlos_config['dist_tx_wall']
                             * self.nlos_config['width_rx_street']) **
                            0.81 / self.nlos_config['wavelength'])
@@ -74,7 +73,7 @@ class Pathloss:
         pathloss_slope_2 = np.invert(slope_selector) \
             * (3.75 + self.nlos_config['is_sub_urban'] * 2.94 + 10
                * np.log10((dist_tx ** 0.957 * 4 * np.pi * dist_rx ** 2
-                           * (self.nlos_config['dist_tx_wall'] *
+                           / (self.nlos_config['dist_tx_wall'] *
                               self.nlos_config['width_rx_street']) ** 0.81
                            / (self.nlos_config['wavelength'] * self.nlos_config['dist_break']))
                           ** self.nlos_config['pathloss_exp']))
@@ -92,7 +91,6 @@ class Pathloss:
                 (not np.isscalar(dist) and any(dist < self.los_config['dist_ref'])):
             logging.warning('Distance smaller than reference distance')
 
-        # TODO: check equation again!
         slope_selector = dist < self.los_config['dist_break']
         pathloss_slope_1 = slope_selector \
             * (self.los_config['pathloss_ref'] + 10 * self.los_config['pathloss_exp_1']
@@ -117,7 +115,6 @@ class Pathloss:
                 (not np.isscalar(dist) and any(dist < self.olos_config['dist_ref'])):
             logging.warning('Distance smaller than reference distance')
 
-        # TODO: check equation again
         slope_selector = dist < self.olos_config['dist_break']
         pathloss_slope_1 = slope_selector \
             * (self.olos_config['pathloss_ref'] + 10 * self.olos_config['pathloss_exp_1']

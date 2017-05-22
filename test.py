@@ -13,6 +13,7 @@ import shapely.geometry as geom
 
 import connection_analysis as con_ana
 import geometry as geom_o
+import pathloss
 import propagation as prop
 import utils
 import vehicles
@@ -109,6 +110,152 @@ class DemoNetwork:
             graph_streets, points_vehs_in=vehs_points)
 
         return vehs
+
+
+class Pathloss():
+    """Provides reimplementations of the pathloss functions to test against"""
+
+    @staticmethod
+    def get_pathloss_olos_los_urban(dist, is_LOS=True):
+        """Determine the pathloss for OLOS/LOS propagation in an urban scenario"""
+
+        dist_ref = 10
+        dist_break = 104
+
+        if is_LOS:
+            pl_exp1 = -1.81
+            pl_exp2 = -2.85
+            pathloss_ref = -63.9
+        else:
+            pl_exp1 = -1.93
+            pl_exp2 = -2.74
+            pathloss_ref = -72.3
+
+        if dist <= dist_break:
+            pathloss = pathloss_ref + 10 * pl_exp1 * np.log10(dist / dist_ref)
+        else:
+            pathloss = pathloss_ref + 10 * pl_exp1 * np.log10(dist_break / dist_ref) + 10 * pl_exp2 * np.log10(
+                dist / dist_break)
+
+        return pathloss
+
+    @staticmethod
+    def get_pathloss_nlos_urban(dist_rx, dist_tx):
+        """Determine the pathloss for NLOS propagation in an urban scenario"""
+
+        dist_break = 44.25
+        width_street = 10
+        dist_wall = 5
+        wavelength = 0.050812281
+
+        if dist_rx <= dist_break:
+            pathloss = 3.75 + 10 * np.log10(
+                (dist_tx ** 0.957 * 4 * np.pi * dist_rx / ((dist_wall * width_street) ** 0.81 * wavelength)) ** 2.69)
+        else:
+            pathloss = 3.75 + 10 * np.log10(
+                (dist_tx ** 0.957 * 4 * np.pi * dist_rx ** 2 / (
+                    (dist_wall * width_street) ** 0.81 * wavelength * dist_break)) ** 2.69)
+
+        return pathloss
+
+
+class TestPathloss(unittest.TestCase):
+    """Provides unit tests for the pathloss module"""
+
+    def test_pathloss_los(self):
+        """Tests the function pathloss_los"""
+
+        iterations = 100
+        pl = pathloss.Pathloss()
+        pl.disable_shadowfading()
+
+        # Test first slope
+        dist = np.random.rand(iterations) * 100
+        for idx in range(iterations):
+            # NOTE: Minus to keep consistent with pathloss.py
+            pathloss_expected = - Pathloss.get_pathloss_olos_los_urban(dist[idx], is_LOS=True)
+            pathloss_generated = pl.pathloss_los(dist[idx])[0]
+            self.assertAlmostEqual(pathloss_expected, pathloss_generated)
+
+        # Test second slope
+        dist = 100 + np.random.rand(iterations) * 5000
+        for idx in range(iterations):
+            # NOTE: Minus to keep consistent with pathloss.py
+            pathloss_expected = - Pathloss.get_pathloss_olos_los_urban(dist[idx], is_LOS=True)
+            pathloss_generated = pl.pathloss_los(dist[idx])[0]
+            self.assertAlmostEqual(pathloss_expected, pathloss_generated)
+
+        # Test arrays
+        dist = np.random.rand(iterations) * 5000
+        pathlosses_generated = pl.pathloss_los(dist)
+
+        for idx in range(iterations):
+            # NOTE: Minus to keep consistent with pathloss.py
+            pathloss_expected = - Pathloss.get_pathloss_olos_los_urban(dist[idx], is_LOS=True)
+            self.assertAlmostEqual(pathloss_expected, pathlosses_generated[idx])
+
+    def test_pathloss_olos(self):
+        """Tests the function pathloss_olos"""
+
+        iterations = 100
+        pl = pathloss.Pathloss()
+        pl.disable_shadowfading()
+
+        # Test first slope
+        dist = np.random.rand(iterations) * 100
+        for idx in range(iterations):
+            # NOTE: Minus to keep consistent with pathloss.py
+            pathloss_expected = - Pathloss.get_pathloss_olos_los_urban(dist[idx], is_LOS=False)
+            pathloss_generated = pl.pathloss_olos(dist[idx])[0]
+            self.assertAlmostEqual(pathloss_expected, pathloss_generated)
+
+        # Test second slope
+        dist = 100 + np.random.rand(iterations) * 5000
+        for idx in range(iterations):
+            # NOTE: Minus to keep consistent with pathloss.py
+            pathloss_expected = - Pathloss.get_pathloss_olos_los_urban(dist[idx], is_LOS=False)
+            pathloss_generated = pl.pathloss_olos(dist[idx])[0]
+            self.assertAlmostEqual(pathloss_expected, pathloss_generated)
+
+        # Test arrays
+        dist = np.random.rand(iterations) * 5000
+        pathlosses_generated = pl.pathloss_olos(dist)
+
+        for idx in range(iterations):
+            # NOTE: Minus to keep consistent with pathloss.py
+            pathloss_expected = - Pathloss.get_pathloss_olos_los_urban(dist[idx], is_LOS=False)
+            self.assertAlmostEqual(pathloss_expected, pathlosses_generated[idx])
+
+    def test_pathloss_nlos(self):
+        """Tests the function pathloss_nlos"""
+
+        iterations = 100
+        pl = pathloss.Pathloss()
+        pl.disable_shadowfading()
+
+        # Test first slope
+        dist_rx = np.random.rand(iterations) * 44.25
+        dist_tx = np.random.rand(iterations) * 44.25
+        for idx in range(iterations):
+            pathloss_expected = Pathloss.get_pathloss_nlos_urban(dist_rx[idx], dist_tx[idx])
+            pathloss_generated = pl.pathloss_nlos(dist_rx[idx], dist_tx[idx])[0]
+            self.assertAlmostEqual(pathloss_expected, pathloss_generated)
+
+        # Test second slope
+        dist_rx = 44.25 + np.random.rand(iterations) * 5000
+        dist_tx = 44.25 + np.random.rand(iterations) * 5000
+        for idx in range(iterations):
+            pathloss_expected = Pathloss.get_pathloss_nlos_urban(dist_rx[idx], dist_tx[idx])
+            pathloss_generated = pl.pathloss_nlos(dist_rx[idx], dist_tx[idx])[0]
+            self.assertAlmostEqual(pathloss_expected, pathloss_generated)
+
+        # Test arrays
+        dist_rx = np.random.rand(iterations) * 5000
+        dist_tx = np.random.rand(iterations) * 5000
+        pathlosses_generated = pl.pathloss_nlos(dist_rx, dist_tx)
+        for idx in range(iterations):
+            pathloss_expected = Pathloss.get_pathloss_nlos_urban(dist_rx[idx], dist_tx[idx])
+            self.assertAlmostEqual(pathloss_expected, pathlosses_generated[idx])
 
 
 class TestVehicles(unittest.TestCase):
