@@ -64,9 +64,9 @@ To get started on Debian 8 follow these steps.
 
         python3 main_sim_osm_pathloss.py
 
-11. Optional: For vehicle realistic vehicle placement and movement install [SUMO](http://www.sumo.dlr.de)
+11. Optional: For vehicle realistic vehicle placement and movement install [SUMO](http://www.sumo.dlr.de) from the [backports repository](https://backports.debian.org/Instructions/):
 
-        apt-get install sumo
+        apt-get -t jessie-backports install sumo sumo-tools
 
 # Tests
 ## Unit tests
