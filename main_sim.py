@@ -401,7 +401,7 @@ def main(conf_path=None, scenario=None):
         save_vars = {'config': config_save,
                      'results': results,
                      'info': info_vars}
-        if scenario in config:
+        if 'scenario' in config:
             filename_prefix = utils.string_to_filename(config['scenario'])
         else:
             filename_prefix = utils.string_to_filename(config['place'])
