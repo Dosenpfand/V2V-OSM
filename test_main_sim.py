@@ -1,7 +1,8 @@
 """Unit tests for the module sim_main which execute slow"""
 
-import unittest
 import json
+import unittest
+
 import main_sim
 
 
@@ -21,8 +22,6 @@ class TestSimMain(unittest.TestCase):
                 continue
 
             main_sim.main(conf_path=self.conf_file_path, scenario=scenario)
-
-
 
 
 if __name__ == '__main__':

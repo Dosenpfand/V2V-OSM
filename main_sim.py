@@ -156,14 +156,21 @@ def main(conf_path=None, scenario=None):
             config_scenario = nw_p.params_from_conf(in_key=config['scenario'])
         else:
             config_scenario = nw_p.params_from_conf(in_key=scenario)
+            config['scenario'] = scenario
     else:
         config = nw_p.params_from_conf(config_file=conf_path)
         if scenario is None:
             config_scenario = nw_p.params_from_conf(in_key=config['scenario'], config_file=conf_path)
         else:
             config_scenario = nw_p.params_from_conf(in_key=scenario, config_file=conf_path)
-
+            config['scenario'] = scenario
+            
+    # Merge the two configurations
     config.update(config_scenario)
+
+    # Sanitize config
+    config = network_parser.check_fill_config(config)
+    densities_veh = config['densities_veh']
 
     # Logger setup
     if 'loglevel' not in config:
@@ -183,10 +190,6 @@ def main(conf_path=None, scenario=None):
                             tolerance=config['building_tolerance'])
     graph_streets = net['graph_streets']
     utils.debug(time_start)
-
-    # Sanitize config
-    config = network_parser.check_fill_config(config)
-    densities_veh = config['densities_veh']
 
     # Convert vehicle densities to counts
     # Iterate densities
@@ -406,6 +409,7 @@ def main(conf_path=None, scenario=None):
         else:
             filename_prefix = utils.string_to_filename(config['place'])
 
+        # TODO: check if file exists!
         filepath_res = 'results/{}.{:d}.pickle.gz'.format(filename_prefix, count_veh)
         utils.save(save_vars, filepath_res)
 
