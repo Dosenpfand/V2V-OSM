@@ -13,18 +13,18 @@ import propagation as prop
 import utils
 
 
-def load_network(place, which_result=1, overwrite=False):
+def load_network(place, which_result=1, overwrite=False, tolerance=0):
     """Generates streets and buildings"""
 
     # Load data
     file_prefix = 'data/{}'.format(utils.string_to_filename(place))
     filename_data_streets = 'data/{}_streets.pickle'.format(
         utils.string_to_filename(place))
-    filename_data_buildings = 'data/{}_buildings.pickle'.format(
-        utils.string_to_filename(place))
     filename_data_boundary = 'data/{}_boundary.pickle'.format(
         utils.string_to_filename(place))
     filename_data_wave = 'data/{}_wave.pickle'.format(
+        utils.string_to_filename(place))
+    filename_data_buildings = 'data/{}_buildings.pickle'.format(
         utils.string_to_filename(place))
 
     if not overwrite and \
@@ -33,11 +33,11 @@ def load_network(place, which_result=1, overwrite=False):
             os.path.isfile(filename_data_boundary):
         # Load from file
         time_start = utils.debug(None, 'Loading data from disk')
-        data = load_place(file_prefix)
+        data = load_place(file_prefix, tolerance=tolerance)
     else:
         # Load from internet
         time_start = utils.debug(None, 'Loading data from the internet')
-        data = download_place(place, which_result=which_result)
+        data = download_place(place, which_result=which_result, tolerance=tolerance)
 
     graph_streets = data['streets']
     gdf_buildings = data['buildings']
@@ -72,7 +72,7 @@ def load_network(place, which_result=1, overwrite=False):
     return network
 
 
-def download_place(place, network_type='drive', file_prefix=None, which_result=1, project=True):
+def download_place(place, network_type='drive', file_prefix=None, which_result=1, project=True, tolerance=0):
     """ Downloads streets and buildings for a place, saves the data to disk and returns them """
 
     if file_prefix is None:
@@ -103,6 +103,13 @@ def download_place(place, network_type='drive', file_prefix=None, which_result=1
     with open(filename_buildings, 'wb') as file:
         pickle.dump(buildings, file)
 
+    # Build and save simplified buildings
+    if tolerance != 0:
+        filename_buildings_simpl = '{}_buildings_{:.2f}.pickle'.format(file_prefix, tolerance)
+        buildings = simplify_buildings(buildings)
+        with open(filename_buildings_simpl, 'wb') as file:
+            pickle.dump(buildings, file)
+
     # Save boundary
     filename_boundary = '{}_boundary.pickle'.format(file_prefix)
     with open(filename_boundary, 'wb') as file:
@@ -113,15 +120,30 @@ def download_place(place, network_type='drive', file_prefix=None, which_result=1
     return data
 
 
-def load_place(file_prefix):
+def load_place(file_prefix, tolerance=0):
     """ Loads previously downloaded street and building data of a place"""
 
     filename_buildings = '{}_buildings.pickle'.format(file_prefix)
-    with open(filename_buildings, 'rb') as file:
-        buildings = pickle.load(file)
+
+    if tolerance == 0:
+        with open(filename_buildings, 'rb') as file:
+            buildings = pickle.load(file)
+    else:
+        filename_buildings_simpl = '{}_buildings_{:.2f}.pickle'.format(file_prefix, tolerance)
+        if os.path.isfile(filename_buildings_simpl):
+            with open(filename_buildings_simpl, 'rb') as file:
+                buildings = pickle.load(file)
+        else:
+            with open(filename_buildings, 'rb') as file:
+                buildings_compl = pickle.load(file)
+                buildings = simplify_buildings(buildings_compl)
+            with open(filename_buildings_simpl, 'wb') as file:
+                pickle.dump(buildings, file)
+
     filename_streets = '{}_streets.pickle'.format(file_prefix)
     with open(filename_streets, 'rb') as file:
         streets = pickle.load(file)
+
     filename_boundary = '{}_boundary.pickle'.format(file_prefix)
     with open(filename_boundary, 'rb') as file:
         boundary = pickle.load(file)
@@ -183,8 +205,6 @@ def which_result_polygon(query, limit=5):
 def simplify_buildings(gdf_buildings, tolerance=1):
     """Simplifies the building polygons by reducing the number of edges"""
 
-    # TODO: Check whole algorithm!
-
     geoms_list = gdf_buildings.geometry.tolist()
     geoms_list_comb = []
     count_buildings = len(geoms_list)
@@ -198,7 +218,7 @@ def simplify_buildings(gdf_buildings, tolerance=1):
             geoms_list_comb.append(geom1)
             continue
 
-        # NOTE: because of previos merges we need to check from the beginning and not from idx+1
+        # NOTE: because of previous merges we need to check from the beginning and not from idx+1
         for idx2, geom2 in enumerate(geoms_list):
 
             if idx1 == idx2:
@@ -214,34 +234,56 @@ def simplify_buildings(gdf_buildings, tolerance=1):
 
             # TODO: check also if no street lies between the buildings!
 
-            buffer = dist / 2 * 10 # TODO: why factor 2 needed?
+            buffer = dist / 2 * 2  # TODO: why factor 2 needed?
             geom1_buf = geom1.buffer(buffer)
             geom2_buf = geom2.buffer(buffer)
 
             if not geom1_buf.intersects(geom2_buf):
                 continue
 
-            geom1 = ops.unary_union([geom1_buf, geom2_buf]).buffer(-buffer)
-            geoms_list[idx2] = None
+            # TODO: not ideal method!
+            geom_union = ops.unary_union([geom1_buf, geom2_buf]).buffer(-buffer)
 
-            # TODO: temp!
-            if isinstance(geom1, geom.MultiPolygon):
-                pass
+            # If the union is 2 seperate polygon we keep them otherwise we save the union
+            if not isinstance(geom_union, geom.MultiPolygon):  # TODO: why does this even happen?
+                geom1 = geom_union
+                geoms_list[idx2] = None
 
         geoms_list[idx1] = geom1
         geoms_list_comb.append(geom1)
 
-    # Simplify polygons
-    geoms_list_simpl = []
+    # Remove interiors of polygons
+    geoms_list_ext = []
     for geometry in geoms_list_comb:
         if not isinstance(geometry, geom.Polygon):
-            # geoms_list_simpl.append(geometry) # TODO: temp!
+            geoms_list_ext.append(geometry)
+        else:
+            poly_simp = geom.Polygon(geometry.exterior)
+            geoms_list_ext.append(poly_simp)
+
+    # TODO: whole section has no effect?
+    # Simplify polygons
+    geoms_list_simpl = []
+    for geometry in geoms_list_ext:
+        if not isinstance(geometry, geom.Polygon):
+            geoms_list_simpl.append(geometry)
             continue
 
         geometry_simpl = geometry.simplify(tolerance, preserve_topology=False)
 
-        if not geometry_simpl.is_empty:
-            geoms_list_simpl.append(geometry_simpl)
+        # TODO: still a bug here!
+
+        if isinstance(geometry_simpl, geom.MultiPolygon):
+            # TODO: why does this happen? fix
+            # for poly in geometry_simpl:
+            #     if not poly.is_empty:
+            #         geoms_list_simpl.append(poly)
+            geoms_list_simpl.append(geometry)
+        else:
+            if not geometry_simpl.is_empty:
+                geoms_list_simpl.append(geometry_simpl)  # TODO: why does this happen?
+            else:
+                geoms_list_simpl.append(geometry)
 
     # Build a new GDF
     buildings = {}
