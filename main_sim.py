@@ -401,9 +401,17 @@ def main(conf_path=None, scenario=None):
         save_vars = {'config': config_save,
                      'results': results,
                      'info': info_vars}
-        filepath_res = 'results/{}.{:d}.pickle.gz'.format(
-            utils.string_to_filename(config['place']), count_veh)
+        if scenario in config:
+            filename_prefix = utils.string_to_filename(config['scenario'])
+        else:
+            filename_prefix = utils.string_to_filename(config['place'])
+
+        filepath_res = 'results/{}.{:d}.pickle.gz'.format(filename_prefix, count_veh)
         utils.save(save_vars, filepath_res)
+
+    runtime_total = time_finish_total - time_start_total
+    # TODO: To datetime format!
+    logging.info('Total runtime: {:.0f} seconds'.format(runtime_total))
 
     # Send mail
     if config['send_mail']:
