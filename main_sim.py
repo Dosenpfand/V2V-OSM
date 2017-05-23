@@ -179,7 +179,8 @@ def main(conf_path=None, scenario=None):
     # Load street network
     time_start = utils.debug(None, 'Loading street network')
     net = ox_a.load_network(config['place'],
-                            which_result=config['which_result'])
+                            which_result=config['which_result'],
+                            tolerance=config['building_tolerance'])
     graph_streets = net['graph_streets']
     utils.debug(time_start)
 

@@ -1,6 +1,6 @@
 {
     "global": {
-        "scenario": "test_demo",
+        "scenario": "default",
         "mail_to": "mgasser@nt.tuwien.ac.at",
         "send_mail": true,
         "loglevel": "INFO"
@@ -22,7 +22,8 @@
             "nlos": 140
         },
         "simulation_mode": "sequential",
-        "show_plot": false
+        "show_plot": false,
+        "building_tolerance": 0
     },
     "viriyasitavat_comparison": {
         "place": "Upper West Side - New York - USA",

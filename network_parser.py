@@ -12,6 +12,7 @@ The default filename is network_definition.json.
 """
 
 import json
+
 import numpy as np
 
 import osmnx_addons as ox_a
@@ -95,6 +96,9 @@ def check_fill_config(config):
 
     if 'which_result' not in config:
         config['which_result'] = None
+
+    if 'building_tolerance' not in config:
+        config['building_tolerance'] = 0
 
     # Optional SUMO settings
     if config['distribution_veh'] == 'SUMO':
