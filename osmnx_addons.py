@@ -3,6 +3,7 @@
 import os.path
 import pickle
 
+import geopandas as gpd
 import networkx as nx
 import osmnx as ox
 import shapely.geometry as geom
@@ -177,3 +178,78 @@ def which_result_polygon(query, limit=5):
         if result['geojson']['type'] == 'Polygon':
             return index + 1
     return None
+
+
+def simplify_buildings(gdf_buildings, tolerance=1):
+    """Simplifies the building polygons by reducing the number of edges"""
+
+    # TODO: Check whole algorithm!
+
+    geoms_list = gdf_buildings.geometry.tolist()
+    geoms_list_comb = []
+    count_buildings = len(geoms_list)
+
+    # Merge polygons
+    for idx1, geom1 in enumerate(geoms_list):
+
+        if geom1 is None:
+            continue
+        elif not isinstance(geom1, geom.Polygon):
+            geoms_list_comb.append(geom1)
+            continue
+
+        # NOTE: because of previos merges we need to check from the beginning and not from idx+1
+        for idx2, geom2 in enumerate(geoms_list):
+
+            if idx1 == idx2:
+                continue
+
+            if not isinstance(geom2, geom.Polygon):
+                continue
+
+            dist = geom1.distance(geom2)
+
+            if dist > tolerance:
+                continue
+
+            # TODO: check also if no street lies between the buildings!
+
+            buffer = dist / 2 * 10 # TODO: why factor 2 needed?
+            geom1_buf = geom1.buffer(buffer)
+            geom2_buf = geom2.buffer(buffer)
+
+            if not geom1_buf.intersects(geom2_buf):
+                continue
+
+            geom1 = ops.unary_union([geom1_buf, geom2_buf]).buffer(-buffer)
+            geoms_list[idx2] = None
+
+            # TODO: temp!
+            if isinstance(geom1, geom.MultiPolygon):
+                pass
+
+        geoms_list[idx1] = geom1
+        geoms_list_comb.append(geom1)
+
+    # Simplify polygons
+    geoms_list_simpl = []
+    for geometry in geoms_list_comb:
+        if not isinstance(geometry, geom.Polygon):
+            # geoms_list_simpl.append(geometry) # TODO: temp!
+            continue
+
+        geometry_simpl = geometry.simplify(tolerance, preserve_topology=False)
+
+        if not geometry_simpl.is_empty:
+            geoms_list_simpl.append(geometry_simpl)
+
+    # Build a new GDF
+    buildings = {}
+    for idx, geometry in enumerate(geoms_list_simpl):
+        building = {'id': idx,
+                    'geometry': geometry}
+        buildings[idx] = building
+
+    gdf_buildings_opt = gpd.GeoDataFrame(buildings).T
+
+    return gdf_buildings_opt
