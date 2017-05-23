@@ -152,7 +152,7 @@
             "olos_los": 250,
             "nlos": 140
         },
-        "simulation_mode": "paralell",
+        "simulation_mode": "parallel",
         "show_plot": false,
         "building_tolerance": 1
     },
@@ -172,7 +172,7 @@
             "olos_los": 250,
             "nlos": 140
         },
-        "simulation_mode": "paralell",
+        "simulation_mode": "parallel",
         "show_plot": false,
         "building_tolerance": 0
     }
