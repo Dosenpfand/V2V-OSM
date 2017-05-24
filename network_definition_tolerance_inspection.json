@@ -1,0 +1,49 @@
+{
+    "global": {
+        "scenario": "tolerance_0_upperwestside",
+        "mail_to": "mgasser@nt.tuwien.ac.at",
+        "send_mail": true,
+        "loglevel": "INFO",
+        "which_result": null,
+        "distribution_veh": "uniform",
+        "iterations": 100,
+        "density_type": "absolute",
+        "densities_veh": [
+            10,
+            100,
+            1000,
+            5000
+        ],
+        "connection_metric": "distance",
+        "max_connection_metric": {
+            "olos_los": 250,
+            "nlos": 140
+        },
+        "simulation_mode": "parallel",
+        "show_plot": false
+    },
+    "tolerance_0_upperwestside": {
+        "place": "Upper West Side - New York - USA",
+        "building_tolerance": 0
+    },
+    "tolerance_1_upperwestside": {
+        "place": "Upper West Side - New York - USA",
+        "building_tolerance": 1
+    },
+    "tolerance_0_neubau": {
+        "place": "Neubau - Vienna - Austria",
+        "building_tolerance": 0
+    },
+    "tolerance_1_neubau": {
+        "place": "Neubau - Vienna - Austria",
+        "building_tolerance": 1
+    },
+    "tolerance_0_graz": {
+        "place": "Graz - Vienna - Austria",
+        "building_tolerance": 0
+    },
+    "tolerance_1_graz": {
+        "place": "Graz - Vienna - Austria",
+        "building_tolerance": 1
+    }
+}
