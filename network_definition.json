@@ -135,45 +135,5 @@
         "max_connection_metric": 150,
         "simulation_mode": "demo",
         "show_plot": true
-    },
-    "tolerance_test_with": {
-        "place": "Upper West Side - New York - USA",
-        "which_result": null,
-        "distribution_veh": "uniform",
-        "iterations": 100,
-        "density_type": "absolute",
-        "densities_veh": [
-            10,
-            100,
-            1000
-        ],
-        "connection_metric": "distance",
-        "max_connection_metric": {
-            "olos_los": 250,
-            "nlos": 140
-        },
-        "simulation_mode": "parallel",
-        "show_plot": false,
-        "building_tolerance": 1
-    },
-    "tolerance_test_without": {
-        "place": "Upper West Side - New York - USA",
-        "which_result": null,
-        "distribution_veh": "uniform",
-        "iterations": 100,
-        "density_type": "absolute",
-        "densities_veh": [
-            10,
-            100,
-            1000
-        ],
-        "connection_metric": "distance",
-        "max_connection_metric": {
-            "olos_los": 250,
-            "nlos": 140
-        },
-        "simulation_mode": "parallel",
-        "show_plot": false,
-        "building_tolerance": 0
     }
 }

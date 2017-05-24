@@ -17,6 +17,8 @@ import numpy as np
 
 import osmnx_addons as ox_a
 
+# TODO: make single/multiscenario more dynamic / transparent for the user!
+
 
 def network_from_conf(in_key="default", config_file="network_definition.json"):
     """Load a network from the settings in a json file.
@@ -37,6 +39,16 @@ def params_from_conf(in_key="global",
         conf = json.load(file_pointer)
     return conf[in_key]
 
+def get_scenarios_list(config_file="network_definition.json"):
+    """Returns a list of scenarios that are defined in the JSON config"""
+
+    with open(config_file, 'r') as file:
+        config = json.load(file)
+
+    scenarios = list(config.keys())
+    scenarios.remove('global')
+
+    return scenarios
 
 def check_fill_config(config):
     """Checks mandatory settings and sets unset SUMO settings to defaults"""

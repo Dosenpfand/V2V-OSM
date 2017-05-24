@@ -136,6 +136,23 @@ def sim_single_uniform(random_seed,
 
     return matrix_cons
 
+def main_multi_scenario(conf_path=None, scenarios=None):
+    """Simulates multiple scenarios"""
+
+    # Load the configuration
+    if scenarios is None:
+        if conf_path is None:
+            scenarios = nw_p.get_scenarios_list()
+        else:
+            scenarios = nw_p.get_scenarios_list(conf_path)
+
+    if not isinstance(scenarios, (list, tuple)):
+        raise RuntimeError('Single scenario not supported. Use appropriate function')
+
+    # Iterate scenarios
+    for scenario in scenarios:
+        main(conf_path=conf_path, scenario=scenario)
+
 
 def main(conf_path=None, scenario=None):
     """Main simulation function"""
@@ -164,6 +181,9 @@ def main(conf_path=None, scenario=None):
         else:
             config_scenario = nw_p.params_from_conf(in_key=scenario, config_file=conf_path)
             config['scenario'] = scenario
+
+    if isinstance(config_scenario, (list, tuple)):
+        raise RuntimeError('Multiple scenarios not supported. Use appropriate function')
             
     # Merge the two configurations
     config.update(config_scenario)
