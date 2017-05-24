@@ -137,7 +137,7 @@
         "show_plot": true
     },
     "tolerance_test_with": {
-        "place": "Neubau - Vienna - Austria",
+        "place": "Upper West Side - New York - USA",
         "which_result": null,
         "distribution_veh": "uniform",
         "iterations": 100,
@@ -157,7 +157,7 @@
         "building_tolerance": 1
     },
     "tolerance_test_without": {
-        "place": "Neubau - Vienna - Austria",
+        "place": "Upper West Side - New York - USA",
         "which_result": null,
         "distribution_veh": "uniform",
         "iterations": 100,
