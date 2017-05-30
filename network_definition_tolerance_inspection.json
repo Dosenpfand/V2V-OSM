@@ -38,11 +38,11 @@
         "building_tolerance": 1
     },
     "tolerance_0_graz": {
-        "place": "Graz - Vienna - Austria",
+        "place": "Graz - Austria",
         "building_tolerance": 0
     },
     "tolerance_1_graz": {
-        "place": "Graz - Vienna - Austria",
+        "place": "Graz - Austria",
         "building_tolerance": 1
     }
 }
