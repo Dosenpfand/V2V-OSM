@@ -3,7 +3,8 @@
         "scenario": "default",
         "mail_to": "mgasser@nt.tuwien.ac.at",
         "send_mail": true,
-        "loglevel": "INFO"
+        "loglevel": "INFO",
+        "overwrite_result": true
     },
     "default": {
         "place": "Neubau - Vienna - Austria",

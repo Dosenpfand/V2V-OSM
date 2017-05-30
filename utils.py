@@ -1,5 +1,6 @@
 """ Various uncomplex functionality"""
 
+import datetime
 import getpass
 import gzip
 import logging
@@ -16,13 +17,28 @@ import scipy.stats as st
 
 
 def string_to_filename(string):
-    """ Cleans a string up to be used as a filename"""
+    """Cleans a string up to be used as a filename"""
 
     keepcharacters = ('_', '-')
     filename = ''.join(c for c in string if c.isalnum()
                        or c in keepcharacters).rstrip()
     filename = filename.lower()
     return filename
+
+
+def seconds_to_string(seconds):
+    """Converts an amount of seconds to a dd:hh:mm:ss string"""
+
+    dtime = datetime.datetime(
+        1, 1, 1) + datetime.timedelta(seconds=int(seconds))
+
+    string = '{:02d}:{:02d}:{:02d}:{:02d}'.format(
+        dtime.day - 1,
+        dtime.hour,
+        dtime.minute,
+        dtime.second)
+
+    return string
 
 
 def print_nnl(text, file=sys.stdout):
@@ -120,8 +136,11 @@ def send_mail_finish(recipient=None, time_start=None):
         smtp.quit()
 
 
-def save(obj, file_path, protocol=4, compression_level=1):
+def save(obj, file_path, protocol=4, compression_level=1, overwrite=True):
     """Saves an object using gzip compression"""
+
+    if not overwrite and os.path.isfile(file_path):
+        return
 
     with gzip.open(file_path, 'wb', compresslevel=compression_level) as file:
         pickle.dump(obj, file, protocol=protocol)
@@ -145,5 +164,3 @@ def compress_file(file_in_path, protocol=4, compression_level=1, delete_uncompre
 
     if delete_uncompressed:
         os.remove(file_in_path)
-
-

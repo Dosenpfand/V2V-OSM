@@ -232,8 +232,6 @@ def simplify_buildings(gdf_buildings, tolerance=1):
             if dist > tolerance:
                 continue
 
-            # TODO: check also if no street lies between the buildings!
-
             buffer = dist / 2 * 2  # TODO: why factor 2 needed?
             geom1_buf = geom1.buffer(buffer)
             geom2_buf = geom2.buffer(buffer)

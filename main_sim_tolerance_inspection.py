@@ -6,9 +6,8 @@ import signal
 import numpy as np
 
 import main_sim
-import utils
-import json
 import network_parser as nw_p
+import utils
 
 
 def analyze_tolerance(conf_path):
@@ -24,7 +23,6 @@ def analyze_tolerance(conf_path):
     suffixes = set()
     for scenario in scenarios:
         suffixes.add(scenario[12:])
-
 
     for suffix in list(suffixes):
 
@@ -58,7 +56,6 @@ def analyze_tolerance(conf_path):
 
 
 if __name__ == '__main__':
-
     # Set the config to be used
     config_file_path = 'network_definition_tolerance_inspection.json'
 
