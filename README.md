@@ -73,6 +73,8 @@ To get started on Debian 8 follow these steps.
 To run the included unit tests execute
 
     python3 -m unittest discover
+    
+For all tests to complete successfully SUMO needs to be installed (see Quickstart).
 
 ## Coverage
 To determine the coverage of the unit tests install dependencies with

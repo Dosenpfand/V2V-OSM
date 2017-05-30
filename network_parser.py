@@ -93,6 +93,9 @@ def check_fill_config(config):
         raise KeyError('Simulation mode not set')
 
     # Optional settings
+    if 'overwrite_result' not in config:
+        config['overwrite_result'] = False
+
     if 'send_mail' not in config:
         config['send_mail'] = False
     else:

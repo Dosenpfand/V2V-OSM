@@ -1,6 +1,5 @@
 """ Generates streets, buildings and vehicles from OpenStreetMap data with osmnx"""
 
-import datetime
 import logging
 import multiprocessing as mp
 import os
@@ -67,16 +66,9 @@ def log_progress(c_checkpoint, c_end, t_checkpoint, t_start):
     progress_now = min([c_now / c_end, 1])
     t_end = t_now * c_end / c_now
     t_todo = max([t_end - t_now, 0])
-
-    datetime_todo = datetime.datetime(
-        1, 1, 1) + datetime.timedelta(seconds=int(t_todo))
     logging.info(
         '{:.0f}% total simulation progress, '.format(progress_now * 100) +
-        '{:02d}:{:02d}:{:02d}:{:02d} remaining simulation time'.format(
-            datetime_todo.day - 1,
-            datetime_todo.hour,
-            datetime_todo.minute,
-            datetime_todo.second))
+        '{} remaining simulation time'.format(utils.seconds_to_string(t_todo)))
 
 
 def sim_single_sumo(snapshot,
@@ -136,6 +128,7 @@ def sim_single_uniform(random_seed,
 
     return matrix_cons
 
+
 def main_multi_scenario(conf_path=None, scenarios=None):
     """Simulates multiple scenarios"""
 
@@ -184,7 +177,7 @@ def main(conf_path=None, scenario=None):
 
     if isinstance(config_scenario, (list, tuple)):
         raise RuntimeError('Multiple scenarios not supported. Use appropriate function')
-            
+
     # Merge the two configurations
     config.update(config_scenario)
 
@@ -246,6 +239,22 @@ def main(conf_path=None, scenario=None):
 
     # Iterate densities
     for idx_count_veh, count_veh in enumerate(counts_veh):
+
+        # Check if results file already exists
+        if 'scenario' in config:
+            filename_prefix = utils.string_to_filename(config['scenario'])
+        else:
+            filename_prefix = utils.string_to_filename(config['place'])
+        filepath_res = 'results/{}.{:d}.pickle.gz'.format(filename_prefix, count_veh)
+        result_file_exists = os.path.isfile(filepath_res)
+        if result_file_exists:
+            if config['overwrite_result']:
+                logging.warning('Results file already exists. Overwriting')
+            else:
+                logging.warning('Results file already exists. Skipping simulation')
+                continue
+
+        time_start_iter = time.time()
         logging.info('Simulating {:d} vehicles'.format(count_veh))
 
         if config['distribution_veh'] == 'SUMO':
@@ -418,24 +427,19 @@ def main(conf_path=None, scenario=None):
         config_save = config.copy()
         config_save['count_veh'] = count_veh
 
-        time_finish_total = time.time()
-        info_vars = {'time_start': time_start_total,
-                     'time_finish': time_finish_total}
+
+        time_finish_iter = time.time()
+        info_vars = {'time_start': time_start_iter,
+                     'time_finish': time_finish_iter}
         save_vars = {'config': config_save,
                      'results': results,
                      'info': info_vars}
-        if 'scenario' in config:
-            filename_prefix = utils.string_to_filename(config['scenario'])
-        else:
-            filename_prefix = utils.string_to_filename(config['place'])
 
-        # TODO: check if file exists!
-        filepath_res = 'results/{}.{:d}.pickle.gz'.format(filename_prefix, count_veh)
         utils.save(save_vars, filepath_res)
 
+    time_finish_total = time.time()
     runtime_total = time_finish_total - time_start_total
-    # TODO: To datetime format!
-    logging.info('Total runtime: {:.0f} seconds'.format(runtime_total))
+    logging.info('Total runtime: {}'.format(utils.seconds_to_string(runtime_total)))
 
     # Send mail
     if config['send_mail']:
