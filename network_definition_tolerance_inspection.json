@@ -11,13 +11,12 @@
         "densities_veh": [
             10,
             100,
-            1000,
-            5000
+            1000
         ],
         "connection_metric": "distance",
         "max_connection_metric": {
-            "olos_los": 250,
-            "nlos": 140
+            "olos_los": 40e6,
+            "nlos": 0
         },
         "simulation_mode": "parallel",
         "show_plot": false
