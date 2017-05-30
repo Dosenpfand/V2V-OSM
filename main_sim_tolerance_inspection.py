@@ -12,7 +12,9 @@ import network_parser as nw_p
 
 
 def analyze_tolerance(conf_path):
-    """Analyzes the simulation results by comparing connection matrices from simulations with and without tolerance"""
+    """Analyzes the simulation results by comparing connection matrices from simulations with and without tolerance.
+    The connection matrices correspond to propagation condition matrices with True = OLOS/LOS and False = NLOS because
+    of the maximum set distances."""
 
     config = nw_p.params_from_conf(config_file=conf_path)
     # TODO: support ranges and other types of vehicle densities
