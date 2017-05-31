@@ -147,7 +147,7 @@ def save(obj, file_path, protocol=4, compression_level=1, overwrite=True, create
     if create_dir:
         directory = os.path.dirname(file_path)
         if not os.path.isdir(directory):
-            os.mkdirs(directory)
+            os.makedirs(directory)
 
     with gzip.open(file_path, 'wb', compresslevel=compression_level) as file:
         pickle.dump(obj, file, protocol=protocol)
