@@ -2,10 +2,10 @@
 
 import numpy as np
 
-import geometry as geom_o
-import pathloss
-import propagation as prop
-import utils
+from . import geometry as geom_o
+from . import pathloss
+from . import propagation as prop
+from . import utils
 
 
 def simulate(network, max_pl=150):

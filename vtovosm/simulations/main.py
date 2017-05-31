@@ -12,16 +12,16 @@ import numpy as np
 import osmnx as ox
 from scipy.special import comb
 
-import connection_analysis as con_ana
-import demo
-import geometry as geom_o
-import network_parser
-import network_parser as nw_p
-import osmnx_addons as ox_a
-import plot
-import sumo
-import utils
-import vehicles
+from .. import connection_analysis as con_ana
+from .. import demo
+from .. import geometry as geom_o
+from .. import network_parser
+from .. import network_parser as nw_p
+from .. import osmnx_addons as ox_a
+from .. import plot
+from .. import sumo
+from .. import utils
+from .. import vehicles
 
 # Global variables
 rte_count_con_checkpoint = 0

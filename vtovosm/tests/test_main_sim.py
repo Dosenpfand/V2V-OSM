@@ -3,7 +3,7 @@
 import json
 import unittest
 
-import main_sim
+import vtovosm.simulations.main as main_sim
 
 
 class TestSimMain(unittest.TestCase):

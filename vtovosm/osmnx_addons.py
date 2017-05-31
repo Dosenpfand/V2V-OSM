@@ -9,8 +9,8 @@ import osmnx as ox
 import shapely.geometry as geom
 import shapely.ops as ops
 
-import propagation as prop
-import utils
+from . import propagation as prop
+from . import utils
 
 
 def load_network(place, which_result=1, overwrite=False, tolerance=0):

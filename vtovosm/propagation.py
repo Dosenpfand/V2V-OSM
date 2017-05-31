@@ -6,8 +6,8 @@ import networkx as nx
 import numpy as np
 import shapely.geometry as geom
 
-import geometry as geom_o
-import osmnx_addons
+from . import geometry as geom_o
+from . import osmnx_addons
 
 
 class Cond(IntEnum):
