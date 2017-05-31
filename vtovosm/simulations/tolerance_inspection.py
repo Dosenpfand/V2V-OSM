@@ -65,10 +65,9 @@ if __name__ == '__main__':
     # Register signal handler
     signal.signal(signal.SIGTSTP, main_sim.signal_handler)
 
-    # Change to directory of script
-    os.chdir(os.path.dirname(os.path.abspath(__file__)))
-
+    # Run main sumulation
     main_sim.main_multi_scenario(conf_path=config_file_path)
 
+    # Analyze results
     results = analyze_tolerance(config_file_path)
     print(results)

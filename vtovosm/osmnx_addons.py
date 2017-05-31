@@ -16,7 +16,7 @@ from . import utils
 def load_network(place, which_result=1, overwrite=False, tolerance=0):
     """Generates streets and buildings"""
 
-    # Load data
+    # Generate filenames
     file_prefix = 'data/{}'.format(utils.string_to_filename(place))
     filename_data_streets = 'data/{}_streets.pickle'.format(
         utils.string_to_filename(place))
@@ -26,6 +26,10 @@ def load_network(place, which_result=1, overwrite=False, tolerance=0):
         utils.string_to_filename(place))
     filename_data_buildings = 'data/{}_buildings.pickle'.format(
         utils.string_to_filename(place))
+
+    # Create the output directory if it does not exist
+    if not os.path.isdir('data/'):
+        os.mkdirs('data/')
 
     if not overwrite and \
             os.path.isfile(filename_data_streets) and \

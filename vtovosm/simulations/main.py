@@ -270,7 +270,7 @@ def main(conf_path=None, scenario=None):
                 tls_settings=config['sumo']['tls_settings'],
                 fringe_factor=config['sumo']['fringe_factor'],
                 intermediate_points=config['sumo']['intermediate_points'],
-                directory='sumo_data')
+                directory='sumo_data/')
             utils.debug(time_start)
 
             if config['sumo']['abort_after_sumo']:
@@ -468,9 +468,6 @@ if __name__ == '__main__':
 
     # Register signal handler
     signal.signal(signal.SIGTSTP, signal_handler)
-
-    # Change to directory of script
-    os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
     # Run main function
     main(conf_path=options.conf_path, scenario=options.scenario)
