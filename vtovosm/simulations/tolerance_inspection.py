@@ -5,9 +5,9 @@ import signal
 
 import numpy as np
 
-import main_sim
-import network_parser as nw_p
-import utils
+from . import main as main_sim
+from .. import network_parser as nw_p
+from .. import utils
 
 
 def analyze_tolerance(conf_path):

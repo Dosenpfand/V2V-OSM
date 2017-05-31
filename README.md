@@ -69,28 +69,31 @@ To get started on Debian 8 follow these steps.
         apt-get -t jessie-backports install sumo sumo-tools
 
 # Tests
-## Unit tests
-To run the included unit tests execute
+To run the tests install the test specific dependencies by executing
 
-    python3 -m unittest discover
+    pip install -r requirements-test.txt
+
+## Unit tests
+
+
+Run the unit tests by executing
+
+    nosetests
     
 For all tests to complete successfully SUMO needs to be installed (see Quickstart).
 
 ## Coverage
-To determine the coverage of the unit tests install dependencies with
+Run the tests with coverage analysis by starting
     
-    pip install -r requirements-test.txt
-
-Then run the tests again with coverage analysis
-
-    coverage run --source=. -m unittest discover
-
-Create a HTML report with
-
-    coverage html
+    nosetests --with-coverage --cover-html
 
 And then open `htmlcov/index.html`.
 
 To create a badge execute
 
     coverage-badge -f -o .travis/coverage.svg
+    
+# Authors
+
+- [Markus Gasser](https://github.com/Dosenpfand)
+- [Thomas Blazek](https://github.com/tmblazek)

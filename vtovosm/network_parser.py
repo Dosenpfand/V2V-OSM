@@ -13,7 +13,7 @@ import json
 
 import numpy as np
 
-import osmnx_addons as ox_a
+from . import osmnx_addons as ox_a
 
 # TODO: make single/multiscenario more dynamic / transparent for the user!
 

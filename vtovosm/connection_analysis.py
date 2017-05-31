@@ -11,10 +11,10 @@ from networkx.algorithms.approximation.connectivity import \
 from networkx.algorithms.connectivity import \
     local_edge_connectivity as nx_local_edge_connectivity
 
-import geometry as geom_o
-import pathloss
-import propagation as prop
-import utils
+from . import geometry as geom_o
+from . import pathloss
+from . import propagation as prop
+from . import utils
 
 
 def gen_connection_matrix(vehs,

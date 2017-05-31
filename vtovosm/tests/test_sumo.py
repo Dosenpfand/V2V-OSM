@@ -4,7 +4,7 @@ import unittest
 
 import numpy as np
 
-import sumo
+import vtovosm.sumo as sumo
 
 
 class TestSumo(unittest.TestCase):

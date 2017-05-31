@@ -10,10 +10,10 @@ import numpy as np
 import osmnx as ox
 import shapely.geometry as geom
 
-import osm_xml
-import osmnx_addons as ox_a
-import utils
-import vehicles
+from . import osm_xml
+from . import osmnx_addons as ox_a
+from . import utils
+from . import vehicles
 
 
 def simple_wrapper(place,

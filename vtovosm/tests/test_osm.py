@@ -4,7 +4,7 @@ import unittest
 import networkx as nx
 import osmnx as ox
 import geopandas as geop
-import osmnx_addons as ox_a
+import vtovosm.osmnx_addons as ox_a
 
 class TestOsmnxAddons(unittest.TestCase):
     """Provides unit tests for the osmnx_addons module"""

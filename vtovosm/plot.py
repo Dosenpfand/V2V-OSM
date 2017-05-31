@@ -1,11 +1,14 @@
 """ Plot functionality"""
 
 import pickle
-import matplotlib.pyplot as plt
+
 import matplotlib.animation as animation
+import matplotlib.pyplot as plt
 import numpy as np
 import osmnx as ox
-import utils
+
+from . import utils
+
 
 # TODO: define figure and axis for every plot function call?
 # TODO: add option to save figure for every function?
@@ -14,6 +17,7 @@ def show():
     """Shows the figure(s)"""
 
     plt.show()
+
 
 def plot_streets_and_buildings(streets, buildings=None, show=True, filename=None, dpi=300):
     """ Plots streets and buildings"""
@@ -47,7 +51,7 @@ def plot_prop_cond(streets, buildings, coordinates_vehs, show=True, place=None):
 
     # Plot vehicles with propagation conditions
     plt.scatter(coordinates_vehs.get('center')[0], coordinates_vehs.get('center')[1], label='Own',
-                marker='x', zorder=10, s=2 * plt.rcParams['lines.markersize']**2, c='black')
+                marker='x', zorder=10, s=2 * plt.rcParams['lines.markersize'] ** 2, c='black')
     plt.scatter(coordinates_vehs.get('los')[:, 0], coordinates_vehs.get('los')[:, 1], label='LOS',
                 zorder=9, alpha=0.75)
     plt.scatter(coordinates_vehs.get('olos')[:, 0], coordinates_vehs.get('olos')[:, 1],
@@ -84,7 +88,7 @@ def plot_pathloss(streets, buildings, vehicles, show=True, place=None):
     index_wo_inf = pathlosses != np.Infinity
     index_inf = np.invert(index_wo_inf)
     plt.scatter(vehicles.get('center')[0], vehicles.get('center')[1], label='Own',
-                c='black', marker='x', s=2 * plt.rcParams['lines.markersize']**2)
+                c='black', marker='x', s=2 * plt.rcParams['lines.markersize'] ** 2)
     cax = plt.scatter(vehicles.get('other')[index_wo_inf][:, 0],
                       vehicles.get('other')[index_wo_inf][:, 1], marker='o',
                       c=pathlosses[index_wo_inf], cmap=plt.cm.magma, label='Finite PL')
@@ -128,7 +132,7 @@ def plot_con_status(streets, buildings, coordinates_vehs, show=True, place=None)
 
     # Plot vehicles with connection status
     plt.scatter(coordinates_vehs.get('center')[0], coordinates_vehs.get('center')[1], label='Own',
-                c='black', marker='x', s=2 * plt.rcParams['lines.markersize']**2, zorder=3)
+                c='black', marker='x', s=2 * plt.rcParams['lines.markersize'] ** 2, zorder=3)
     plt.scatter(coordinates_vehs.get('in_range')[:, 0], coordinates_vehs.get('in_range')[:, 1],
                 label='In range', marker='o', zorder=2)
     plt.scatter(coordinates_vehs.get('out_range')[:, 0], coordinates_vehs.get('out_range')[:, 1],

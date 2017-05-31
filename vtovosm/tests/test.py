@@ -11,12 +11,13 @@ import numpy.matlib
 import scipy.spatial.distance as sp_dist
 import shapely.geometry as geom
 
-import connection_analysis as con_ana
-import geometry as geom_o
-import pathloss
-import propagation as prop
-import utils
-import vehicles
+# TODO: why do we need 'vtoosm.' here but normally '..'?
+import vtovosm.connection_analysis as con_ana
+import vtovosm.geometry as geom_o
+import vtovosm.pathloss as pathloss
+import vtovosm.propagation as prop
+import vtovosm.utils as utils
+import vtovosm.vehicles as vehicles
 
 
 class DemoNetwork:

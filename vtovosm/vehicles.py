@@ -3,8 +3,8 @@
 import networkx as nx
 import numpy as np
 
-import geometry as geom_o
-import utils
+from . import geometry as geom_o
+from . import utils
 
 
 class Vehicles:
