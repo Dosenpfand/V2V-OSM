@@ -10,6 +10,7 @@ The default filename is stored in DEFAULT_CONFIG_PATH.
 """
 
 import json
+import os
 
 import numpy as np
 
@@ -17,8 +18,9 @@ from . import osmnx_addons as ox_a
 
 # TODO: make single/multiscenario more dynamic / transparent for the user!
 
-DEFAULT_CONFIG_PATH = 'network_config/default.json'
-
+MODULE_PATH = os.path.dirname(__file__)
+DEFAULT_CONFIG_DIR = os.path.join(MODULE_PATH, 'simulations', 'network_config')
+DEFAULT_CONFIG_PATH = os.path.join(DEFAULT_CONFIG_DIR, 'default.json')
 
 def network_from_conf(in_key="default", config_file=DEFAULT_CONFIG_PATH):
     """Load a network from the settings in a json file.
