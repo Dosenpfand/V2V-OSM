@@ -105,3 +105,6 @@ cache/*.json
 # Pickle saved objects
 *.pickle
 *.p
+
+# Coverage report
+cover/
