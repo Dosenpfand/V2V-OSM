@@ -6,6 +6,8 @@ import osmnx as ox
 import geopandas as geop
 import vtovosm.osmnx_addons as ox_a
 
+# Setup osmnx non verbose
+
 class TestOsmnxAddons(unittest.TestCase):
     """Provides unit tests for the osmnx_addons module"""
 

@@ -185,10 +185,7 @@ def gen_simulation_conf(place,
     else:
         arguments += ['-r', filename_trips]
 
-    working_dir = os.path.dirname(os.path.abspath(__file__))
-
-    proc = sproc.Popen(arguments, cwd=working_dir,
-                       stdout=sproc.PIPE, stderr=sproc.PIPE)
+    proc = sproc.Popen(arguments, stdout=sproc.PIPE, stderr=sproc.PIPE)
     out_text, err_text = proc.communicate()
     exit_code = proc.returncode
 
@@ -217,10 +214,8 @@ def run_simulation(place, directory='', file_suffix=None, debug=False, bin_dir='
     arguments = [path_bin,
                  '-c', path_cfg,
                  '--fcd-output', path_traces]
-    working_dir = os.path.dirname(os.path.abspath(__file__))
 
-    proc = sproc.Popen(arguments, cwd=working_dir,
-                       stdout=sproc.PIPE, stderr=sproc.PIPE)
+    proc = sproc.Popen(arguments, stdout=sproc.PIPE, stderr=sproc.PIPE)
     out_text, err_text = proc.communicate()
     exit_code = proc.returncode
 
@@ -354,10 +349,7 @@ def create_random_trips(place,
     if fringe_factor is not None:
         arguments += ['--fringe-factor', str(fringe_factor)]
 
-    working_dir = os.path.dirname(os.path.abspath(__file__))
-
-    proc = sproc.Popen(arguments, cwd=working_dir,
-                       stdout=sproc.PIPE, stderr=sproc.PIPE)
+    proc = sproc.Popen(arguments, stdout=sproc.PIPE, stderr=sproc.PIPE)
     out_text, err_text = proc.communicate()
     exit_code = proc.returncode
 
@@ -422,10 +414,7 @@ def build_network(filename,
 
         arguments += ['--netconvert-options', netconvert_opts]
 
-    working_dir = os.path.dirname(os.path.abspath(__file__))
-
-    proc = sproc.Popen(arguments, cwd=working_dir,
-                       stdout=sproc.PIPE, stderr=sproc.PIPE)
+    proc = sproc.Popen(arguments, stdout=sproc.PIPE, stderr=sproc.PIPE)
     out_text, err_text = proc.communicate()
     exit_code = proc.returncode
 
@@ -480,10 +469,7 @@ def generate_tls_coordination(place,
                  '-r', path_routes,
                  '-o', path_tls]
 
-    working_dir = os.path.dirname(os.path.abspath(__file__))
-
-    proc = sproc.Popen(arguments, cwd=working_dir,
-                       stdout=sproc.PIPE, stderr=sproc.PIPE)
+    proc = sproc.Popen(arguments, stdout=sproc.PIPE, stderr=sproc.PIPE)
     out_text, err_text = proc.communicate()
     exit_code = proc.returncode
 
@@ -510,10 +496,8 @@ def download_streets_from_id(area_id,
         arguments += ['-p', prefix]
     if directory != '':
         arguments += ['-d', directory]
-    working_dir = os.path.dirname(os.path.abspath(__file__))
 
-    proc = sproc.Popen(arguments, cwd=working_dir,
-                       stdout=sproc.PIPE, stderr=sproc.PIPE)
+    proc = sproc.Popen(arguments, stdout=sproc.PIPE, stderr=sproc.PIPE)
     out_text, err_text = proc.communicate()
     exit_code = proc.returncode
 
