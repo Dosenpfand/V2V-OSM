@@ -48,7 +48,7 @@ def simple_wrapper(place,
 
     # Create the output directory if it does not exist
     if not os.path.isdir(directory):
-        os.mkdirs(directory)
+        os.makedirs(directory)
 
     if not (skip_if_exists and os.path.isfile(path_network_osm)):
         logging.info('Downloading street network from OpenStreetMap')

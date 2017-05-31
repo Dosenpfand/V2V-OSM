@@ -29,7 +29,7 @@ def load_network(place, which_result=1, overwrite=False, tolerance=0):
 
     # Create the output directory if it does not exist
     if not os.path.isdir('data/'):
-        os.mkdirs('data/')
+        os.makedirs('data/')
 
     if not overwrite and \
             os.path.isfile(filename_data_streets) and \
