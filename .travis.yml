@@ -33,7 +33,9 @@ branches:
   - travis
   - dev
 script:
-  - coverage run --source=. -m unittest discover
+  - nosetests --with-coverage --cover-html --cover-tests --cover-package=vtovosm
 after_success:
   - coverage-badge -f -o .travis/coverage.svg
   - if [[ $TRAVIS_PYTHON_VERSION == 3.4 ]]; then .travis/push.sh; fi
+
+# TODO: also test packaging!
