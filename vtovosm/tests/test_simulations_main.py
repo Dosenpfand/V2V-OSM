@@ -1,10 +1,11 @@
 """Unit tests for the module simulations.main which execute slow"""
 
 import json
-import unittest
 import os
+import unittest
 
 import vtovosm.simulations.main as main_sim
+
 
 class TestSimulationsMain(unittest.TestCase):
     """Provides unit tests for the simulations.main module"""
