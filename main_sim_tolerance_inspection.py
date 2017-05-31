@@ -16,7 +16,10 @@ def analyze_tolerance(conf_path):
     of the maximum set distances."""
 
     config = nw_p.params_from_conf(config_file=conf_path)
-    # TODO: support ranges and other types of vehicle densities
+
+    if config['density_type'] != 'absolute':
+        raise NotImplementedError('Only absolute vehicle counts supported')
+
     counts_vehs = config['densities_veh']
 
     scenarios = nw_p.get_scenarios_list(conf_path)
@@ -57,7 +60,7 @@ def analyze_tolerance(conf_path):
 
 if __name__ == '__main__':
     # Set the config to be used
-    config_file_path = 'network_definition_tolerance_inspection.json'
+    config_file_path = 'network_config/tolerance_inspection.json'
 
     # Register signal handler
     signal.signal(signal.SIGTSTP, main_sim.signal_handler)
