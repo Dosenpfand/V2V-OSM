@@ -1,0 +1,31 @@
+{
+    "global": {
+        "scenario": "tolerance_0_test",
+        "mail_to": "mgasser@nt.tuwien.ac.at",
+        "send_mail": true,
+        "loglevel": "INFO",
+        "which_result": null,
+        "distribution_veh": "uniform",
+        "iterations": 3,
+        "density_type": "absolute",
+        "densities_veh": [
+            4,
+            6
+        ],
+        "connection_metric": "distance",
+        "max_connection_metric": {
+            "olos_los": 40e6,
+            "nlos": 0
+        },
+        "simulation_mode": "parallel",
+        "show_plot": false
+    },
+    "tolerance_0_test": {
+        "place": "Salmannsdorf - Vienna - Austria",
+        "building_tolerance": 0
+    },
+    "tolerance_1_test": {
+        "place": "Salmannsdorf - Vienna - Austria",
+        "building_tolerance": 1
+    },
+}
