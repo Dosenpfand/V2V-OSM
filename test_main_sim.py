@@ -9,7 +9,7 @@ import main_sim
 class TestSimMain(unittest.TestCase):
     """Provides unit tests for the sim_main module"""
 
-    conf_file_path = 'network_definition_test.json'
+    conf_file_path = 'network_config/tests.json'
 
     def test_main(self):
         """Tests the function main"""

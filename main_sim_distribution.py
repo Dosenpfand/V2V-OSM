@@ -94,7 +94,7 @@ def execute_main():
     iterations = 1
     # place = 'Neubau - Vienna - Austria'
     sim_mode = 'single'
-    with open("network_definition.json") as fp:
+    with open("network_config/default.json") as fp:
         param_set = json.load(fp)
     # Adapt static input parameters
     static_params = param_set["graz"]

@@ -2,13 +2,11 @@
 
 It contains the load_network function, which loads from cache
 (or from OpenStreetMap) a street layout. To make this easily accessible,
-it provides 2 additional functions:
-network_from_conf(in_key="graz", config_file="network_definition.json")
-params_from_conf(in_key="global_config", config_file="network_definition.json")
+it provides 2 additional functions: network_from_conf and params_from_conf
 
 params_from_conf takes a json file, and loads a given key from that file.
 network_from_conf takes that function and uses it to load a setup.
-The default filename is network_definition.json.
+The default filename is stored in DEFAULT_CONFIG_PATH.
 """
 
 import json
@@ -19,8 +17,10 @@ import osmnx_addons as ox_a
 
 # TODO: make single/multiscenario more dynamic / transparent for the user!
 
+DEFAULT_CONFIG_PATH = 'network_config/default.json'
 
-def network_from_conf(in_key="default", config_file="network_definition.json"):
+
+def network_from_conf(in_key="default", config_file=DEFAULT_CONFIG_PATH):
     """Load a network from the settings in a json file.
 
     Abstracts away load_network call.
@@ -29,8 +29,7 @@ def network_from_conf(in_key="default", config_file="network_definition.json"):
     return ox_a.load_network(conf["place"], conf["which_result"])
 
 
-def params_from_conf(in_key="global",
-                     config_file="network_definition.json"):
+def params_from_conf(in_key="global", config_file=DEFAULT_CONFIG_PATH):
     """Load a parameter set from the given config_file.
 
     global_config: configuration params that are independent on chosen network.
@@ -39,7 +38,8 @@ def params_from_conf(in_key="global",
         conf = json.load(file_pointer)
     return conf[in_key]
 
-def get_scenarios_list(config_file="network_definition.json"):
+
+def get_scenarios_list(config_file=DEFAULT_CONFIG_PATH):
     """Returns a list of scenarios that are defined in the JSON config"""
 
     with open(config_file, 'r') as file:
@@ -49,6 +49,7 @@ def get_scenarios_list(config_file="network_definition.json"):
     scenarios.remove('global')
 
     return scenarios
+
 
 def check_fill_config(config):
     """Checks mandatory settings and sets unset SUMO settings to defaults"""
