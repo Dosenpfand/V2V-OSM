@@ -59,8 +59,9 @@ def analyze_tolerance(conf_path):
 
 
 if __name__ == '__main__':
+
     # Set the config to be used
-    config_file_path = 'network_config/tolerance_inspection.json'
+    config_file_path = os.path.join(nw_p.DEFAULT_CONFIG_DIR, 'tolerance_inspection.json')
 
     # Register signal handler
     signal.signal(signal.SIGTSTP, main_sim.signal_handler)
