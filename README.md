@@ -85,7 +85,7 @@ For all tests to complete successfully SUMO needs to be installed (see Quickstar
 ## Coverage
 Run the tests with coverage analysis by starting
     
-    nosetests --with-coverage --cover-html --cover-package=vtovosm
+    nosetests --with-coverage --cover-html --cover-tests --cover-package=vtovosm
 
 And then open `htmlcov/index.html`.
 
