@@ -136,11 +136,18 @@ def send_mail_finish(recipient=None, time_start=None):
         smtp.quit()
 
 
-def save(obj, file_path, protocol=4, compression_level=1, overwrite=True):
+def save(obj, file_path, protocol=4, compression_level=1, overwrite=True, create_dir=True):
     """Saves an object using gzip compression"""
 
+    # Return if file already exists
     if not overwrite and os.path.isfile(file_path):
         return
+
+    # Create the output directory if it does not exist
+    if create_dir:
+        directory = os.path.dirname(file_path)
+        if not os.path.isdir(directory):
+            os.mkdirs(directory)
 
     with gzip.open(file_path, 'wb', compresslevel=compression_level) as file:
         pickle.dump(obj, file, protocol=protocol)
