@@ -10,16 +10,20 @@ import vtovosm.simulations.tolerance_inspection as tol_insp
 class TestSimulationsToleranceInspection(unittest.TestCase):
     """Provides unit tests for the simulations.tolerance_inspection module"""
 
+    max_diff_ratio = 1e-4
+
     module_path = os.path.dirname(__file__)
     conf_file_path = os.path.join(module_path, 'network_config', 'tolerance_inspection.json')
 
-    def analyze_tolerance(self):
+    def test_analyze_tolerance(self):
         """Tests the function analyze_tolerance"""
 
         main_sim.main_multi_scenario(conf_path=self.conf_file_path)
-        results = tol_insp.analyze_tolerance(self.conf_file_path)
+        all_results = tol_insp.analyze_tolerance(self.conf_file_path)
 
-        # TODO: check results!
+        for results in all_results.values():
+            for result in results:
+                self.assertTrue(result['ratio_con_diff'] < self.max_diff_ratio)
 
 
 if __name__ == '__main__':

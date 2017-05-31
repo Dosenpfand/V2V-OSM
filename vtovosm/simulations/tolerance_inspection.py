@@ -27,6 +27,7 @@ def analyze_tolerance(conf_path):
     for scenario in scenarios:
         suffixes.add(scenario[12:])
 
+    all_results = {}
     for suffix in list(suffixes):
 
         results = []
@@ -56,6 +57,9 @@ def analyze_tolerance(conf_path):
             results.append(result)
 
         utils.save(results, 'results/tolerance_comparison_{}.pickle.gz'.format(suffix))
+        all_results[suffix] = results
+
+    return all_results
 
 
 if __name__ == '__main__':
