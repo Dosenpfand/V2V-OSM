@@ -10,6 +10,7 @@ import vtovosm.simulations.main as main_sim
 class TestSimulationsMain(unittest.TestCase):
     """Provides unit tests for the simulations.main module"""
 
+    slow = True
     network = True
 
     module_path = os.path.dirname(__file__)

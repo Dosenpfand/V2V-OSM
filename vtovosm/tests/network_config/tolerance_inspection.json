@@ -18,7 +18,8 @@
             "nlos": 0
         },
         "simulation_mode": "parallel",
-        "show_plot": false
+        "show_plot": false,
+        "overwrite_result": true
     },
     "tolerance_0_test": {
         "place": "Salmannsdorf - Vienna - Austria",
