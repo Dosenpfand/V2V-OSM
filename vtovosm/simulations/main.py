@@ -185,16 +185,14 @@ def main(conf_path=None, scenario=None):
     config = network_parser.check_fill_config(config)
     densities_veh = config['densities_veh']
 
-    # Logger setup
-    if 'loglevel' not in config:
-        config['logelevel'] = 'ERROR'
-
     loglevel = logging.getLevelName(config['loglevel'])
     logger = logging.getLogger()
     logger.setLevel(loglevel)
 
     # Setup OSMnx
-    ox.config(log_console=True, log_level=loglevel, use_cache=True)
+    # We are logging to dev/null as a workaround to get nice log output and so that specified levels are respected
+    # TODO: still outputs all and not only >= loglevel!
+    ox.config(log_console=False, log_file=os.devnull, log_name=logger.name, use_cache=True)
 
     # Load street network
     time_start = utils.debug(None, 'Loading street network')

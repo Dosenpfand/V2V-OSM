@@ -3,7 +3,8 @@
         "scenario": "test_demo",
         "mail_to": "mgasser@nt.tuwien.ac.at",
         "send_mail": true,
-        "loglevel": "INFO"
+        "loglevel": "WARNING",
+        "overwrite_result": true
     },
     "default": {
         "place": "Salmannsdorf - Vienna - Austria",

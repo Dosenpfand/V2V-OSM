@@ -12,6 +12,9 @@ class TestSimulationsToleranceInspection(unittest.TestCase):
 
     max_diff_ratio = 1e-4
 
+    slow = True
+    network = True
+
     module_path = os.path.dirname(__file__)
     conf_file_path = os.path.join(module_path, 'network_config', 'tolerance_inspection.json')
 
