@@ -190,6 +190,7 @@ def gen_simulation_conf(place,
     exit_code = proc.returncode
 
     if exit_code != 0:
+        utils.print_nnl(err_text.decode(), file=sys.stderr)
         raise RuntimeError('SUMO quit with nonzero exit code')
 
     if debug:
@@ -223,6 +224,7 @@ def run_simulation(place, directory='', file_suffix=None, debug=False, bin_dir='
     exit_code = proc.returncode
 
     if exit_code != 0:
+        utils.print_nnl(err_text.decode(), file=sys.stderr)
         raise RuntimeError('SUMO quit with nonzero exit code')
 
     if debug:
@@ -360,6 +362,7 @@ def create_random_trips(place,
     exit_code = proc.returncode
 
     if exit_code != 0:
+        utils.print_nnl(err_text.decode(), file=sys.stderr)
         raise RuntimeError('Trip generation script quit with nonzero exit code')
 
     if debug:
@@ -428,6 +431,7 @@ def build_network(filename,
     exit_code = proc.returncode
 
     if exit_code != 0:
+        utils.print_nnl(err_text.decode(), file=sys.stderr)
         raise RuntimeError('Network build script quit with nonzero exit code')
 
     if debug:
@@ -486,6 +490,7 @@ def generate_tls_coordination(place,
     exit_code = proc.returncode
 
     if exit_code != 0:
+        utils.print_nnl(err_text.decode(), file=sys.stderr)
         raise RuntimeError('TLS coordination script quit with nonzero exit code')
 
     if debug:
@@ -517,6 +522,7 @@ def download_streets_from_id(area_id,
     exit_code = proc.returncode
 
     if exit_code != 0:
+        utils.print_nnl(err_text.decode(), file=sys.stderr)
         raise RuntimeError('OSM download script quit with nonzero exit code')
 
     if debug:
