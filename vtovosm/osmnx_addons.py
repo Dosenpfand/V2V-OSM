@@ -247,7 +247,6 @@ def simplify_buildings(gdf_buildings, tolerance=1):
             poly_simp = geom.Polygon(geometry.exterior)
             geoms_list_ext.append(poly_simp)
 
-    # TODO: should this be moved before the merges?
     # Simplify polygons
     geoms_list_simpl = []
     for geometry in geoms_list_ext:
