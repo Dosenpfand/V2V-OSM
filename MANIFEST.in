@@ -1,0 +1,4 @@
+include README.md
+include LICENSE.txt
+include vtovosm/simulations/network_config/*.json
+include vtovosm/tests/network_config/*.json
