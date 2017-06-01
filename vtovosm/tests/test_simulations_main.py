@@ -10,6 +10,8 @@ import vtovosm.simulations.main as main_sim
 class TestSimulationsMain(unittest.TestCase):
     """Provides unit tests for the simulations.main module"""
 
+    network = True
+
     module_path = os.path.dirname(__file__)
     conf_file_path = os.path.join(module_path, 'network_config', 'tests.json')
 

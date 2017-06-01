@@ -14,6 +14,9 @@ import vtovosm.sumo as sumo
 class TestSumo(unittest.TestCase):
     """Provides unit tests for the sumo module"""
 
+    slow = True
+    network = True
+
     def test_simple_wrapper(self):
         """Tests the function simple_wrapper"""
 

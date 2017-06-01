@@ -12,6 +12,8 @@ class TestOsmnxAddons(unittest.TestCase):
     """Provides unit tests for the osmnx_addons module"""
 
     place = 'Salmannsdorf - Vienna - Austria'
+    slow = True
+    network = True
 
     def test_many(self):
         """Tests the functions which_result_polygon, add_geometry, check_geometry"""
