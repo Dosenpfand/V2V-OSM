@@ -5,9 +5,9 @@ from enum import IntEnum
 import networkx as nx
 import numpy as np
 import shapely.geometry as geom
+import shapely.ops as ops
 
 from . import geometry as geom_o
-from . import osmnx_addons
 
 
 class Cond(IntEnum):
@@ -144,7 +144,7 @@ def check_if_con_is_orthogonal(streets_wave,
     streets_wave_local = nx.compose(graph_veh_v, streets_wave_local)
 
     # NOTE: We suboptimally use the length of roads between nodes as weight for routing and not the angle
-    route = osmnx_addons.line_route_between_nodes(
+    route = line_route_between_nodes(
         node_u, node_v, streets_wave_local)
     angles = geom_o.angles_along_line(route)
     angles_wrapped = np.pi - np.abs(geom_o.wrap_to_pi(angles))
@@ -180,6 +180,22 @@ def check_if_cons_are_orthogonal(streets_wave,
                 streets_wave, graph_veh_own, graph, max_angle=max_angle)
 
     return is_orthogonal, coords_max_angle
+
+
+def line_route_between_nodes(node_from, node_to, graph):
+    """Determines the line representing the shortest path between two nodes"""
+
+    route = nx.shortest_path(graph, node_from, node_to, weight='length')
+    edge_nodes = list(zip(route[:-1], route[1:]))
+    lines = []
+    for u_node, v_node in edge_nodes:
+        # If there are parallel edges, select the shortest in length
+        data = min([data for data in graph.edge[u_node][v_node].values()],
+                   key=lambda x: x['length'])
+        lines.append(data['geometry'])
+
+    line = ops.linemerge(lines)
+    return line
 
 
 def add_edges_if_los(graph, buildings, max_distance=50):
