@@ -191,10 +191,10 @@ def which_result_polygon(query, limit=5):
 
 def simplify_buildings(gdf_buildings, tolerance=1):
     """Simplifies the building polygons by reducing the number of edges"""
+    # TODO: actual tolerance is higher because two different algorithms (merge + simplify) applied
 
     geoms_list = gdf_buildings.geometry.tolist()
     geoms_list_comb = []
-    count_buildings = len(geoms_list)
 
     # Merge polygons
     for idx1, geom1 in enumerate(geoms_list):
@@ -219,18 +219,19 @@ def simplify_buildings(gdf_buildings, tolerance=1):
             if dist > tolerance:
                 continue
 
-            buffer = dist / 2 * 2  # TODO: why factor 2 needed?
-            geom1_buf = geom1.buffer(buffer)
-            geom2_buf = geom2.buffer(buffer)
+            # NOTE: setting the buffer to dist/2 does not guarantee that the 2 polygons will intersect and resulting in
+            # a single polygon. Therefore we need the check at the end of the inner loop.
+            buffer = dist / 2
+            geom1_buf = geom1.buffer(buffer, resolution=1)
+            geom2_buf = geom2.buffer(buffer, resolution=1)
 
             if not geom1_buf.intersects(geom2_buf):
                 continue
 
-            # TODO: not ideal method!
-            geom_union = ops.unary_union([geom1_buf, geom2_buf]).buffer(-buffer)
+            geom_union = ops.unary_union([geom1_buf, geom2_buf]).buffer(-buffer, resolution=1)
 
             # If the union is 2 seperate polygon we keep them otherwise we save the union
-            if not isinstance(geom_union, geom.MultiPolygon):  # TODO: why does this even happen?
+            if not isinstance(geom_union, geom.MultiPolygon):
                 geom1 = geom_union
                 geoms_list[idx2] = None
 
@@ -246,7 +247,7 @@ def simplify_buildings(gdf_buildings, tolerance=1):
             poly_simp = geom.Polygon(geometry.exterior)
             geoms_list_ext.append(poly_simp)
 
-    # TODO: whole section has no effect?
+    # TODO: should this be moved before the merges?
     # Simplify polygons
     geoms_list_simpl = []
     for geometry in geoms_list_ext:
@@ -256,17 +257,13 @@ def simplify_buildings(gdf_buildings, tolerance=1):
 
         geometry_simpl = geometry.simplify(tolerance, preserve_topology=False)
 
-        # TODO: still a bug here!
-
         if isinstance(geometry_simpl, geom.MultiPolygon):
-            # TODO: why does this happen? fix
-            # for poly in geometry_simpl:
-            #     if not poly.is_empty:
-            #         geoms_list_simpl.append(poly)
-            geoms_list_simpl.append(geometry)
+            for poly in geometry_simpl:
+                if not poly.is_empty:
+                    geoms_list_simpl.append(poly)
         else:
             if not geometry_simpl.is_empty:
-                geoms_list_simpl.append(geometry_simpl)  # TODO: why does this happen?
+                geoms_list_simpl.append(geometry_simpl)
             else:
                 geoms_list_simpl.append(geometry)
 

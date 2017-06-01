@@ -19,7 +19,8 @@
             "nlos": 0
         },
         "simulation_mode": "parallel",
-        "show_plot": false
+        "show_plot": false,
+        "overwrite_result": false
     },
     "tolerance_0_upperwestside": {
         "place": "Upper West Side - New York - USA",
@@ -35,14 +36,6 @@
     },
     "tolerance_1_neubau": {
         "place": "Neubau - Vienna - Austria",
-        "building_tolerance": 1
-    },
-    "tolerance_0_graz": {
-        "place": "Graz - Austria",
-        "building_tolerance": 0
-    },
-    "tolerance_1_graz": {
-        "place": "Graz - Austria",
         "building_tolerance": 1
     }
 }
