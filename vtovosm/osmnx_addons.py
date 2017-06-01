@@ -4,7 +4,6 @@ import os.path
 import pickle
 
 import geopandas as gpd
-import networkx as nx
 import osmnx as ox
 import shapely.geometry as geom
 import shapely.ops as ops
@@ -178,22 +177,6 @@ def check_geometry(streets):
             break
 
     return complete
-
-
-def line_route_between_nodes(node_from, node_to, graph):
-    """Determines the line representing the shortest path between two nodes"""
-
-    route = nx.shortest_path(graph, node_from, node_to, weight='length')
-    edge_nodes = list(zip(route[:-1], route[1:]))
-    lines = []
-    for u_node, v_node in edge_nodes:
-        # If there are parallel edges, select the shortest in length
-        data = min([data for data in graph.edge[u_node][v_node].values()],
-                   key=lambda x: x['length'])
-        lines.append(data['geometry'])
-
-    line = ops.linemerge(lines)
-    return line
 
 
 def which_result_polygon(query, limit=5):
