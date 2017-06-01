@@ -208,7 +208,7 @@ def calc_net_connectivity(graph_cons, vehs=None):
     return net_connectivity
 
 
-def calc_path_redundancy(graph_cons, vehs):
+def calc_center_path_redundancy(graph_cons, vehs):
     """Calculates the path redundancy of the connection graph for the center vehicle"""
 
     # Find center vehicle
@@ -224,7 +224,7 @@ def calc_path_redundancy(graph_cons, vehs):
     node_center_veh = idx_center_veh
     time_start = utils.debug(None, 'Determining path redundancy')
     distances = dist.pdist(vehs.coordinates)
-    path_redundancy = get_path_redundancy(
+    path_redundancy = calc_path_redundancy(
         graph_cons, node_center_veh, distances)
 
     utils.debug(time_start)
@@ -232,7 +232,7 @@ def calc_path_redundancy(graph_cons, vehs):
     return path_redundancy
 
 
-def get_path_redundancy(graph, node, distances):
+def calc_path_redundancy(graph, node, distances):
     """Determines the path redundancy (number of node/edge disjoint paths)
     from one specific node to all other nodes"""
     # NOTE: we calculate the minimum number of node independent paths as an approximation (and not

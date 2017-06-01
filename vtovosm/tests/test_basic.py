@@ -444,7 +444,7 @@ class TestConnectionAnalysis(unittest.TestCase):
     """Provides unit tests for the connection_analysis module"""
 
     def test_calc_path_redundancy(self):
-        """Tests the function calc_path_redundancy"""
+        """Tests the function calc_center_path_redundancy"""
 
         max_dist = {'nlos': 100, 'olos_los': 150}
         node_redundancies_expteced = [3, 3, 4, 5, 5, 5, 6, 3]
@@ -476,7 +476,7 @@ class TestConnectionAnalysis(unittest.TestCase):
             metric='distance',
             graph_streets_wave=graph_streets_wave)
 
-        path_redundancy = con_ana.calc_path_redundancy(graph_cons, vehs)
+        path_redundancy = con_ana.calc_center_path_redundancy(graph_cons, vehs)
 
         node_redundancy_correct = np.array_equal(
             path_redundancy['count_node_disjoint_paths'],
