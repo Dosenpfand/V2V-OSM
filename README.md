@@ -86,9 +86,17 @@ To run the tests install the test specific dependencies by executing
 
 Run the unit tests by executing
 
-    nosetests
+    nosetests -v
     
 For all tests to complete successfully SUMO needs to be installed (see Quickstart).
+
+To only run fast tests or tests that do not need network access exectute
+
+    nosetests -v -a '!slow'
+    
+or
+
+    nosetests -v -a '!network'
 
 ## Coverage
 Run the tests with coverage analysis by starting
