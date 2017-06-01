@@ -48,23 +48,31 @@ To get started on Debian 8 follow these steps.
         wget https://bootstrap.pypa.io/get-pip.py
         python 3 get-pip.py
 
-8. Install dependencies
+8. Optional: Install the package
 
-        pip install -r requirements.txt
+        pip install .
+        
+   or via symlinks
+        
+        pip install -e .
 
 9. Run an exemplary simulation
 
-        python3 main_sim_osm_pathloss.py
+        python3 -m vtovosm.simulations.main
 
 10. Modify the simulation parameters in
 
-        network_definition.json
+        vtovosm/simulations/network_config/default.json
 
     and run the simulation again
 
-        python3 main_sim_osm_pathloss.py
+        python3 -m vtovosm.simulations.main
+        
+11. Get help by executing
 
-11. Optional: For vehicle realistic vehicle placement and movement install [SUMO](http://www.sumo.dlr.de) from the [backports repository](https://backports.debian.org/Instructions/):
+        python3 -m vtovosm.simulations.main -h
+
+12. Optional: For vehicle realistic vehicle placement and movement install [SUMO](http://www.sumo.dlr.de) from the [backports repository](https://backports.debian.org/Instructions/):
 
         apt-get -t jessie-backports install sumo sumo-tools
 
