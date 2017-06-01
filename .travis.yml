@@ -11,10 +11,10 @@ before_install:
   - sudo apt-get install sumo
 install:
   - pip install --upgrade pip
-  - pip install -r requirements.txt
   - pip install -r requirements-test.txt
   # Clone SUMO to get newer tools than in the repository
   - git clone --depth 1 https://github.com/planetsumo/sumo.git $TRAVIS_BUILD_DIR/sumo
+  - pip install .
 addons:
   apt:
     packages:
@@ -33,9 +33,7 @@ branches:
   - travis
   - dev
 script:
-  - nosetests --with-coverage --cover-html --cover-tests --cover-package=vtovosm
+  - nosetests --with-coverage --cover-html --cover-tests --cover-package=vtovosm --verbose
 after_success:
   - coverage-badge -f -o .travis/coverage.svg
   - if [[ $TRAVIS_PYTHON_VERSION == 3.4 ]]; then .travis/push.sh; fi
-
-# TODO: also test packaging!
