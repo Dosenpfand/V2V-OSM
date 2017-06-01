@@ -6,7 +6,10 @@ import numpy as np
 
 import vtovosm.sumo as sumo
 
-# Setup osmnx non verbose
+# TODO: Setup osmnx non verbose
+
+# TODO: these tests fail silently on travis with:
+# Error: File 'sumo_data/salmannsdorf-vienna-austria.passenger.tls.xml' is not accessible (No such file or directory).
 
 class TestSumo(unittest.TestCase):
     """Provides unit tests for the sumo module"""

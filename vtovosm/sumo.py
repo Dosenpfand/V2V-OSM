@@ -189,6 +189,9 @@ def gen_simulation_conf(place,
     out_text, err_text = proc.communicate()
     exit_code = proc.returncode
 
+    if exit_code != 0:
+        raise RuntimeError('SUMO quit with nonzero exit code')
+
     if debug:
         utils.print_nnl(out_text.decode())
     utils.print_nnl(err_text.decode(), file=sys.stderr)
@@ -218,6 +221,9 @@ def run_simulation(place, directory='', file_suffix=None, debug=False, bin_dir='
     proc = sproc.Popen(arguments, stdout=sproc.PIPE, stderr=sproc.PIPE)
     out_text, err_text = proc.communicate()
     exit_code = proc.returncode
+
+    if exit_code != 0:
+        raise RuntimeError('SUMO quit with nonzero exit code')
 
     if debug:
         utils.print_nnl(out_text.decode())
@@ -353,6 +359,9 @@ def create_random_trips(place,
     out_text, err_text = proc.communicate()
     exit_code = proc.returncode
 
+    if exit_code != 0:
+        raise RuntimeError('Trip generation script quit with nonzero exit code')
+
     if debug:
         utils.print_nnl(out_text.decode())
     utils.print_nnl(err_text.decode(), file=sys.stderr)
@@ -418,6 +427,9 @@ def build_network(filename,
     out_text, err_text = proc.communicate()
     exit_code = proc.returncode
 
+    if exit_code != 0:
+        raise RuntimeError('Network build script quit with nonzero exit code')
+
     if debug:
         utils.print_nnl(out_text.decode())
     utils.print_nnl(err_text.decode(), file=sys.stderr)
@@ -473,6 +485,9 @@ def generate_tls_coordination(place,
     out_text, err_text = proc.communicate()
     exit_code = proc.returncode
 
+    if exit_code != 0:
+        raise RuntimeError('TLS coordination script quit with nonzero exit code')
+
     if debug:
         utils.print_nnl(out_text.decode())
     utils.print_nnl(err_text.decode(), file=sys.stderr)
@@ -500,6 +515,9 @@ def download_streets_from_id(area_id,
     proc = sproc.Popen(arguments, stdout=sproc.PIPE, stderr=sproc.PIPE)
     out_text, err_text = proc.communicate()
     exit_code = proc.returncode
+
+    if exit_code != 0:
+        raise RuntimeError('OSM download script quit with nonzero exit code')
 
     if debug:
         utils.print_nnl(out_text.decode())
