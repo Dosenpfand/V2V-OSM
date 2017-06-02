@@ -58,6 +58,7 @@
             },
             "max_speed": 15,
             "intermediate_points": 100,
+            "skip_sumo": false,
             "abort_after_sumo": false
         },
         "show_plot": false

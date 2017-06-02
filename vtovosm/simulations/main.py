@@ -256,20 +256,31 @@ def main(conf_path=None, scenario=None):
         logging.info('Simulating {:d} vehicles'.format(count_veh))
 
         if config['distribution_veh'] == 'SUMO':
-            # Run SUMO interface functions
-            time_start = utils.debug(None, 'Running SUMO interface')
-            veh_traces = sumo.simple_wrapper(
-                config['place'],
-                which_result=config['which_result'],
-                count_veh=count_veh,
-                duration=config['sumo']['sim_duration'],
-                warmup_duration=config['sumo']['warmup_duration'],
-                max_speed=config['sumo']['max_speed'],
-                tls_settings=config['sumo']['tls_settings'],
-                fringe_factor=config['sumo']['fringe_factor'],
-                intermediate_points=config['sumo']['intermediate_points'],
-                directory='sumo_data/')
-            utils.debug(time_start)
+            if not config['sumo']['skip_sumo']:
+                # Run SUMO interface functions
+                time_start = utils.debug(None, 'Running SUMO interface')
+                veh_traces = sumo.simple_wrapper(
+                    config['place'],
+                    which_result=config['which_result'],
+                    count_veh=count_veh,
+                    duration=config['sumo']['sim_duration'],
+                    warmup_duration=config['sumo']['warmup_duration'],
+                    max_speed=config['sumo']['max_speed'],
+                    tls_settings=config['sumo']['tls_settings'],
+                    fringe_factor=config['sumo']['fringe_factor'],
+                    intermediate_points=config['sumo']['intermediate_points'],
+                    directory='sumo_data/')
+                utils.debug(time_start)
+            else:
+                # Load vehicle traces
+                time_start = utils.debug(None, 'Loading vehicle traces')
+                veh_traces = sumo.load_veh_traces(
+                    config['place'],
+                    file_suffix=str(count_veh),
+                    directory='sumo_data/',
+                    delete_first_n=config['sumo']['warmup_duration'],
+                    count_veh=count_veh)
+                utils.debug(time_start)
 
             if config['sumo']['abort_after_sumo']:
                 logger.warning('Aborting after SUMO completed')
@@ -425,7 +436,6 @@ def main(conf_path=None, scenario=None):
         # Save in and outputs
         config_save = config.copy()
         config_save['count_veh'] = count_veh
-
 
         time_finish_iter = time.time()
         info_vars = {'time_start': time_start_iter,
