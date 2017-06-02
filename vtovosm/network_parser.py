@@ -22,6 +22,7 @@ MODULE_PATH = os.path.dirname(__file__)
 DEFAULT_CONFIG_DIR = os.path.join(MODULE_PATH, 'simulations', 'network_config')
 DEFAULT_CONFIG_PATH = os.path.join(DEFAULT_CONFIG_DIR, 'default.json')
 
+
 def network_from_conf(in_key="default", config_file=DEFAULT_CONFIG_PATH):
     """Load a network from the settings in a json file.
 
@@ -156,3 +157,20 @@ def convert_densities(config_densities):
         densities = np.array([config_densities])
 
     return densities
+
+
+def merge(orig, update, path=None):
+    """Deep merges update into orig. (dict.update only shallow merges)"""
+
+    if path is None: path = []
+    for key in update:
+        if key in orig:
+            if isinstance(orig[key], dict) and isinstance(update[key], dict):
+                merge(orig[key], update[key], path + [str(key)])
+            elif orig[key] == update[key]:
+                pass
+            else:
+                raise Exception('Conflict at %s' % '.'.join(path + [str(key)]))
+        else:
+            orig[key] = update[key]
+    return orig

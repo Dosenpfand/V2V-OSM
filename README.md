@@ -103,7 +103,7 @@ Run the tests with coverage analysis by starting
     
     nosetests --with-coverage --cover-html --cover-tests --cover-package=vtovosm --verbose
 
-And then open `htmlcov/index.html`.
+And then open `cover/index.html`.
 
 To create a badge execute
 
