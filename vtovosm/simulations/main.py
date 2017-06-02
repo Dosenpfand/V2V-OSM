@@ -179,7 +179,7 @@ def main(conf_path=None, scenario=None):
         raise RuntimeError('Multiple scenarios not supported. Use appropriate function')
 
     # Merge the two configurations
-    config.update(config_scenario)
+    config = nw_p.merge(config, config_scenario)
 
     # Sanitize config
     config = network_parser.check_fill_config(config)
@@ -272,6 +272,7 @@ def main(conf_path=None, scenario=None):
             utils.debug(time_start)
 
             if config['sumo']['abort_after_sumo']:
+                logger.warning('Aborting after SUMO completed')
                 continue
 
         # Determine connected vehicles

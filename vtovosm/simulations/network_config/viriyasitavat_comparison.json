@@ -46,6 +46,8 @@
         }
     },
     "only_sumo": {
+        "sumo": {
             "abort_after_sumo": true
+        }
     }
 }
