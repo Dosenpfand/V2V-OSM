@@ -261,7 +261,7 @@ def calc_path_redundancy(graph, node, distances):
 
 
 def calc_link_durations(graphs_cons):
-    """Determines the link durations (continuous time period during which 2 nodes are directly connected"""
+    """Determines the link durations (continuous time period during which 2 nodes are directly connected)"""
 
     # Assumes that all graphs have the same number of nodes
     count_nodes = graphs_cons[0].number_of_nodes()
@@ -273,7 +273,7 @@ def calc_link_durations(graphs_cons):
     active_matrix = np.zeros(size_cond, bool)
     edges_last = []
     for graph_cons in graphs_cons:
-        # Iterate all active connections
+        # Iterate all active links
         for edge in graph_cons.edges_iter():
             idx_cond = utils.square_to_condensed(edge[0], edge[1], count_nodes)
             if not active_matrix[idx_cond]:
@@ -281,18 +281,66 @@ def calc_link_durations(graphs_cons):
                 active_matrix[idx_cond] = True
             durations_matrix[idx_cond][-1] += 1
 
-        # Find and iterate all newly inactive connections
+        # Find and iterate all newly inactive links
         edges_inactive_new = list(set(edges_last) - set(graph_cons.edges()))
         for edge in edges_inactive_new:
             idx_cond = utils.square_to_condensed(edge[0], edge[1], count_nodes)
             active_matrix[idx_cond] = False
 
-        # Save connections for next iteration
+        # Save links for next iteration
         edges_last = graph_cons.edges()
 
     durations = [item for sublist in durations_matrix.tolist() for item in sublist]
     return durations
 
 
+def calc_connection_durations(graphs_cons):
+    """Determines the link durations (continuous time period during which 2 nodes have a path between them)"""
 
+    # Assumes that all graphs have the same number of nodes
+    count_nodes = graphs_cons[0].number_of_nodes()
+    size_cond = count_nodes * (count_nodes - 1) // 2
+    durations_matrix = np.zeros(size_cond, dtype=object)
+    for idx in range(durations_matrix.size):
+        durations_matrix[idx] = []
+
+    active_matrix = np.zeros(size_cond, bool)
+    connections_last = []
+
+    for graph_cons in graphs_cons:
+        # Search for all active connections
+        connections = []
+        for idx_u, node_u in enumerate(graph_cons.nodes()):
+            for idx_v, node_v in enumerate(graph_cons.nodes()[idx_u + 1:]):
+                is_connected = nx.has_path(graph_cons, node_u, node_v)
+                if is_connected:
+                    idx_cond = utils.square_to_condensed(node_u, node_v, count_nodes)
+                    if not active_matrix[idx_cond]:
+                        durations_matrix[idx_cond].append(0)
+                        active_matrix[idx_cond] = True
+                    durations_matrix[idx_cond][-1] += 1
+                    connections.append((node_u, node_v))
+
+        # Find and iterate all newly inactive connections
+        connections_inactive_new = list(set(connections_last) - set(connections))
+        for connection in connections_inactive_new:
+            idx_cond = utils.square_to_condensed(connection[0], connection[1], count_nodes)
+            active_matrix[idx_cond] = False
+
+        # Save connections for next iteration
+        connections_last = connections
+
+    durations = [item for sublist in durations_matrix.tolist() for item in sublist]
+    return durations
+
+
+def calc_connection_stats(durations, count_nodes):
+    """Determines the average number of connected periods and the average duration of a connected period from
+    durations"""
+
+    count_pairs = count_nodes * (count_nodes - 1) // 2
+    mean_duration = np.mean(durations)
+    mean_connected_periods = len(durations) / count_pairs
+
+    return mean_duration, mean_connected_periods
 

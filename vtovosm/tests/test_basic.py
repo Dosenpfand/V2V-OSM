@@ -443,8 +443,41 @@ class TestUtils(unittest.TestCase):
 class TestConnectionAnalysis(unittest.TestCase):
     """Provides unit tests for the connection_analysis module"""
 
+    def test_calc_connection_stats(self):
+        """Tests the function calc_connection_stats"""
+
+        durations = [1, 2, 1, 2, 4, 5, 2, 2, 2, 2]
+        count_nodes = 4
+        mean_duration_expected = 2.3
+        mean_connected_periods_expected = 10/6
+
+        mean_duration_generated, mean_connected_periods_generated = \
+            con_ana.calc_connection_stats(durations, count_nodes)
+
+        self.assertAlmostEqual(mean_duration_generated, mean_duration_expected)
+        self.assertAlmostEqual(mean_connected_periods_generated, mean_connected_periods_expected)
+
+    def test_calc_connection_durations(self):
+        """Tests the function calc_connection_durations"""
+
+        con_matrices_cond = [
+            [0, 0, 0, 1, 0, 1],
+            [1, 0, 0, 1, 0, 1],
+            [0, 0, 1, 1, 0, 0],
+            [1, 0, 0, 1, 0, 1],
+            [0, 0, 1, 1, 0, 1]
+        ]
+        durations_expected = [1, 2, 1, 2, 4, 5, 2, 2, 2, 2]
+
+        con_matrices = [sp_dist.squareform(con_matrix_cond) for con_matrix_cond in con_matrices_cond]
+        graphs_cons = [nx.from_numpy_matrix(con_matrix) for con_matrix in con_matrices]
+
+        durations_generated = con_ana.calc_connection_durations(graphs_cons)
+
+        self.assertEqual(durations_generated, durations_expected)
+
     def test_calc_link_durations(self):
-        """Tests the function calc_link_duration"""
+        """Tests the function calc_link_durations"""
 
         con_matrices_cond = [
             [1, 0, 0, 1, 0, 1],
