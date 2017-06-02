@@ -240,3 +240,14 @@ def plot_veh_traces_animation(traces, streets, buildings=None, show=True, filena
         writer = animation.writers['ffmpeg']
         writer_inst = writer(fps=15, bitrate=1800)
         line_anim.save(filename, writer=writer_inst)
+
+
+def plot_emp_pmf(realizations, bins=None):
+    """Plots a empirical pmf from the realizations"""
+
+    # TODO: expand!
+
+    if bins is None:
+        bins = int(max(realizations) - min(realizations))
+
+    plt.hist(realizations, bins=bins, normed=True)

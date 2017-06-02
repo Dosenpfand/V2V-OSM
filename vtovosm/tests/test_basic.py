@@ -443,6 +443,25 @@ class TestUtils(unittest.TestCase):
 class TestConnectionAnalysis(unittest.TestCase):
     """Provides unit tests for the connection_analysis module"""
 
+    def test_calc_link_durations(self):
+        """Tests the function calc_link_duration"""
+
+        con_matrices_cond = [
+            [1, 0, 0, 1, 0, 1],
+            [1, 0, 0, 1, 0, 1],
+            [1, 0, 1, 1, 0, 0],
+            [1, 0, 0, 1, 0, 1],
+            [0, 0, 1, 1, 0, 1]
+        ]
+        durations_expected = [4, 1, 1, 5, 2, 2]
+
+        con_matrices = [sp_dist.squareform(con_matrix_cond) for con_matrix_cond in con_matrices_cond]
+        graphs_cons = [nx.from_numpy_matrix(con_matrix) for con_matrix in con_matrices]
+
+        durations_generated = con_ana.calc_link_durations(graphs_cons)
+
+        self.assertEqual(durations_generated, durations_expected)
+
     def test_calc_path_redundancy(self):
         """Tests the function calc_center_path_redundancy"""
 

@@ -145,7 +145,6 @@ def gen_connection_matrix(vehs,
             pathloss_iter1 = ploss.pathloss_nlos(dist_1, dist_2)
             pathloss_iter2 = ploss.pathloss_nlos(dist_2, dist_1)
 
-
             # NOTE: Maximum of the 2 pathlosses => Nodes connected if both are below threshold
             pathlosses[idx_nlos_ort] = np.max(
                 [pathloss_iter1, pathloss_iter2])
@@ -259,3 +258,41 @@ def calc_path_redundancy(graph, node, distances):
         iter_veh += 1
 
     return path_redundancy
+
+
+def calc_link_durations(graphs_cons):
+    """Determines the link durations (continuous time period during which 2 nodes are directly connected"""
+
+    # Assumes that all graphs have the same number of nodes
+    count_nodes = graphs_cons[0].number_of_nodes()
+    size_cond = count_nodes * (count_nodes - 1) // 2
+    durations_matrix = np.zeros(size_cond, dtype=object)
+    for idx in range(durations_matrix.size):
+        durations_matrix[idx] = []
+
+    active_matrix = np.zeros(size_cond, bool)
+    edges_last = []
+    for graph_cons in graphs_cons:
+        # Iterate all active connections
+        for edge in graph_cons.edges_iter():
+            idx_cond = utils.square_to_condensed(edge[0], edge[1], count_nodes)
+            if not active_matrix[idx_cond]:
+                durations_matrix[idx_cond].append(0)
+                active_matrix[idx_cond] = True
+            durations_matrix[idx_cond][-1] += 1
+
+        # Find and iterate all newly inactive connections
+        edges_inactive_new = list(set(edges_last) - set(graph_cons.edges()))
+        for edge in edges_inactive_new:
+            idx_cond = utils.square_to_condensed(edge[0], edge[1], count_nodes)
+            active_matrix[idx_cond] = False
+
+        # Save connections for next iteration
+        edges_last = graph_cons.edges()
+
+    durations = [item for sublist in durations_matrix.tolist() for item in sublist]
+    return durations
+
+
+
+

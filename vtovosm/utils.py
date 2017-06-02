@@ -62,7 +62,7 @@ def debug(time_start=None, text=None):
 
 
 def square_to_condensed(idx_i, idx_j, size_n):
-    """Converts the squareform indices i and j of the condensed vector with size n to the
+    """Converts the squareform indices i and j of the square matrix with with size n x n to the
     condensed index k. See also: scipy.spatial.distance.squareform"""
 
     if idx_i == idx_j:
