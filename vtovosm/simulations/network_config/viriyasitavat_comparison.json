@@ -38,6 +38,7 @@
             "max_speed": 15,
             "intermediate_points": 100
         },
+        "building_tolerance": 1,
         "show_plot": false
     },
     "default": {
@@ -52,7 +53,7 @@
             "abort_after_sumo": true
         }
     },
-    "only_prop": {
+    "only_connection": {
         "sumo": {
             "skip_sumo": true,
             "abort_after_sumo": false
