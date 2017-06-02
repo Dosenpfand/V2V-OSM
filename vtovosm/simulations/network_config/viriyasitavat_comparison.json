@@ -42,12 +42,20 @@
     },
     "default": {
         "sumo": {
+            "skip_sumo": false,
             "abort_after_sumo": false
         }
     },
     "only_sumo": {
         "sumo": {
+            "skip_sumo": false,
             "abort_after_sumo": true
+        }
+    },
+    "only_prop": {
+        "sumo": {
+            "skip_sumo": true,
+            "abort_after_sumo": false
         }
     }
 }
