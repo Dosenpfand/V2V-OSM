@@ -1,8 +1,6 @@
 """ Provides functions to generate connection graphs and matrices and
 derive further results from them"""
 
-import logging
-
 import networkx as nx
 import numpy as np
 import scipy.spatial.distance as dist
@@ -185,6 +183,17 @@ def gen_connection_graph(vehs,
     return graph_cons
 
 
+def calc_net_connectivities(graphs_cons):
+    """Calculates the network connectivities (relative size of the biggest connected cluster)"""
+
+    net_connectivities = np.zeros(len(graphs_cons))
+
+    for idx, graph_cons in enumerate(graphs_cons):
+        net_connectivities[idx] = calc_net_connectivity(graph_cons)
+
+    return net_connectivities
+
+
 def calc_net_connectivity(graph_cons, vehs=None):
     """Calculates the network connectivity (relative size of the biggest connected cluster)"""
 
@@ -201,8 +210,6 @@ def calc_net_connectivity(graph_cons, vehs=None):
         vehs.add_key('not_cluster_max', not_cluster_max_nodes)
 
     utils.debug(time_start)
-    logging.info('Network connectivity {:.2f}%'.format(
-        net_connectivity * 100))
 
     return net_connectivity
 
@@ -343,4 +350,3 @@ def calc_connection_stats(durations, count_nodes):
     mean_connected_periods = len(durations) / count_pairs
 
     return mean_duration, mean_connected_periods
-
