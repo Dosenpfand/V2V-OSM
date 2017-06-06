@@ -214,6 +214,25 @@ def calc_net_connectivity(graph_cons, vehs=None):
     return net_connectivity
 
 
+def calc_center_path_redundancies(graphs_cons, vehs):
+    """Determines the path redundancy of all the connection graphs for the center vehicle"""
+
+    count_graphs = len(graphs_cons)
+    count_nodes = graphs_cons[0].number_of_nodes()
+
+    path_redundancies = np.zeros(
+        (count_nodes - 1, count_graphs),
+        dtype=[('distance', 'float'),
+               ('count_node_disjoint_paths', 'uint'),
+               ('count_edge_disjoint_paths', 'uint')])
+
+    for idx, graph_cons, vehs_snapshot in zip(range(count_graphs), graphs_cons, vehs):
+        path_redundancy = calc_center_path_redundancy(graph_cons, vehs_snapshot)
+        path_redundancies[:, idx] = path_redundancy
+
+    return path_redundancies
+
+
 def calc_center_path_redundancy(graph_cons, vehs):
     """Calculates the path redundancy of the connection graph for the center vehicle"""
 
@@ -302,43 +321,46 @@ def calc_link_durations(graphs_cons):
 
 
 def calc_connection_durations(graphs_cons):
-    """Determines the link durations (continuous time period during which 2 nodes have a path between them)"""
+    """Determines the connection durations (continuous time period during which 2 nodes have a path between them)
+    and rehealing times (lengths of disconnected periods)"""
 
     # Assumes that all graphs have the same number of nodes
     count_nodes = graphs_cons[0].number_of_nodes()
     size_cond = count_nodes * (count_nodes - 1) // 2
-    durations_matrix = np.zeros(size_cond, dtype=object)
-    for idx in range(durations_matrix.size):
-        durations_matrix[idx] = []
+
+    durations_matrix_con = np.zeros(size_cond, dtype=object)
+    for idx in range(durations_matrix_con.size):
+        durations_matrix_con[idx] = []
+
+    durations_matrix_discon = np.zeros(size_cond, dtype=object)
+    for idx in range(durations_matrix_discon.size):
+        durations_matrix_discon[idx] = []
 
     active_matrix = np.zeros(size_cond, bool)
-    connections_last = []
 
     for graph_cons in graphs_cons:
         # Search for all active connections
         connections = []
         for idx_u, node_u in enumerate(graph_cons.nodes()):
             for idx_v, node_v in enumerate(graph_cons.nodes()[idx_u + 1:]):
+                idx_cond = utils.square_to_condensed(node_u, node_v, count_nodes)
                 is_connected = nx.has_path(graph_cons, node_u, node_v)
                 if is_connected:
-                    idx_cond = utils.square_to_condensed(node_u, node_v, count_nodes)
                     if not active_matrix[idx_cond]:
-                        durations_matrix[idx_cond].append(0)
+                        durations_matrix_con[idx_cond].append(0)
                         active_matrix[idx_cond] = True
-                    durations_matrix[idx_cond][-1] += 1
+                    durations_matrix_con[idx_cond][-1] += 1
                     connections.append((node_u, node_v))
+                else:
+                    if active_matrix[idx_cond] or durations_matrix_discon[idx_cond] == []:
+                        durations_matrix_discon[idx_cond].append(0)
+                        active_matrix[idx_cond] = False
+                    durations_matrix_discon[idx_cond][-1] += 1
 
-        # Find and iterate all newly inactive connections
-        connections_inactive_new = list(set(connections_last) - set(connections))
-        for connection in connections_inactive_new:
-            idx_cond = utils.square_to_condensed(connection[0], connection[1], count_nodes)
-            active_matrix[idx_cond] = False
+    durations_con = [item for sublist in durations_matrix_con.tolist() for item in sublist]
+    durations_discon = [item for sublist in durations_matrix_discon.tolist() for item in sublist]
 
-        # Save connections for next iteration
-        connections_last = connections
-
-    durations = [item for sublist in durations_matrix.tolist() for item in sublist]
-    return durations
+    return durations_con, durations_discon
 
 
 def calc_connection_stats(durations, count_nodes):

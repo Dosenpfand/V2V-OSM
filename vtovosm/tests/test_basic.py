@@ -449,7 +449,7 @@ class TestConnectionAnalysis(unittest.TestCase):
         durations = [1, 2, 1, 2, 4, 5, 2, 2, 2, 2]
         count_nodes = 4
         mean_duration_expected = 2.3
-        mean_connected_periods_expected = 10/6
+        mean_connected_periods_expected = 10 / 6
 
         mean_duration_generated, mean_connected_periods_generated = \
             con_ana.calc_connection_stats(durations, count_nodes)
@@ -467,14 +467,16 @@ class TestConnectionAnalysis(unittest.TestCase):
             [1, 0, 0, 1, 0, 1],
             [0, 0, 1, 1, 0, 1]
         ]
-        durations_expected = [1, 2, 1, 2, 4, 5, 2, 2, 2, 2]
+        durations_con_expected = [1, 2, 1, 2, 4, 5, 2, 2, 2, 2]
+        durations_discon_expected = [1, 1, 1, 1, 1, 1, 1]
 
         con_matrices = [sp_dist.squareform(con_matrix_cond) for con_matrix_cond in con_matrices_cond]
         graphs_cons = [nx.from_numpy_matrix(con_matrix) for con_matrix in con_matrices]
 
         durations_generated = con_ana.calc_connection_durations(graphs_cons)
 
-        self.assertEqual(durations_generated, durations_expected)
+        self.assertEqual(durations_generated[0], durations_con_expected)
+        self.assertEqual(durations_generated[1], durations_discon_expected)
 
     def test_calc_link_durations(self):
         """Tests the function calc_link_durations"""
