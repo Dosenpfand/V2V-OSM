@@ -12,6 +12,8 @@ from . import propagation as prop
 from . import utils
 
 
+# TODO: use utils.load/save to compress!
+
 def load_network(place, which_result=1, overwrite=False, tolerance=0):
     """Generates streets and buildings"""
 
