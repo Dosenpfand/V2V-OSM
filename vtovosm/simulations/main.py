@@ -8,6 +8,7 @@ import time
 from itertools import repeat
 from optparse import OptionParser
 
+import networkx as nx
 import numpy as np
 import osmnx as ox
 from scipy.special import comb
@@ -203,7 +204,6 @@ def main(conf_path=None, scenario=None):
     utils.debug(time_start)
 
     # Convert vehicle densities to counts
-    # Iterate densities
     counts_veh = np.zeros(densities_veh.size, dtype=int)
 
     if config['density_type'] == 'length':
@@ -238,12 +238,23 @@ def main(conf_path=None, scenario=None):
     # Iterate densities
     for idx_count_veh, count_veh in enumerate(counts_veh):
 
-        # Check if results file already exists
-        if 'scenario' in config:
+        # Determine results path and check if it exists
+        if config['results_file_prefix'] is not None:
+            filename_prefix = utils.string_to_filename(config['results_file_prefix'])
+        elif 'scenario' in config:
             filename_prefix = utils.string_to_filename(config['scenario'])
         else:
             filename_prefix = utils.string_to_filename(config['place'])
-        filepath_res = 'results/{}.{:d}.pickle.gz'.format(filename_prefix, count_veh)
+
+        file_name = '{}.{:d}.pickle.gz'.format(filename_prefix, count_veh)
+
+        if config['results_file_dir'] is not None:
+            file_dir = config['results_file_dir']
+        else:
+            file_dir = 'results'
+
+        filepath_res = os.path.join(file_dir, file_name)
+
         result_file_exists = os.path.isfile(filepath_res)
         if result_file_exists:
             if config['overwrite_result']:
@@ -424,8 +435,52 @@ def main(conf_path=None, scenario=None):
             # Define which variables to save in a file
             results = {'vehs': net['vehs']}
 
+        elif config['simulation_mode'] == 'analyze_results':
+            results_loaded = utils.load(filepath_res)
+            matrices_cons = results_loaded['results']['matrices_cons']
+            results = {'matrices_cons': matrices_cons,
+                       'old_info': results_loaded['info'],
+                       'old_config': results_loaded['config']}
         else:
             raise NotImplementedError('Simulation mode not supported')
+
+        # Analyze results
+        # TODO: check also sim mode
+        # TODO: make a simulation mode that only analyzes the results? but needs vehicle positions for redundancy
+        if config['analyze_results'] is not None:
+            time_start = utils.debug(None, 'Analyzing results')
+
+            if config['analyze_results'] == ['all']:
+                config['analyze_results'] = ['net_connectivities',
+                                             'path_redundancies',
+                                             'link_durations',
+                                             'connection_durations']
+
+            graphs_cons = []
+            for matrix_cons in matrices_cons:
+                graphs_cons.append(nx.from_numpy_matrix(matrix_cons))
+
+            for analysis in config['analyze_results']:
+                if analysis == 'net_connectivities':
+                    net_connectivities = con_ana.calc_net_connectivities(graphs_cons)
+                    results['net_connectivities'] = net_connectivities
+                elif analysis == 'path_redundancies':
+                    logging.warning('Not yet implemented')
+                    # TODO: path redundancy!
+                elif analysis == 'link_durations':
+                    link_durations = con_ana.calc_link_durations(graphs_cons)
+                    results['link_durations'] = link_durations
+                elif analysis == 'connection_durations':
+                    connection_durations = con_ana.calc_connection_durations(graphs_cons)
+                    results['connection_durations'] = connection_durations
+                    connection_stats = con_ana.calc_connection_stats(connection_durations,
+                                                                     graphs_cons[0].number_of_nodes())
+                    results['connection_duration_mean'] = connection_stats[0]
+                    results['connection_periods_mean'] = connection_stats[1]
+                else:
+                    raise NotImplementedError('Analysis not supported')
+
+            utils.debug(time_start)
 
         # Progress report
         rte_time_checkpoint = time.time() - rte_time_start

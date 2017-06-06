@@ -574,6 +574,8 @@ def load_veh_traces(place, directory='', file_suffix=None, delete_first_n=0, cou
     """Load parsed traces if they are available otherwise parse,
     clean up (if requested) and save them. Return the traces"""
 
+    # TODO: use utils.load/save to compress!
+
     filename_place = utils.string_to_filename(place)
 
     if file_suffix is None:

@@ -119,6 +119,17 @@ def check_fill_config(config):
     if 'building_tolerance' not in config:
         config['building_tolerance'] = 0
 
+    if 'results_file_prefix' not in config:
+        config['results_file_prefix'] = None
+
+    if 'results_file_dir' not in config:
+        config['results_file_dir'] = None
+
+    if 'analyze_results' not in config:
+        config['analyze_results'] = None
+    elif not isinstance(config['analyze_results'], (list, tuple)):
+        config['analyze_results'] = [config['analyze_results']]
+
     # Optional SUMO settings
     if config['distribution_veh'] == 'SUMO':
         if 'sumo' not in config:
