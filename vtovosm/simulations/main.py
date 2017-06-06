@@ -95,7 +95,7 @@ def sim_single_sumo(snapshot,
         metric=metric,
         graph_streets_wave=graph_streets_wave)
 
-    return matrix_cons
+    return matrix_cons, vehs
 
 
 def sim_single_uniform(random_seed,
@@ -127,7 +127,7 @@ def sim_single_uniform(random_seed,
         metric=metric,
         graph_streets_wave=graph_streets_wave)
 
-    return matrix_cons
+    return matrix_cons, vehs
 
 
 def main_multi_scenario(conf_path=None, scenarios=None):
@@ -320,10 +320,15 @@ def main(conf_path=None, scenario=None):
                         raise NotImplementedError(
                             'Connection metric not supported')
 
-                    matrices_cons = pool.starmap(
+                    mp_res = pool.starmap(
                         sim_single_sumo,
                         sim_param_list
                     )
+                    if len(mp_res) == 0:
+                        matrices_cons, vehs = [], []
+                    else:
+                        matrices_cons, vehs = list(zip(*mp_res))
+
                 elif config['distribution_veh'] == 'uniform':
                     random_seeds = np.arange(config['iterations'])
 
@@ -348,25 +353,31 @@ def main(conf_path=None, scenario=None):
                         raise NotImplementedError(
                             'Connection metric not supported')
 
-                    matrices_cons = pool.starmap(
+                    mp_res = pool.starmap(
                         sim_single_uniform,
                         sim_param_list)
+                    if len(mp_res) == 0:
+                        matrices_cons, vehs = [], []
+                    else:
+                        matrices_cons, vehs = list(zip(*mp_res))
+
                 else:
                     raise NotImplementedError(
                         'Vehicle distribution type not supported')
 
             # Define which variables to save in a file
-            results = {'matrices_cons': matrices_cons}
+            results = {'matrices_cons': matrices_cons, 'vehs': vehs}
 
         elif config['simulation_mode'] == 'sequential':
             if config['distribution_veh'] == 'SUMO':
                 matrices_cons = np.zeros(veh_traces.size, dtype=object)
+                vehs = np.zeros(config['iterations'], dtype=object)
                 for idx, snapshot in enumerate(veh_traces):
                     time_start = utils.debug(
                         None, 'Analyzing snapshot {:d}'.format(idx))
 
                     if config['connection_metric'] == 'distance':
-                        matrix_cons_snapshot = \
+                        matrix_cons_snapshot, vehs_snapshot = \
                             sim_single_sumo(
                                 snapshot,
                                 net['graph_streets'],
@@ -374,7 +385,7 @@ def main(conf_path=None, scenario=None):
                                 max_metric=config['max_connection_metric'],
                                 metric=config['connection_metric'])
                     elif config['connection_metric'] == 'pathloss':
-                        matrix_cons_snapshot = \
+                        matrix_cons_snapshot, vehs_snapshot = \
                             sim_single_sumo(
                                 snapshot,
                                 net['graph_streets'],
@@ -390,12 +401,13 @@ def main(conf_path=None, scenario=None):
                     utils.debug(time_start)
             elif config['distribution_veh'] == 'uniform':
                 matrices_cons = np.zeros(config['iterations'], dtype=object)
+                vehs = np.zeros(config['iterations'], dtype=object)
                 for iteration in np.arange(config['iterations']):
                     time_start = utils.debug(
                         None, 'Analyzing iteration {:d}'.format(iteration))
 
                     if config['connection_metric'] == 'distance':
-                        matrix_cons_snapshot = \
+                        matrix_cons_snapshot, vehs_snapshot = \
                             sim_single_uniform(
                                 iteration,
                                 count_veh,
@@ -404,7 +416,7 @@ def main(conf_path=None, scenario=None):
                                 max_metric=config['max_connection_metric'],
                                 metric=config['connection_metric'])
                     elif config['connection_metric'] == 'pathloss':
-                        matrix_cons_snapshot = \
+                        matrix_cons_snapshot, vehs_snapshot = \
                             sim_single_uniform(
                                 iteration,
                                 count_veh,
@@ -418,13 +430,14 @@ def main(conf_path=None, scenario=None):
                             'Connection metric not supported')
 
                     matrices_cons[iteration] = matrix_cons_snapshot
+                    vehs[iteration] = vehs_snapshot
                     utils.debug(time_start)
             else:
                 raise NotImplementedError(
                     'Vehicle distribution type not supported')
 
             # Define which variables to save in a file
-            results = {'matrices_cons': matrices_cons}
+            results = {'matrices_cons': matrices_cons, 'vehs': vehs}
 
         elif config['simulation_mode'] == 'demo':
             vehicles.place_vehicles_in_network(net,
@@ -438,15 +451,16 @@ def main(conf_path=None, scenario=None):
         elif config['simulation_mode'] == 'analyze_results':
             results_loaded = utils.load(filepath_res)
             matrices_cons = results_loaded['results']['matrices_cons']
+            vehs = results_loaded['results']['vehs']
             results = {'matrices_cons': matrices_cons,
+                       'vehs': vehs,
                        'old_info': results_loaded['info'],
                        'old_config': results_loaded['config']}
         else:
             raise NotImplementedError('Simulation mode not supported')
 
         # Analyze results
-        # TODO: check also sim mode
-        # TODO: make a simulation mode that only analyzes the results? but needs vehicle positions for redundancy
+        # TODO: check also sim_mode
         if config['analyze_results'] is not None:
             time_start = utils.debug(None, 'Analyzing results')
 
@@ -462,18 +476,23 @@ def main(conf_path=None, scenario=None):
 
             for analysis in config['analyze_results']:
                 if analysis == 'net_connectivities':
+                    logging.info('Determining network connectivities')
                     net_connectivities = con_ana.calc_net_connectivities(graphs_cons)
                     results['net_connectivities'] = net_connectivities
                 elif analysis == 'path_redundancies':
-                    logging.warning('Not yet implemented')
-                    # TODO: path redundancy!
+                    logging.info('Determining path redundancies')
+                    path_redundancies = con_ana.calc_center_path_redundancies(graphs_cons, vehs)
+                    results['path_redundancies'] = path_redundancies
                 elif analysis == 'link_durations':
+                    logging.info('Determining link durations')
                     link_durations = con_ana.calc_link_durations(graphs_cons)
                     results['link_durations'] = link_durations
                 elif analysis == 'connection_durations':
+                    logging.info('Determining connection durations')
                     connection_durations = con_ana.calc_connection_durations(graphs_cons)
-                    results['connection_durations'] = connection_durations
-                    connection_stats = con_ana.calc_connection_stats(connection_durations,
+                    results['connection_durations'] = connection_durations[0]
+                    results['rehealing_times'] = connection_durations[1]
+                    connection_stats = con_ana.calc_connection_stats(connection_durations[0],
                                                                      graphs_cons[0].number_of_nodes())
                     results['connection_duration_mean'] = connection_stats[0]
                     results['connection_periods_mean'] = connection_stats[1]
