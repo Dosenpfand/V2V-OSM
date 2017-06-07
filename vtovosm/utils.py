@@ -4,6 +4,7 @@ import datetime
 import getpass
 import gzip
 import logging
+import lzma
 import os
 import pickle
 import smtplib
@@ -258,6 +259,8 @@ def save(obj, file_path, protocol=4, compression_level=1, overwrite=True, create
         When true any non existing intermediary directories in `file_path` will be created.
     """
 
+    # TODO: temporary change to LZMA, see https://bugs.python.org/issue27130
+
     # Return if file already exists
     if not overwrite and os.path.isfile(file_path):
         return
@@ -268,7 +271,7 @@ def save(obj, file_path, protocol=4, compression_level=1, overwrite=True, create
         if not os.path.isdir(directory):
             os.makedirs(directory)
 
-    with gzip.open(file_path, 'wb', compresslevel=compression_level) as file:
+    with lzma.open(file_path, 'wb', preset=compression_level) as file:
         pickle.dump(obj, file, protocol=protocol)
 
 
@@ -286,8 +289,13 @@ def load(file_path):
         Object that was saved in the file
     """
 
-    with gzip.open(file_path, 'rb') as file:
-        return pickle.load(file)
+    # TODO: temporary change to LZMA, see https://bugs.python.org/issue27130
+    try:
+        with lzma.open(file_path, 'rb') as file:
+            return pickle.load(file)
+    except:
+        with gzip.open(file_path, 'rb') as file:
+            return pickle.load(file)
 
 
 def compress_file(file_in_path, protocol=4, compression_level=1, delete_uncompressed=True):

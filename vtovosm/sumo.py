@@ -31,7 +31,8 @@ def simple_wrapper(place,
                    skip_if_exists=True,
                    veh_class='passenger'):
     """Generates and downloads all necessary files, runs a generic SUMO simulation
-    and returns the vehicle traces"""
+    and returns the vehicle traces."""
+
 
     filename_place = utils.string_to_filename(place)
     filename_place_count = filename_place + '.' + str(count_veh)
