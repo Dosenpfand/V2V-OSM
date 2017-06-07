@@ -2,7 +2,6 @@
 
 import datetime
 import getpass
-import gzip
 import logging
 import lzma
 import os
@@ -250,16 +249,19 @@ def save(obj, file_path, protocol=4, compression_level=1, overwrite=True, create
     file_path : str
         Path at which `obj` will be saved
     protocol : int, optinal
-        Gzip protocol
+        LZMA protocol
     compression_level : int, optional
-        Gzip compression level
+        LZMA compression level
     overwrite : bool, optional
         When true an already existing file will be overwritten.
     create_dir : bool, optional
         When true any non existing intermediary directories in `file_path` will be created.
-    """
 
-    # TODO: temporary change to LZMA, see https://bugs.python.org/issue27130
+    Notes
+    -----
+    Because of the 4 GiB limit of gzip in Python <= 3.4 we use LZMA as compression even though it is slower.
+    See: https://bugs.python.org/issue27130
+    """
 
     # Return if file already exists
     if not overwrite and os.path.isfile(file_path):
@@ -287,15 +289,15 @@ def load(file_path):
     -------
     object
         Object that was saved in the file
+
+    Notes
+    -----
+    Because of the 4 GiB limit of gzip in Python <= 3.4 we use LZMA as compression even though it is slower.
+    See: https://bugs.python.org/issue27130
     """
 
-    # TODO: temporary change to LZMA, see https://bugs.python.org/issue27130
-    try:
-        with lzma.open(file_path, 'rb') as file:
-            return pickle.load(file)
-    except:
-        with gzip.open(file_path, 'rb') as file:
-            return pickle.load(file)
+    with lzma.open(file_path, 'rb') as file:
+        return pickle.load(file)
 
 
 def compress_file(file_in_path, protocol=4, compression_level=1, delete_uncompressed=True):
@@ -313,7 +315,7 @@ def compress_file(file_in_path, protocol=4, compression_level=1, delete_uncompre
         When True, the uncompressed file will be deleted after compression
     """
 
-    file_out_path = file_in_path + '.gz'
+    file_out_path = file_in_path + '.xz'
     with open(file_in_path, 'rb') as file_in:
         obj = pickle.load(file_in)
         save(obj, file_out_path, protocol=protocol,
