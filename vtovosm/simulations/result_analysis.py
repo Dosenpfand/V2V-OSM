@@ -1,3 +1,5 @@
+"""Provides functions to derive further results from simulation results"""
+
 import logging
 import multiprocessing as mp
 import os
