@@ -574,8 +574,6 @@ def load_veh_traces(place, directory='', file_suffix=None, delete_first_n=0, cou
     """Load parsed traces if they are available otherwise parse,
     clean up (if requested) and save them. Return the traces"""
 
-    # TODO: use utils.load/save to compress!
-
     filename_place = utils.string_to_filename(place)
 
     if file_suffix is None:
@@ -586,18 +584,18 @@ def load_veh_traces(place, directory='', file_suffix=None, delete_first_n=0, cou
     path_and_prefix = os.path.join(directory, filename_place)
     path_and_prefix_suffix = os.path.join(directory, filename_place_suffix)
 
-    filename_traces_npy = path_and_prefix_suffix + '.traces.npy'
+    filename_traces_npy = path_and_prefix_suffix + '.traces.pickle.gz'
     filename_traces_xml = path_and_prefix_suffix + '.traces.xml'
     filename_network = path_and_prefix + '.net.xml'
 
     if os.path.isfile(filename_traces_npy):
-        traces = np.load(filename_traces_npy)
+        traces = utils.load(filename_traces_npy)
     else:
         coord_offsets = get_coordinates_offset(filename_network)
         traces = parse_veh_traces(filename_traces_xml, coord_offsets)
         traces = clean_veh_traces(
             traces, delete_first_n=delete_first_n, count_veh=count_veh)
-        np.save(filename_traces_npy, traces)
+        utils.save(traces, filename_traces_npy)
     return traces
 
 
