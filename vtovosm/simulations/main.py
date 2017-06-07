@@ -21,6 +21,7 @@ from .. import plot
 from .. import sumo
 from .. import utils
 from .. import vehicles
+from . import analyze
 
 # Global variables
 rte_count_con_checkpoint = 0
@@ -324,6 +325,7 @@ def main(conf_path=None, scenario=None):
                     )
                     if len(mp_res) == 0:
                         matrices_cons, vehs = [], []
+                        logging.warning('Simulation results are empty')
                     else:
                         matrices_cons, vehs = list(zip(*mp_res))
 
@@ -472,7 +474,9 @@ def main(conf_path=None, scenario=None):
     runtime_total = time_finish_total - time_start_total
     logging.info('Total runtime: {}'.format(utils.seconds_to_string(runtime_total)))
 
-    # TODO: call analyze here?
+    # TODO: here!
+    if config['analyze_results'] is not None:
+        analyze.main(conf_path, scenario)
 
     # Send mail
     if config['send_mail']:
