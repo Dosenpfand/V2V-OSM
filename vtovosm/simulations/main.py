@@ -8,7 +8,6 @@ import time
 from itertools import repeat
 from optparse import OptionParser
 
-import networkx as nx
 import numpy as np
 import osmnx as ox
 from scipy.special import comb
@@ -16,7 +15,6 @@ from scipy.special import comb
 from .. import connection_analysis as con_ana
 from .. import demo
 from .. import geometry as geom_o
-from .. import network_parser
 from .. import network_parser as nw_p
 from .. import osmnx_addons as ox_a
 from .. import plot
@@ -183,7 +181,7 @@ def main(conf_path=None, scenario=None):
     config = nw_p.merge(config, config_scenario)
 
     # Sanitize config
-    config = network_parser.check_fill_config(config)
+    config = nw_p.check_fill_config(config)
     densities_veh = config['densities_veh']
 
     loglevel = logging.getLevelName(config['loglevel'])
@@ -209,8 +207,8 @@ def main(conf_path=None, scenario=None):
     if config['density_type'] == 'length':
         street_lengths = geom_o.get_street_lengths(graph_streets)
 
+    # Determine total vehicle count
     for idx, density_veh in enumerate(densities_veh):
-        # Determine total vehicle count
         if config['density_type'] == 'absolute':
             counts_veh[idx] = int(density_veh)
         elif config['density_type'] == 'length':
@@ -448,58 +446,8 @@ def main(conf_path=None, scenario=None):
             # Define which variables to save in a file
             results = {'vehs': net['vehs']}
 
-        elif config['simulation_mode'] == 'analyze_results':
-            results_loaded = utils.load(filepath_res)
-            matrices_cons = results_loaded['results']['matrices_cons']
-            vehs = results_loaded['results']['vehs']
-            results = {'matrices_cons': matrices_cons,
-                       'vehs': vehs,
-                       'old_info': results_loaded['info'],
-                       'old_config': results_loaded['config']}
         else:
             raise NotImplementedError('Simulation mode not supported')
-
-        # Analyze results
-        # TODO: check also sim_mode
-        if config['analyze_results'] is not None:
-            time_start = utils.debug(None, 'Analyzing results')
-
-            if config['analyze_results'] == ['all']:
-                config['analyze_results'] = ['net_connectivities',
-                                             'path_redundancies',
-                                             'link_durations',
-                                             'connection_durations']
-
-            graphs_cons = []
-            for matrix_cons in matrices_cons:
-                graphs_cons.append(nx.from_numpy_matrix(matrix_cons))
-
-            for analysis in config['analyze_results']:
-                if analysis == 'net_connectivities':
-                    logging.info('Determining network connectivities')
-                    net_connectivities = con_ana.calc_net_connectivities(graphs_cons)
-                    results['net_connectivities'] = net_connectivities
-                elif analysis == 'path_redundancies':
-                    logging.info('Determining path redundancies')
-                    path_redundancies = con_ana.calc_center_path_redundancies(graphs_cons, vehs)
-                    results['path_redundancies'] = path_redundancies
-                elif analysis == 'link_durations':
-                    logging.info('Determining link durations')
-                    link_durations = con_ana.calc_link_durations(graphs_cons)
-                    results['link_durations'] = link_durations
-                elif analysis == 'connection_durations':
-                    logging.info('Determining connection durations')
-                    connection_durations = con_ana.calc_connection_durations(graphs_cons)
-                    results['connection_durations'] = connection_durations[0]
-                    results['rehealing_times'] = connection_durations[1]
-                    connection_stats = con_ana.calc_connection_stats(connection_durations[0],
-                                                                     graphs_cons[0].number_of_nodes())
-                    results['connection_duration_mean'] = connection_stats[0]
-                    results['connection_periods_mean'] = connection_stats[1]
-                else:
-                    raise NotImplementedError('Analysis not supported')
-
-            utils.debug(time_start)
 
         # Progress report
         rte_time_checkpoint = time.time() - rte_time_start
@@ -523,6 +471,8 @@ def main(conf_path=None, scenario=None):
     time_finish_total = time.time()
     runtime_total = time_finish_total - time_start_total
     logging.info('Total runtime: {}'.format(utils.seconds_to_string(runtime_total)))
+
+    # TODO: call analyze here?
 
     # Send mail
     if config['send_mail']:
