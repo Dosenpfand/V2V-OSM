@@ -33,8 +33,8 @@ def analyze_tolerance(conf_path):
         results = []
 
         for count_vehs in counts_vehs:
-            res_wo = utils.load('results/tolerance_0_{}.{:d}.pickle.xz'.format(suffix, count_vehs))
-            res_w = utils.load('results/tolerance_1_{}.{:d}.pickle.xz'.format(suffix, count_vehs))
+            res_wo = utils.load('results/tolerance_inspection/tolerance_0_{}.{:d}.pickle.xz'.format(suffix, count_vehs))
+            res_w = utils.load('results/tolerance_inspection/tolerance_1_{}.{:d}.pickle.xz'.format(suffix, count_vehs))
             run_time_wo = res_wo['info']['time_finish'] - res_wo['info']['time_start']
             run_time_w = res_w['info']['time_finish'] - res_w['info']['time_start']
             matrices_cons_wo = res_wo['results']['matrices_cons']
@@ -56,7 +56,7 @@ def analyze_tolerance(conf_path):
                       'run_time_w': run_time_w}
             results.append(result)
 
-        utils.save(results, 'results/tolerance_comparison_{}.pickle.xz'.format(suffix))
+        utils.save(results, 'results/tolerance_inspection/tolerance_comparison_{}.pickle.xz'.format(suffix))
         all_results[suffix] = results
 
     return all_results
