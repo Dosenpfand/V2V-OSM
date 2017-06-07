@@ -40,6 +40,7 @@
         "results_file_prefix": "result",
         "analyze_results": "all",
         "building_tolerance": 1,
+        "overwrite_result": false,
         "show_plot": false
     },
     "default": {
@@ -47,27 +48,20 @@
         "sumo": {
             "skip_sumo": false,
             "abort_after_sumo": false
-        },
-        "overwrite_result": false
+        }
     },
     "only_sumo": {
         "simulation_mode": "parallel",
         "sumo": {
             "skip_sumo": false,
             "abort_after_sumo": true
-        },
-        "overwrite_result": false
+        }
     },
     "only_connection": {
         "simulation_mode": "parallel",
         "sumo": {
             "skip_sumo": true,
             "abort_after_sumo": false
-        },
-        "overwrite_result": false
-    },
-    "only_analysis": {
-        "simulation_mode": "analyze_results",
-        "overwrite_result": true
+        }
     }
 }
