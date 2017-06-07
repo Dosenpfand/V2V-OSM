@@ -21,7 +21,7 @@ from .. import plot
 from .. import sumo
 from .. import utils
 from .. import vehicles
-from . import analyze
+from . import result_analysis
 
 # Global variables
 rte_count_con_checkpoint = 0
@@ -476,7 +476,7 @@ def main(conf_path=None, scenario=None):
 
     # TODO: here!
     if config['analyze_results'] is not None:
-        analyze.main(conf_path, scenario)
+        result_analysis.main(conf_path, scenario)
 
     # Send mail
     if config['send_mail']:
