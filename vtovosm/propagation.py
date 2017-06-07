@@ -11,7 +11,13 @@ from . import geometry as geom_o
 
 
 class Cond(IntEnum):
-    """Enumeration of possible propagation conditions"""
+    """Enumeration of possible propagation conditions:
+    LOS: Line Of Sight
+    OLOS: Obstructed Line Of Sight (obstructed by other vehicles)
+    NLOS_par: Non Line Of Sight between vehicles on parallel streets
+    NLOS_ort: Non Line Of Sight between vehicles on orthogonal streets
+    NLOS: Non Line Of Sight
+    """
 
     LOS = 1
     OLOS = 2

@@ -339,6 +339,7 @@ def calc_connection_durations(graphs_cons):
     active_matrix = np.zeros(size_cond, bool)
 
     for graph_cons in graphs_cons:
+
         # Search for all active connections
         connections = []
         for idx_u, node_u in enumerate(graph_cons.nodes()):
