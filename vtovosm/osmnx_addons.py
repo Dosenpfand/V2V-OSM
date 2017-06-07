@@ -16,13 +16,13 @@ def load_network(place, which_result=1, overwrite=False, tolerance=0):
 
     # Generate filenames
     file_prefix = 'data/{}'.format(utils.string_to_filename(place))
-    filename_data_streets = 'data/{}_streets.pickle.gz'.format(
+    filename_data_streets = 'data/{}_streets.pickle.xz'.format(
         utils.string_to_filename(place))
-    filename_data_boundary = 'data/{}_boundary.pickle.gz'.format(
+    filename_data_boundary = 'data/{}_boundary.pickle.xz'.format(
         utils.string_to_filename(place))
-    filename_data_wave = 'data/{}_wave.pickle.gz'.format(
+    filename_data_wave = 'data/{}_wave.pickle.xz'.format(
         utils.string_to_filename(place))
-    filename_data_buildings = 'data/{}_buildings.pickle.gz'.format(
+    filename_data_buildings = 'data/{}_buildings.pickle.xz'.format(
         utils.string_to_filename(place))
 
     # Create the output directory if it does not exist
@@ -86,7 +86,7 @@ def download_place(place, network_type='drive', file_prefix=None, which_result=1
         place, network_type=network_type, which_result=which_result)
     if project:
         streets = ox.project_graph(streets)
-    filename_streets = '{}_streets.pickle.gz'.format(file_prefix)
+    filename_streets = '{}_streets.pickle.xz'.format(file_prefix)
     utils.save(streets, filename_streets)
 
     # Boundary and buildings
@@ -98,17 +98,17 @@ def download_place(place, network_type='drive', file_prefix=None, which_result=1
         boundary = ox.project_gdf(boundary)
 
     # Save buildings
-    filename_buildings = '{}_buildings.pickle.gz'.format(file_prefix)
+    filename_buildings = '{}_buildings.pickle.xz'.format(file_prefix)
     utils.save(buildings, filename_buildings)
 
     # Build and save simplified buildings
     if tolerance != 0:
-        filename_buildings_simpl = '{}_buildings_{:.2f}.pickle.gz'.format(file_prefix, tolerance)
+        filename_buildings_simpl = '{}_buildings_{:.2f}.pickle.xz'.format(file_prefix, tolerance)
         buildings = simplify_buildings(buildings)
         utils.save(buildings, filename_buildings_simpl)
 
     # Save boundary
-    filename_boundary = '{}_boundary.pickle.gz'.format(file_prefix)
+    filename_boundary = '{}_boundary.pickle.xz'.format(file_prefix)
     utils.save(boundary, filename_boundary)
 
     # Return data
@@ -119,12 +119,12 @@ def download_place(place, network_type='drive', file_prefix=None, which_result=1
 def load_place(file_prefix, tolerance=0):
     """ Loads previously downloaded street and building data of a place"""
 
-    filename_buildings = '{}_buildings.pickle.gz'.format(file_prefix)
+    filename_buildings = '{}_buildings.pickle.xz'.format(file_prefix)
 
     if tolerance == 0:
         buildings = utils.load(filename_buildings)
     else:
-        filename_buildings_simpl = '{}_buildings_{:.2f}.pickle.gz'.format(file_prefix, tolerance)
+        filename_buildings_simpl = '{}_buildings_{:.2f}.pickle.xz'.format(file_prefix, tolerance)
         if os.path.isfile(filename_buildings_simpl):
             with open(filename_buildings_simpl, 'rb') as file:
                 buildings = utils.load(file)
@@ -133,10 +133,10 @@ def load_place(file_prefix, tolerance=0):
             buildings = simplify_buildings(buildings_compl)
             utils.save(buildings, filename_buildings_simpl)
 
-    filename_streets = '{}_streets.pickle.gz'.format(file_prefix)
+    filename_streets = '{}_streets.pickle.xz'.format(file_prefix)
     streets = utils.load(filename_streets)
 
-    filename_boundary = '{}_boundary.pickle.gz'.format(file_prefix)
+    filename_boundary = '{}_boundary.pickle.xz'.format(file_prefix)
     boundary = utils.load(filename_boundary)
 
     place = {'streets': streets, 'buildings': buildings, 'boundary': boundary}

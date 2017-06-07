@@ -383,7 +383,7 @@ class TestUtils(unittest.TestCase):
     def test_save_load(self):
         """Tests the functions save and load"""
 
-        file_path = 'results/TEMP_test_load_save.pickle.gz'
+        file_path = 'results/TEMP_test_load_save.pickle.xz'
 
         save_data = np.random.rand(100)
         utils.save(save_data, file_path)
@@ -399,7 +399,7 @@ class TestUtils(unittest.TestCase):
         """Tests the function compress_file"""
 
         file_path_uncomp = 'results/TEMP_test_compress_file.pickle'
-        file_path_comp = file_path_uncomp + '.gz'
+        file_path_comp = file_path_uncomp + '.xz'
 
         save_data = save_data = np.random.rand(100)
 

@@ -585,7 +585,7 @@ def load_veh_traces(place, directory='', file_suffix=None, delete_first_n=0, cou
     path_and_prefix = os.path.join(directory, filename_place)
     path_and_prefix_suffix = os.path.join(directory, filename_place_suffix)
 
-    filename_traces_npy = path_and_prefix_suffix + '.traces.pickle.gz'
+    filename_traces_npy = path_and_prefix_suffix + '.traces.pickle.xz'
     filename_traces_xml = path_and_prefix_suffix + '.traces.xml'
     filename_network = path_and_prefix + '.net.xml'
 

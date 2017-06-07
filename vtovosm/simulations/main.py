@@ -245,7 +245,7 @@ def main(conf_path=None, scenario=None):
         else:
             filename_prefix = utils.string_to_filename(config['place'])
 
-        file_name = '{}.{:d}.pickle.gz'.format(filename_prefix, count_veh)
+        file_name = '{}.{:d}.pickle.xz'.format(filename_prefix, count_veh)
 
         if config['results_file_dir'] is not None:
             file_dir = config['results_file_dir']

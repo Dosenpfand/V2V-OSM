@@ -92,8 +92,8 @@ def main(conf_path=None, scenario=None):
         else:
             filename_prefix = utils.string_to_filename(config['place'])
 
-        file_name_res = '{}.{:d}.pickle.gz'.format(filename_prefix, count_veh)
-        file_name_ana = '{}.{:d}_analysis.pickle.gz'.format(filename_prefix, count_veh)
+        file_name_res = '{}.{:d}.pickle.xz'.format(filename_prefix, count_veh)
+        file_name_ana = '{}.{:d}_analysis.pickle.xz'.format(filename_prefix, count_veh)
 
         if config['results_file_dir'] is not None:
             file_dir = config['results_file_dir']
@@ -142,7 +142,7 @@ def main(conf_path=None, scenario=None):
     for count_veh, filepath_ana in zip(counts_veh, filepaths_ana_all):
         analysis_results[count_veh] = utils.load(filepath_ana)
 
-    file_name_ana = '{}_analysis.pickle.gz'.format(filename_prefix)
+    file_name_ana = '{}_analysis.pickle.xz'.format(filename_prefix)
     filepath_ana = os.path.join(file_dir, file_name_ana)
     analysis_file_exists = os.path.isfile(filepath_ana)
     if analysis_file_exists:
