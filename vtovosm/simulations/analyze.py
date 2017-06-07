@@ -42,6 +42,10 @@ def main(conf_path=None, scenario=None):
     config = nw_p.check_fill_config(config)
     densities_veh = config['densities_veh']
 
+    # Return if there is nothing to analyze
+    if config['analyze_results'] is None:
+        return
+
     loglevel = logging.getLevelName(config['loglevel'])
     logger = logging.getLogger()
     logger.setLevel(loglevel)
@@ -75,6 +79,7 @@ def main(conf_path=None, scenario=None):
     # Determine file paths
     filepaths_res = []
     filepaths_ana = []
+    filepaths_ana_all = []
     for idx_count_veh, count_veh in enumerate(counts_veh):
 
         # Determine results path and check if it exists
@@ -108,8 +113,13 @@ def main(conf_path=None, scenario=None):
                 filepaths_ana.append(filepath_ana)
             else:
                 logging.warning('Analysis file already exists. Skipping analysis')
+        else:
+            filepaths_res.append(filepath_res)
+            filepaths_ana.append(filepath_ana)
 
-    logging.info('Starting analyis of results')
+        filepaths_ana_all.append(filepath_ana)
+
+    logging.info('Starting analysis of results')
     if config['simulation_mode'] == 'parallel':
         with mp.Pool() as pool:
             param_list = zip(filepaths_res,
@@ -125,6 +135,26 @@ def main(conf_path=None, scenario=None):
     else:
         raise NotImplementedError('Mode not supported')
 
+    logging.info('Merging all analysis results')
+    analysis_results = {}
+    for count_veh, filepath_ana in zip(counts_veh, filepaths_ana_all):
+        analysis_results[count_veh] = utils.load(filepath_ana)
+
+    file_name_ana = '{}_analysis.pickle.gz'.format(filename_prefix)
+    filepath_ana = os.path.join(file_dir, file_name_ana)
+    analysis_file_exists = os.path.isfile(filepath_ana)
+    if analysis_file_exists:
+        if config['overwrite_result']:
+            logging.warning('Overwriting combined analysis file')
+            utils.save(analysis_results, filepath_ana)
+        else:
+            logging.warning('Combined analysis file already exists. Not overwriting')
+    else:
+        utils.save(analysis_results, filepath_ana)
+
+    return analysis_results
+
+
 def analyze_single(filepath_res, filepath_ana, config_analysis):
     """Runs a single vehicle count analysis of a simulation result.
     Can be run in parallel"""
@@ -132,6 +162,11 @@ def analyze_single(filepath_res, filepath_ana, config_analysis):
     results_loaded = utils.load(filepath_res)
     matrices_cons = results_loaded['results']['matrices_cons']
     vehs = results_loaded['results']['vehs']
+
+    if len(matrices_cons) == 0 or vehs[0].count == 1:
+        logging.warning('Nothing to analyze. Skipping')
+        utils.save(None, filepath_ana)
+        return
 
     # Analyze results
     if config_analysis is not None:

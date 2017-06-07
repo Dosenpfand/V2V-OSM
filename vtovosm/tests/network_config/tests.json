@@ -23,7 +23,8 @@
             "nlos": 140
         },
         "simulation_mode": "sequential",
-        "show_plot": false
+        "show_plot": false,
+        "analyze_results": "all"
     },
     "sumo_distance_paralell": {
         "place": "Salmannsdorf - Vienna - Austria",
@@ -61,7 +62,8 @@
             "skip_sumo": false,
             "abort_after_sumo": false
         },
-        "show_plot": false
+        "show_plot": false,
+        "analyze_results": "all"
     },
     "uniform_distance_sequential": {
         "place": "Salmannsdorf - Vienna - Austria",
@@ -79,7 +81,8 @@
             "nlos": 140
         },
         "simulation_mode": "sequential",
-        "show_plot": false
+        "show_plot": false,
+        "analyze_results": "all"
     },
     "uniform_pathloss_sequential": {
         "place": "Salmannsdorf - Vienna - Austria",
@@ -95,7 +98,8 @@
         "connection_metric": "pathloss",
         "max_connection_metric": 116,
         "simulation_mode": "sequential",
-        "show_plot": false
+        "show_plot": false,
+        "analyze_results": "all"
     },
     "demo": {
         "place": "Salmannsdorf - Vienna - Austria",
