@@ -11,8 +11,7 @@ class Vehicles:
     """Class representing vehicles with their properties and relations
      to each other."""
 
-    # TODO: only points as attributes and get coordinates from points when
-    # requested?
+    # TODO: only points as attributes and get coordinates from points when requested?
 
     def __init__(self, points, graphs=None, size=0):
         self.count = np.size(points)
@@ -144,7 +143,7 @@ def choose_random_streets(lengths, count=1):
 
 
 def choose_random_point(street, count=1):
-    """Chooses random points along street """
+    """Chooses random points along street"""
 
     distances = np.random.random(count)
     points = np.zeros_like(distances, dtype=object)
@@ -198,7 +197,7 @@ def generate_vehs(graph_streets, street_idxs=None, points_vehs_in=None):
 
 
 def get_vehicles_from_streets(graph_streets, street_idxs):
-    """Generate Random vehicle points according to the street_idxs."""
+    """Generate random vehicle points according to the street_idxs."""
 
     count_veh = np.size(street_idxs)
     points_vehs = np.zeros(count_veh, dtype=object)

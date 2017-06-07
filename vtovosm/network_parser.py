@@ -1,13 +1,4 @@
-"""network_parser provides configuration based network generation.
-
-It contains the load_network function, which loads from cache
-(or from OpenStreetMap) a street layout. To make this easily accessible,
-it provides 2 additional functions: network_from_conf and params_from_conf
-
-params_from_conf takes a json file, and loads a given key from that file.
-network_from_conf takes that function and uses it to load a setup.
-The default filename is stored in DEFAULT_CONFIG_PATH.
-"""
+"""Provides configuration based network generation"""
 
 import json
 import os

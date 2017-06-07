@@ -9,7 +9,17 @@ from . import utils
 
 
 def simulate(network, max_pl=150):
-    """Simulates the connections from one to all other vehicles using pathloss functions"""
+    """Simulates the connections from one to all other vehicles using pathloss functions.
+    The function finds the center vehicle, determines the propagation condition from it to all other vehicles, then
+    determines the corresponding pathloss and finally checks if there is a connection.
+
+    Parameters
+    ----------
+    network : dict
+        A dictionary containing the buildings, street network and vehicles
+    max_pl : float
+        The maximum pathloss for 2 vehicles to be connected
+    """
 
     # Initialize
     vehs = network['vehs']
