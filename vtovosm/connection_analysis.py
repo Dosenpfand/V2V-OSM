@@ -341,15 +341,7 @@ def calc_connection_durations(graphs_cons):
     for graph_cons in graphs_cons:
 
         # Determine all nodes that have a path between them:
-        # This is much faster than calling nx.has_path() for every source and destination node
-        has_path_matrix = np.zeros(size_cond, dtype=bool)
-        path_lengths = nx.all_pairs_shortest_path_length(graph_cons)
-        for node_u, nodes_v in path_lengths.items():
-            for node_v in nodes_v.keys():
-                if node_u == node_v:
-                    continue
-                idx_cond = utils.square_to_condensed(node_v, node_u, count_nodes)
-                has_path_matrix[idx_cond] = True
+        has_path_matrix = to_has_path_matrix(graph_cons)
 
         # Search for all active connections
         connections = []
@@ -374,6 +366,24 @@ def calc_connection_durations(graphs_cons):
 
     return durations_con, durations_discon
 
+def to_has_path_matrix(graph):
+    """Determine all nodes that have a path between them"""
+
+    count_nodes = graph.number_of_nodes()
+    size_cond = count_nodes * (count_nodes - 1) // 2
+    has_path_matrix = np.zeros(size_cond, dtype=bool)
+
+    # This is much faster than calling nx.has_path() for every source and destination node
+    path_lengths = nx.all_pairs_shortest_path_length(graph)
+
+    for node_u, nodes_v in path_lengths.items():
+        for node_v in nodes_v.keys():
+            if node_u <= node_v:
+                continue
+            idx_cond = utils.square_to_condensed(node_v, node_u, count_nodes)
+            has_path_matrix[idx_cond] = True
+
+    return has_path_matrix
 
 def calc_connection_stats(durations, count_nodes):
     """Determines the average number of connected periods and the average duration of a connected period from
