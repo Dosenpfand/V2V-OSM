@@ -340,12 +340,23 @@ def calc_connection_durations(graphs_cons):
 
     for graph_cons in graphs_cons:
 
+        # Determine all nodes that have a path between them:
+        # This is much faster than calling nx.has_path() for every source and destination node
+        has_path_matrix = np.zeros(size_cond, dtype=bool)
+        path_lengths = nx.all_pairs_shortest_path_length(graph_cons)
+        for node_u, nodes_v in path_lengths.items():
+            for node_v in nodes_v.keys():
+                if node_u == node_v:
+                    continue
+                idx_cond = utils.square_to_condensed(node_v, node_u, count_nodes)
+                has_path_matrix[idx_cond] = True
+
         # Search for all active connections
         connections = []
         for idx_u, node_u in enumerate(graph_cons.nodes()):
-            for idx_v, node_v in enumerate(graph_cons.nodes()[idx_u + 1:]):
+            for node_v in graph_cons.nodes()[idx_u + 1:]:
                 idx_cond = utils.square_to_condensed(node_u, node_v, count_nodes)
-                is_connected = nx.has_path(graph_cons, node_u, node_v)
+                is_connected = has_path_matrix[idx_cond]
                 if is_connected:
                     if not active_matrix[idx_cond]:
                         durations_matrix_con[idx_cond].append(0)
