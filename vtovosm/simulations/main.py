@@ -58,7 +58,7 @@ def log_progress(c_checkpoint, c_end, t_checkpoint, t_start):
     """Estimates and logs the progress of the currently running simulation"""
 
     if c_checkpoint == 0:
-        logging.info('No progress and remaining time estimation possible')
+        logging.info('No simulation progress and remaining time estimation possible')
         return
 
     t_now = time.time() - t_start
@@ -156,9 +156,6 @@ def main(conf_path=None, scenario=None):
     global rte_time_start
     global rte_time_checkpoint
 
-    # Save start time
-    time_start_total = time.time()
-
     # Load the configuration
     if conf_path is None:
         config = nw_p.params_from_conf()
@@ -233,6 +230,9 @@ def main(conf_path=None, scenario=None):
     rte_count_con_total = np.sum(rte_counts_con)
     rte_time_start = time.time()
     rte_count_con_checkpoint = 0
+
+    # Save start time
+    time_start_total = time.time()
 
     # Iterate densities
     for idx_count_veh, count_veh in enumerate(counts_veh):
@@ -472,9 +472,10 @@ def main(conf_path=None, scenario=None):
 
     time_finish_total = time.time()
     runtime_total = time_finish_total - time_start_total
-    logging.info('Total runtime: {}'.format(utils.seconds_to_string(runtime_total)))
+    logging.info('Total simulation runtime: {}'.format(utils.seconds_to_string(runtime_total)))
 
-    # TODO: here!
+    # TODO: runtime estimation should also include result analysis!
+    # Analyze simulation results
     if config['analyze_results'] is not None:
         result_analysis.main(conf_path, scenario)
 
