@@ -122,20 +122,18 @@ def main(conf_path=None, scenario=None):
         filepaths_ana_all.append(filepath_ana)
 
     logging.info('Starting analysis of results')
+
     if config['simulation_mode'] == 'parallel':
-        with mp.Pool() as pool:
-            param_list = zip(filepaths_res,
-                             filepaths_ana,
-                             repeat(config['analyze_results']))
-
-            pool.starmap(analyze_single, param_list)
-
+        multiprocess = True
     elif config['simulation_mode'] == 'sequential':
-        for filepath_res, filepath_ana in zip(filepaths_res, filepaths_ana):
-            analyze_single(filepath_res, filepath_ana, config['analyze_results'])
-
+        multiprocess = False
     else:
         raise NotImplementedError('Mode not supported')
+
+    # Iterate all result files
+    for filepath_res, filepath_ana in zip(filepaths_res, filepaths_ana):
+        # Analyze results
+        analyze_single(filepath_res, filepath_ana, config['analyze_results'], multiprocess=multiprocess)
 
     logging.info('Merging all analysis results')
     analysis_results = {}
@@ -157,60 +155,99 @@ def main(conf_path=None, scenario=None):
     return analysis_results
 
 
-def analyze_single(filepath_res, filepath_ana, config_analysis):
+def analyze_single(filepath_res, filepath_ana, config_analysis, multiprocess=False):
     """Runs a single vehicle count analysis of a simulation result.
     Can be run in parallel"""
 
+    # Load the connection results
     results_loaded = utils.load(filepath_res)
     matrices_cons = results_loaded['results']['matrices_cons']
     vehs = results_loaded['results']['vehs']
 
+    # Check if given connection results are not empty
     if len(matrices_cons) == 0 or vehs[0].count == 1:
         logging.warning('Nothing to analyze. Skipping')
         utils.save(None, filepath_ana)
         return
 
-    # Analyze results
-    if config_analysis is not None:
-        time_start = utils.debug(None, 'Analyzing results')
+    # Check if analysis to be performed is set
+    if config_analysis is None:
+        return
 
-        if config_analysis == ['all']:
-            config_analysis = ['net_connectivities',
-                               'path_redundancies',
-                               'link_durations',
-                               'connection_durations']
+    # Prepare analysis
+    time_start = utils.debug(None, 'Analyzing results')
 
-        graphs_cons = []
-        for matrix_cons in matrices_cons:
-            graphs_cons.append(nx.from_numpy_matrix(matrix_cons))
+    all_analysis = ['net_connectivities',
+                    'path_redundancies',
+                    'link_durations',
+                    'connection_durations']
 
-        analysis_result = {}
-        for analysis in config_analysis:
-            if analysis == 'net_connectivities':
-                logging.info('Determining network connectivities')
-                net_connectivities = con_ana.calc_net_connectivities(graphs_cons)
-                analysis_result['net_connectivities'] = net_connectivities
-            elif analysis == 'path_redundancies':
-                logging.info('Determining path redundancies')
-                path_redundancies = con_ana.calc_center_path_redundancies(graphs_cons, vehs)
-                analysis_result['path_redundancies'] = path_redundancies
-            elif analysis == 'link_durations':
-                logging.info('Determining link durations')
-                link_durations = con_ana.calc_link_durations(graphs_cons)
-                analysis_result['link_durations'] = link_durations
-            elif analysis == 'connection_durations':
-                logging.info('Determining connection durations')
-                connection_durations = con_ana.calc_connection_durations(graphs_cons)
-                analysis_result['connection_durations'] = connection_durations[0]
-                analysis_result['rehealing_times'] = connection_durations[1]
-                connection_stats = con_ana.calc_connection_stats(
-                    connection_durations[0], graphs_cons[0].number_of_nodes())
-                analysis_result['connection_duration_mean'] = connection_stats[0]
-                analysis_result['connection_periods_mean'] = connection_stats[1]
-            else:
-                raise NotImplementedError('Analysis not supported')
+    if config_analysis == ['all'] or config_analysis == 'all':
+        config_analysis = all_analysis
 
-        utils.debug(time_start)
+    if not set(config_analysis).issubset(set(all_analysis)):
+        raise RuntimeError('Analysis not supported')
 
-        utils.save(analysis_result, filepath_ana)
-        return analysis_result
+    graphs_cons = []
+    for matrix_cons in matrices_cons:
+        graphs_cons.append(nx.from_numpy_matrix(matrix_cons))
+
+    analysis_result = {}
+
+    if multiprocess:
+        pool = mp.Pool()
+
+    # Determine network connectivities
+    if 'net_connectivities' in config_analysis:
+        logging.info('Determining network connectivities')
+
+        if multiprocess:
+            net_connectivities = pool.map(con_ana.calc_net_connectivity, graphs_cons)
+        else:
+            net_connectivities = con_ana.calc_net_connectivities(graphs_cons)
+
+        analysis_result['net_connectivities'] = net_connectivities
+
+    # Determine path redundancies
+    if 'path_redundancies' in config_analysis:
+        logging.info('Determining path redundancies')
+
+        if multiprocess:
+            # TODO: merge into 1 np array (not list of arrays)
+            path_redundancies = pool.starmap(con_ana.calc_center_path_redundancy, zip(graphs_cons, vehs))
+        else:
+            path_redundancies = con_ana.calc_center_path_redundancies(graphs_cons, vehs)
+
+        analysis_result['path_redundancies'] = path_redundancies
+
+    # Determine link durations
+    if 'link_durations' in config_analysis:
+        logging.info('Determining link durations')
+        # TODO: Not yet parallelized
+        link_durations = con_ana.calc_link_durations(graphs_cons)
+        analysis_result['link_durations'] = link_durations
+
+    # Determine connection durations
+    if 'connection_durations' in config_analysis:
+        logging.info('Determining connection durations')
+        if multiprocess:
+            connection_durations = con_ana.calc_connection_durations(graphs_cons, mp_pool=pool)
+        else:
+            connection_durations = con_ana.calc_connection_durations(graphs_cons)
+
+        analysis_result['connection_durations'] = connection_durations[0]
+        analysis_result['rehealing_times'] = connection_durations[1]
+        connection_stats = con_ana.calc_connection_stats(
+            connection_durations[0], graphs_cons[0].number_of_nodes())
+        analysis_result['connection_duration_mean'] = connection_stats[0]
+        analysis_result['connection_periods_mean'] = connection_stats[1]
+
+    # Clean up and save results
+    if multiprocess:
+        pool.close()
+        pool.join()
+
+    utils.debug(time_start)
+
+    utils.save(analysis_result, filepath_ana)
+    return analysis_result

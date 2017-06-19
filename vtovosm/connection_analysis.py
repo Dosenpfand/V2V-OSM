@@ -320,7 +320,7 @@ def calc_link_durations(graphs_cons):
     return durations
 
 
-def calc_connection_durations(graphs_cons):
+def calc_connection_durations(graphs_cons, mp_pool=None):
     """Determines the connection durations (continuous time period during which 2 nodes have a path between them)
     and rehealing times (lengths of disconnected periods)"""
 
@@ -338,10 +338,19 @@ def calc_connection_durations(graphs_cons):
 
     active_matrix = np.zeros(size_cond, bool)
 
-    for graph_cons in graphs_cons:
+    # TODO: quick and dirty hack to make it multiprocess-able. Would be better to move the mp-part outside AND merge
+    # connection and link duration functions
 
-        # Determine all nodes that have a path between them:
-        has_path_matrix = to_has_path_matrix(graph_cons)
+    # Determine all nodes that have a path between them:
+    if mp_pool is None:
+        has_path_matrices = []
+        for graph_cons in graphs_cons:
+            has_path_matrix = to_has_path_matrix(graph_cons)
+            has_path_matrices.append(has_path_matrix)
+    else:
+        has_path_matrices = mp_pool.map(to_has_path_matrix, graphs_cons)
+
+    for graph_cons, has_path_matrix in zip(graphs_cons, has_path_matrices):
 
         # Search for all active connections
         connections = []
