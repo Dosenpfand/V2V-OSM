@@ -1,6 +1,9 @@
 """ Provides functions to generate connection graphs and matrices and
 derive further results from them"""
 
+import multiprocessing as mp
+from collections import namedtuple
+
 import networkx as nx
 import numpy as np
 import scipy.spatial.distance as sp_dist
@@ -286,6 +289,10 @@ def calc_path_redundancy(graph, node, distances):
     return path_redundancy
 
 
+LinkDurations = namedtuple('LinkDurations',
+                           ['durations_con', 'durations_discon', 'durations_matrix_con', 'durations_matrix_discon'])
+
+
 def calc_link_durations(graphs_cons):
     """Determines the link durations (continuous time period during which 2 nodes are directly connected)
     and link rehealing time (lengths of disconnected periods)"""
@@ -327,12 +334,82 @@ def calc_link_durations(graphs_cons):
     durations_con = [item for sublist in durations_matrix_con.tolist() for item in sublist]
     durations_discon = [item for sublist in durations_matrix_discon.tolist() for item in sublist]
 
-    return durations_con, durations_discon
+    link_durations = LinkDurations(durations_con=durations_con,
+                                   durations_discon=durations_discon,
+                                   durations_matrix_con=durations_matrix_con,
+                                   durations_matrix_discon=durations_matrix_discon)
+
+    return link_durations
+
+
+def calc_link_durations_multiprocess(graphs_cons, mp_pool=None, chunk_length=25):
+    """Determines the link durations using multiple processes. See also: calc_link_durations"""
+
+    # Split the graphs list in chunks
+    graphs_chunks = [graphs_cons[i:i + chunk_length] for i in range(0, len(graphs_cons), chunk_length)]
+
+    # Paralell computiation of chunks' link durations
+    if mp_pool is None:
+        mp_pool = mp.Pool()
+        mp_pool_was_none = True
+    else:
+        mp_pool_was_none = False
+
+    link_chunks = mp_pool.map(calc_link_durations, graphs_chunks)
+
+    if mp_pool_was_none:
+        mp_pool.close()
+        mp_pool.join()
+
+    # Merge link durations
+    size_cond = link_chunks[0].durations_matrix_con.size
+    durations_matrix_con = np.zeros(size_cond, dtype=object)
+    durations_matrix_discon = np.zeros(size_cond, dtype=object)
+
+    for idx_link in range(size_cond):
+        link_pair_durations_con = link_chunks[0].durations_matrix_con[idx_link]
+        link_pair_durations_discon = link_chunks[0].durations_matrix_discon[idx_link]
+        idx_square1, idx_square2 = utils.condensed_to_square(idx_link, graphs_cons[0].number_of_nodes())
+        for idx_chunk in range(1, len(link_chunks)):
+            link_pair_durations_con_iter = link_chunks[idx_chunk].durations_matrix_con[idx_link]
+            link_pair_durations_discon_iter = link_chunks[idx_chunk].durations_matrix_discon[idx_link]
+            idx_graph = chunk_length * idx_chunk
+            graph_edges_1 = [set(edge) for edge in graphs_cons[idx_graph].edges()]
+            graph_edges_2 = [set(edge) for edge in graphs_cons[idx_graph-1].edges()]
+            edge_set = {idx_square1, idx_square2}
+            to_merge_con = (edge_set in graph_edges_1) and (edge_set in graph_edges_2)
+            to_merge_discon = (edge_set not in graph_edges_1) and (edge_set not in graph_edges_2)
+
+            if to_merge_con:
+                link_pair_durations_con[-1] += link_pair_durations_con_iter[0]
+                link_pair_durations_con_iter.pop(0)
+
+            if to_merge_discon:
+                link_pair_durations_discon[-1] += link_pair_durations_discon_iter[0]
+                link_pair_durations_discon_iter.pop(0)
+
+            link_pair_durations_con += link_pair_durations_con_iter
+            link_pair_durations_discon += link_pair_durations_discon_iter
+
+        durations_matrix_con[idx_link] = link_pair_durations_con
+        durations_matrix_discon[idx_link] = link_pair_durations_discon
+
+    durations_con = [item for sublist in durations_matrix_con.tolist() for item in sublist]
+    durations_discon = [item for sublist in durations_matrix_discon.tolist() for item in sublist]
+
+    link_durations = LinkDurations(durations_con=durations_con,
+                                   durations_discon=durations_discon,
+                                   durations_matrix_con=durations_matrix_con,
+                                   durations_matrix_discon=durations_matrix_discon)
+
+    return link_durations
 
 
 def calc_connection_durations(graphs_cons):
     """Determines the connection durations (continuous time period during which 2 nodes have a path between them)
     and rehealing times (lengths of disconnected periods)"""
+
+    # TODO: back to own function? faster? less memory?
 
     # Assumes that all graphs have the same number of nodes
     count_nodes = graphs_cons[0].number_of_nodes()
@@ -353,9 +430,9 @@ def calc_connection_durations(graphs_cons):
         graphs_path.append(graph_paths)
 
     # Determine connection duration
-    durations_con, durations_discon = calc_link_durations(graphs_path)
+    res = calc_link_durations(graphs_path)
 
-    return durations_con, durations_discon
+    return res
 
 
 def to_path_graph(graph):
