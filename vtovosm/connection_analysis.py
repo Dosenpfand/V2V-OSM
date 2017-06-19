@@ -3,7 +3,7 @@ derive further results from them"""
 
 import networkx as nx
 import numpy as np
-import scipy.spatial.distance as dist
+import scipy.spatial.distance as sp_dist
 from networkx.algorithms.approximation.connectivity import \
     local_node_connectivity as nx_local_node_connectivity
 from networkx.algorithms.connectivity import \
@@ -66,7 +66,7 @@ def gen_connection_matrix(vehs,
         # Determine in range vehicles
         time_start = utils.debug(None, 'Determining in range vehicles')
 
-        distances = dist.pdist(vehs.coordinates)
+        distances = sp_dist.pdist(vehs.coordinates)
 
         idxs_in_range_olos_los = idxs_olos_los[
             distances[idxs_olos_los] < max_dist_olos_los]
@@ -119,7 +119,7 @@ def gen_connection_matrix(vehs,
         vehs.add_key('olos_los', idxs_olos_los)
         vehs.add_key('nlos', idxs_nlos)
 
-        distances = dist.pdist(vehs.coordinates)
+        distances = sp_dist.pdist(vehs.coordinates)
 
         ploss = pathloss.Pathloss()
         if not metric_config['shadowfading_enabled']:
@@ -156,7 +156,7 @@ def gen_connection_matrix(vehs,
         raise NotImplementedError('Metric not implemented')
 
     is_in_range = np.in1d(np.arange(count_cond), idxs_in_range)
-    matrix_cons = dist.squareform(is_in_range).astype(bool)
+    matrix_cons = sp_dist.squareform(is_in_range).astype(bool)
 
     return matrix_cons
 
@@ -248,7 +248,7 @@ def calc_center_path_redundancy(graph_cons, vehs):
     # Determine path redundancy
     node_center_veh = idx_center_veh
     time_start = utils.debug(None, 'Determining path redundancy')
-    distances = dist.pdist(vehs.coordinates)
+    distances = sp_dist.pdist(vehs.coordinates)
     path_redundancy = calc_path_redundancy(
         graph_cons, node_center_veh, distances)
 
@@ -287,42 +287,8 @@ def calc_path_redundancy(graph, node, distances):
 
 
 def calc_link_durations(graphs_cons):
-    """Determines the link durations (continuous time period during which 2 nodes are directly connected)"""
-
-    # Assumes that all graphs have the same number of nodes
-    count_nodes = graphs_cons[0].number_of_nodes()
-    size_cond = count_nodes * (count_nodes - 1) // 2
-    durations_matrix = np.zeros(size_cond, dtype=object)
-    for idx in range(durations_matrix.size):
-        durations_matrix[idx] = []
-
-    active_matrix = np.zeros(size_cond, bool)
-    edges_last = []
-    for graph_cons in graphs_cons:
-        # Iterate all active links
-        for edge in graph_cons.edges_iter():
-            idx_cond = utils.square_to_condensed(edge[0], edge[1], count_nodes)
-            if not active_matrix[idx_cond]:
-                durations_matrix[idx_cond].append(0)
-                active_matrix[idx_cond] = True
-            durations_matrix[idx_cond][-1] += 1
-
-        # Find and iterate all newly inactive links
-        edges_inactive_new = list(set(edges_last) - set(graph_cons.edges()))
-        for edge in edges_inactive_new:
-            idx_cond = utils.square_to_condensed(edge[0], edge[1], count_nodes)
-            active_matrix[idx_cond] = False
-
-        # Save links for next iteration
-        edges_last = graph_cons.edges()
-
-    durations = [item for sublist in durations_matrix.tolist() for item in sublist]
-    return durations
-
-
-def calc_connection_durations(graphs_cons, mp_pool=None):
-    """Determines the connection durations (continuous time period during which 2 nodes have a path between them)
-    and rehealing times (lengths of disconnected periods)"""
+    """Determines the link durations (continuous time period during which 2 nodes are directly connected)
+    and link rehealing time (lengths of disconnected periods)"""
 
     # Assumes that all graphs have the same number of nodes
     count_nodes = graphs_cons[0].number_of_nodes()
@@ -338,32 +304,20 @@ def calc_connection_durations(graphs_cons, mp_pool=None):
 
     active_matrix = np.zeros(size_cond, bool)
 
-    # TODO: quick and dirty hack to make it multiprocess-able. Would be better to move the mp-part outside AND merge
-    # connection and link duration functions
-
-    # Determine all nodes that have a path between them:
-    if mp_pool is None:
-        has_path_matrices = []
-        for graph_cons in graphs_cons:
-            has_path_matrix = to_has_path_matrix(graph_cons)
-            has_path_matrices.append(has_path_matrix)
-    else:
-        has_path_matrices = mp_pool.map(to_has_path_matrix, graphs_cons)
-
-    for graph_cons, has_path_matrix in zip(graphs_cons, has_path_matrices):
+    for graph_cons in graphs_cons:
 
         # Search for all active connections
-        connections = []
+        edges = [set(edge) for edge in graph_cons.edges_iter()]
+
         for idx_u, node_u in enumerate(graph_cons.nodes()):
             for node_v in graph_cons.nodes()[idx_u + 1:]:
                 idx_cond = utils.square_to_condensed(node_u, node_v, count_nodes)
-                is_connected = has_path_matrix[idx_cond]
+                is_connected = {node_u, node_v} in edges
                 if is_connected:
                     if not active_matrix[idx_cond]:
                         durations_matrix_con[idx_cond].append(0)
                         active_matrix[idx_cond] = True
                     durations_matrix_con[idx_cond][-1] += 1
-                    connections.append((node_u, node_v))
                 else:
                     if active_matrix[idx_cond] or durations_matrix_discon[idx_cond] == []:
                         durations_matrix_discon[idx_cond].append(0)
@@ -375,8 +329,37 @@ def calc_connection_durations(graphs_cons, mp_pool=None):
 
     return durations_con, durations_discon
 
-def to_has_path_matrix(graph):
-    """Determine all nodes that have a path between them"""
+
+def calc_connection_durations(graphs_cons):
+    """Determines the connection durations (continuous time period during which 2 nodes have a path between them)
+    and rehealing times (lengths of disconnected periods)"""
+
+    # Assumes that all graphs have the same number of nodes
+    count_nodes = graphs_cons[0].number_of_nodes()
+    size_cond = count_nodes * (count_nodes - 1) // 2
+
+    durations_matrix_con = np.zeros(size_cond, dtype=object)
+    for idx in range(durations_matrix_con.size):
+        durations_matrix_con[idx] = []
+
+    durations_matrix_discon = np.zeros(size_cond, dtype=object)
+    for idx in range(durations_matrix_discon.size):
+        durations_matrix_discon[idx] = []
+
+    # Convert the graphs to graphs where edges stand for paths
+    graphs_path = []
+    for graph_cons in graphs_cons:
+        graph_paths = to_path_graph(graph_cons)
+        graphs_path.append(graph_paths)
+
+    # Determine connection duration
+    durations_con, durations_discon = calc_link_durations(graphs_path)
+
+    return durations_con, durations_discon
+
+
+def to_path_graph(graph):
+    """Converts a graph to another graph where edges are the equivalent of paths in the old graph"""
 
     count_nodes = graph.number_of_nodes()
     size_cond = count_nodes * (count_nodes - 1) // 2
@@ -392,7 +375,9 @@ def to_has_path_matrix(graph):
             idx_cond = utils.square_to_condensed(node_v, node_u, count_nodes)
             has_path_matrix[idx_cond] = True
 
-    return has_path_matrix
+    graph_path = nx.from_numpy_matrix(sp_dist.squareform(has_path_matrix))
+    return graph_path
+
 
 def calc_connection_stats(durations, count_nodes):
     """Determines the average number of connected periods and the average duration of a connected period from

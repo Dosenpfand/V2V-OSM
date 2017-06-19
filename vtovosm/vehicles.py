@@ -137,7 +137,6 @@ def choose_random_streets(lengths, count=1):
     total_length = sum(lengths)
     probs = lengths / total_length
     count_streets = np.size(lengths)
-    indices = np.zeros(count, dtype=int)
     indices = np.random.choice(count_streets, size=count, p=probs)
     return indices
 

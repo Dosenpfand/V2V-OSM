@@ -401,7 +401,7 @@ class TestUtils(unittest.TestCase):
         file_path_uncomp = 'results/TEMP_test_compress_file.pickle'
         file_path_comp = file_path_uncomp + '.xz'
 
-        save_data = save_data = np.random.rand(100)
+        save_data = np.random.rand(100)
 
         with open(file_path_uncomp, 'wb') as file:
             pickle.dump(save_data, file)
@@ -488,14 +488,16 @@ class TestConnectionAnalysis(unittest.TestCase):
             [1, 0, 0, 1, 0, 1],
             [0, 0, 1, 1, 0, 1]
         ]
-        durations_expected = [4, 1, 1, 5, 2, 2]
+        durations_con_expected = [4, 1, 1, 5, 2, 2]
+        durations_discon_expected = [1, 5, 2, 1, 5, 1]
 
         con_matrices = [sp_dist.squareform(con_matrix_cond) for con_matrix_cond in con_matrices_cond]
         graphs_cons = [nx.from_numpy_matrix(con_matrix) for con_matrix in con_matrices]
 
         durations_generated = con_ana.calc_link_durations(graphs_cons)
 
-        self.assertEqual(durations_generated, durations_expected)
+        self.assertEqual(durations_generated[0], durations_con_expected)
+        self.assertEqual(durations_generated[1], durations_discon_expected)
 
     def test_calc_path_redundancy(self):
         """Tests the function calc_center_path_redundancy"""
