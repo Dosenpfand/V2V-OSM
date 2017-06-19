@@ -231,7 +231,7 @@ def analyze_single(filepath_res, filepath_ana, config_analysis, multiprocess=Fal
     if 'connection_durations' in config_analysis:
         logging.info('Determining connection durations')
         if multiprocess:
-            graphs_paths = mp.map(con_ana.to_path_graph, graphs_cons)
+            graphs_paths = pool.map(con_ana.to_path_graph, graphs_cons)
 
             # con_ana.calc_link_durations is used because the graphs are already "path graphs"
             connection_durations = con_ana.calc_link_durations(graphs_paths)
