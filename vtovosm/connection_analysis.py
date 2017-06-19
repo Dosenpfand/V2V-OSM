@@ -342,11 +342,8 @@ def calc_link_durations(graphs_cons):
     return link_durations
 
 
-def calc_link_durations_multiprocess(graphs_cons, mp_pool=None, chunk_length=25):
+def calc_link_durations_multiprocess(graphs_cons, mp_pool=None, chunk_length=None):
     """Determines the link durations using multiple processes. See also: calc_link_durations"""
-
-    # Split the graphs list in chunks
-    graphs_chunks = [graphs_cons[i:i + chunk_length] for i in range(0, len(graphs_cons), chunk_length)]
 
     # Paralell computiation of chunks' link durations
     if mp_pool is None:
@@ -355,6 +352,15 @@ def calc_link_durations_multiprocess(graphs_cons, mp_pool=None, chunk_length=25)
     else:
         mp_pool_was_none = False
 
+    # Determine optimal chunk size
+    if chunk_length is None:
+        # TODO: here!
+        chunk_length = int(np.ceil(len(graphs_cons) / mp_pool._processes))
+
+    # Split the graphs list in chunks
+    graphs_chunks = [graphs_cons[i:i + chunk_length] for i in range(0, len(graphs_cons), chunk_length)]
+
+    # Process chunks in parallel
     link_chunks = mp_pool.map(calc_link_durations, graphs_chunks)
 
     if mp_pool_was_none:
@@ -374,11 +380,19 @@ def calc_link_durations_multiprocess(graphs_cons, mp_pool=None, chunk_length=25)
             link_pair_durations_con_iter = link_chunks[idx_chunk].durations_matrix_con[idx_link]
             link_pair_durations_discon_iter = link_chunks[idx_chunk].durations_matrix_discon[idx_link]
             idx_graph = chunk_length * idx_chunk
-            graph_edges_1 = [set(edge) for edge in graphs_cons[idx_graph].edges()]
-            graph_edges_2 = [set(edge) for edge in graphs_cons[idx_graph-1].edges()]
-            edge_set = {idx_square1, idx_square2}
-            to_merge_con = (edge_set in graph_edges_1) and (edge_set in graph_edges_2)
-            to_merge_discon = (edge_set not in graph_edges_1) and (edge_set not in graph_edges_2)
+
+            # TODO: This slowed down extremely!
+            # graph_edges_1 = [set(edge) for edge in graphs_cons[idx_graph].edges()]
+            # graph_edges_2 = [set(edge) for edge in graphs_cons[idx_graph-1].edges()]
+            # edge_set = {idx_square1, idx_square2}
+            # to_merge_con = (edge_set in graph_edges_1) and (edge_set in graph_edges_2)
+            # to_merge_discon = (edge_set not in graph_edges_1) and (edge_set not in graph_edges_2)
+
+            has_edge_1 = graphs_cons[idx_graph].has_edge(idx_square1, idx_square2)
+            has_edge_2 = graphs_cons[idx_graph-1].has_edge(idx_square1, idx_square2)
+
+            to_merge_con = has_edge_1 and has_edge_2
+            to_merge_discon = not (has_edge_1 or has_edge_2)
 
             if to_merge_con:
                 link_pair_durations_con[-1] += link_pair_durations_con_iter[0]
