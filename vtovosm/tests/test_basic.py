@@ -509,7 +509,7 @@ class TestConnectionAnalysis(unittest.TestCase):
             [1, 0, 0, 1, 0, 1],
             [0, 0, 1, 1, 0, 1]
         ]
-        chunk_lengths = range(1, 4)
+        chunk_lengths = list(range(1, 4)) + [None]
 
         con_matrices = [sp_dist.squareform(con_matrix_cond) for con_matrix_cond in con_matrices_cond]
         graphs_cons = [nx.from_numpy_matrix(con_matrix) for con_matrix in con_matrices]

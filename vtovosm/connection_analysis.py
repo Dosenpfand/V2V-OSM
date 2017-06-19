@@ -345,7 +345,7 @@ def calc_link_durations(graphs_cons):
 def calc_link_durations_multiprocess(graphs_cons, mp_pool=None, chunk_length=None):
     """Determines the link durations using multiple processes. See also: calc_link_durations"""
 
-    # Paralell computiation of chunks' link durations
+    # Paralell computation of chunks' link durations
     if mp_pool is None:
         mp_pool = mp.Pool()
         mp_pool_was_none = True
@@ -354,7 +354,7 @@ def calc_link_durations_multiprocess(graphs_cons, mp_pool=None, chunk_length=Non
 
     # Determine optimal chunk size
     if chunk_length is None:
-        # TODO: here!
+        # NOTE: _processes() should not be used, but no obvious alternative
         chunk_length = int(np.ceil(len(graphs_cons) / mp_pool._processes))
 
     # Split the graphs list in chunks
@@ -381,16 +381,8 @@ def calc_link_durations_multiprocess(graphs_cons, mp_pool=None, chunk_length=Non
             link_pair_durations_discon_iter = link_chunks[idx_chunk].durations_matrix_discon[idx_link]
             idx_graph = chunk_length * idx_chunk
 
-            # TODO: This slowed down extremely!
-            # graph_edges_1 = [set(edge) for edge in graphs_cons[idx_graph].edges()]
-            # graph_edges_2 = [set(edge) for edge in graphs_cons[idx_graph-1].edges()]
-            # edge_set = {idx_square1, idx_square2}
-            # to_merge_con = (edge_set in graph_edges_1) and (edge_set in graph_edges_2)
-            # to_merge_discon = (edge_set not in graph_edges_1) and (edge_set not in graph_edges_2)
-
             has_edge_1 = graphs_cons[idx_graph].has_edge(idx_square1, idx_square2)
-            has_edge_2 = graphs_cons[idx_graph-1].has_edge(idx_square1, idx_square2)
-
+            has_edge_2 = graphs_cons[idx_graph - 1].has_edge(idx_square1, idx_square2)
             to_merge_con = has_edge_1 and has_edge_2
             to_merge_discon = not (has_edge_1 or has_edge_2)
 
