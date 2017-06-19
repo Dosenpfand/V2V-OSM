@@ -154,7 +154,7 @@ def main(conf_path=None, scenario=None):
     return analysis_results
 
 
-def analyze_single(filepath_res, filepath_ana, config_analysis, multiprocess=False, chunk_length=50):
+def analyze_single(filepath_res, filepath_ana, config_analysis, multiprocess=False):
     """Runs a single vehicle count analysis of a simulation result.
     Can be run in parallel"""
 
