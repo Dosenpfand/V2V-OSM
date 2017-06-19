@@ -245,7 +245,7 @@ def main_sim():
 
         coords_veh_y, coords_streets_y = gen_streets_and_vehicles(
             lam_s, lam_v, road_len)
-        if coords_veh_y != None:
+        if coords_veh_y is not None:
             coords_veh_y = np.fliplr(coords_veh_y)
             coords_veh_y = np.column_stack(
                 (coords_veh_y, np.zeros(np.shape(coords_veh_y)[0])))
