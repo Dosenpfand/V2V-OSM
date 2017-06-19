@@ -3,7 +3,6 @@
 import logging
 import multiprocessing as mp
 import os
-from itertools import repeat
 
 import networkx as nx
 import numpy as np
@@ -155,7 +154,7 @@ def main(conf_path=None, scenario=None):
     return analysis_results
 
 
-def analyze_single(filepath_res, filepath_ana, config_analysis, multiprocess=False):
+def analyze_single(filepath_res, filepath_ana, config_analysis, multiprocess=False, chunk_length=50):
     """Runs a single vehicle count analysis of a simulation result.
     Can be run in parallel"""
 
@@ -213,8 +212,8 @@ def analyze_single(filepath_res, filepath_ana, config_analysis, multiprocess=Fal
         logging.info('Determining path redundancies')
 
         if multiprocess:
-            # TODO: merge into 1 np array (not list of arrays)
-            path_redundancies = pool.starmap(con_ana.calc_center_path_redundancy, zip(graphs_cons, vehs))
+            path_redundancies_seperate = pool.starmap(con_ana.calc_center_path_redundancy, zip(graphs_cons, vehs))
+            path_redundancies = np.concatenate(path_redundancies_seperate)
         else:
             path_redundancies = con_ana.calc_center_path_redundancies(graphs_cons, vehs)
 
@@ -223,8 +222,11 @@ def analyze_single(filepath_res, filepath_ana, config_analysis, multiprocess=Fal
     # Determine link durations
     if 'link_durations' in config_analysis:
         logging.info('Determining link durations')
-        # TODO: Not yet parallelized
-        link_durations = con_ana.calc_link_durations(graphs_cons)
+        if multiprocess:
+            link_durations = con_ana.calc_link_durations_multiprocess(graphs_cons, mp_pool=pool)
+        else:
+            link_durations = con_ana.calc_link_durations(graphs_cons)
+
         analysis_result['link_durations'] = link_durations
 
     # Determine connection durations
@@ -233,8 +235,8 @@ def analyze_single(filepath_res, filepath_ana, config_analysis, multiprocess=Fal
         if multiprocess:
             graphs_paths = pool.map(con_ana.to_path_graph, graphs_cons)
 
-            # con_ana.calc_link_durations is used because the graphs are already "path graphs"
-            connection_durations = con_ana.calc_link_durations(graphs_paths)
+            # link duration function is used because the graphs are already "path graphs"
+            connection_durations = con_ana.calc_link_durations_multiprocess(graphs_paths, mp_pool=pool)
         else:
             connection_durations = con_ana.calc_connection_durations(graphs_cons)
 
