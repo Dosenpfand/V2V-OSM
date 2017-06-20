@@ -41,24 +41,22 @@
         "analyze_results": "all",
         "building_tolerance": 1,
         "overwrite_result": false,
-        "show_plot": false
+        "show_plot": false,
+        "simulation_mode": "parallel"
     },
     "default": {
-        "simulation_mode": "parallel",
         "sumo": {
             "skip_sumo": false,
             "abort_after_sumo": false
         }
     },
     "only_sumo": {
-        "simulation_mode": "parallel",
         "sumo": {
             "skip_sumo": false,
             "abort_after_sumo": true
         }
     },
     "only_connection": {
-        "simulation_mode": "parallel",
         "sumo": {
             "skip_sumo": true,
             "abort_after_sumo": false
