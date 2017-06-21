@@ -40,6 +40,8 @@ def parse_cmd_args():
     parser.add_option('-s', '--scenario', dest="scenario", default=None,
                       help='Use SCENARIO instead of the one defined in the configuration file',
                       metavar='SCENARIO')
+    parser.add_option('-m', '--multi', action="store_true", dest="multi", default=False,
+                      help="Simulate all scenarios defined in the configuration file")
 
     (options, args) = parser.parse_args()
 
@@ -477,7 +479,10 @@ def main(conf_path=None, scenario=None):
     # TODO: runtime estimation should also include result analysis!
     # Analyze simulation results
     if config['analyze_results'] is not None:
-        result_analysis.main(conf_path, scenario)
+        if config['distribution_veh'] == 'SUMO' and config['sumo']['abort_after_sumo']:
+            logging.warning('Not running result analysis because simulation was skipped')
+        else:
+            result_analysis.main(conf_path, scenario)
 
     # Send mail
     if config['send_mail']:
@@ -507,5 +512,8 @@ if __name__ == '__main__':
     # Register signal handler
     signal.signal(signal.SIGTSTP, signal_handler)
 
-    # Run main function
-    main(conf_path=options.conf_path, scenario=options.scenario)
+    # Run main simulation
+    if options.multi:
+        main_multi_scenario(conf_path=options.conf_path, scenarios=options.scenario)
+    else:
+        main(conf_path=options.conf_path, scenario=options.scenario)
