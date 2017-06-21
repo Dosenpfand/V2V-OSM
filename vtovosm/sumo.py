@@ -33,7 +33,6 @@ def simple_wrapper(place,
     """Generates and downloads all necessary files, runs a generic SUMO simulation
     and returns the vehicle traces."""
 
-
     filename_place = utils.string_to_filename(place)
     if count_veh is not None:
         filename_place_count = filename_place + '.' + str(count_veh)
@@ -78,8 +77,9 @@ def simple_wrapper(place,
         if count_veh is not None:
             # Generate double the trips than needed because validation will throw
             # some away
-            # TODO: check if necessary
-            veh_rate = duration / count_veh / 2
+            # TODO: check if necessary => yes it is, depending on place (area?) it might even need a bigger value
+            # Determine value dynamically? try with 2, if still discarding -> 3, ...
+            veh_rate = duration / count_veh / 4
         else:
             veh_rate = 1
 
@@ -382,7 +382,8 @@ def build_network(filename,
                   tls_settings=None,
                   directory='',
                   debug=False,
-                  script_dir=None):
+                  script_dir=None,
+                  remove_isolated=True):
     """Converts a OpenStreetMap files to a SUMO street network file"""
 
     filepath = os.path.join(directory, filename)
@@ -411,6 +412,9 @@ def build_network(filename,
                           '--output.original-names,' + \
                           '--junctions.corner-detail,5,' + \
                           '--output.street-names'
+
+        if remove_isolated:
+            netconvert_opts += ',--remove-edges.isolated'
 
         if ('cycle_time' in tls_settings) and ('green_time' in tls_settings):
             raise RuntimeError(
