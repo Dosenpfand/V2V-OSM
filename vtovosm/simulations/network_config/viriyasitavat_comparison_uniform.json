@@ -1,0 +1,41 @@
+{
+    "global": {
+        "scenario": "default",
+        "mail_to": "mgasser@nt.tuwien.ac.at",
+        "send_mail": true,
+        "loglevel": "INFO",
+        "distribution_veh": "uniform",
+        "density_type": "area",
+        "densities_veh": [
+            {
+                "start": 10e-6,
+                "stop": 80e-6,
+                "num": 8
+            },
+            {
+                "start": 120e-6,
+                "stop": 160e-6,
+                "num": 2
+            }
+        ],
+        "connection_metric": "distance",
+        "max_connection_metric": {
+            "olos_los": 250,
+            "nlos": 140
+        },
+        "iterations": 1000,
+        "results_file_dir": "results/viriyasitavat_comparison_uniform",
+        "results_file_prefix": "result",
+        "analyze_results": [
+            "net_connectivities"
+        ],
+        "building_tolerance": 1,
+        "overwrite_result": false,
+        "show_plot": false,
+        "simulation_mode": "parallel"
+    },
+    "default": {
+        "place": "Upper West Side - New York - USA",
+        "which_result": null
+    }
+}
