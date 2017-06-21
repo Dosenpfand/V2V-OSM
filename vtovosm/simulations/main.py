@@ -279,7 +279,7 @@ def main(conf_path=None, scenario=None):
                     tls_settings=config['sumo']['tls_settings'],
                     fringe_factor=config['sumo']['fringe_factor'],
                     intermediate_points=config['sumo']['intermediate_points'],
-                    directory='sumo_data/')
+                    directory=config['sumo']['directory'])
                 utils.debug(time_start)
             else:
                 # Load vehicle traces
@@ -287,7 +287,7 @@ def main(conf_path=None, scenario=None):
                 veh_traces = sumo.load_veh_traces(
                     config['place'],
                     file_suffix=str(count_veh),
-                    directory='sumo_data/',
+                    directory=config['sumo']['directory'],
                     delete_first_n=config['sumo']['warmup_duration'],
                     count_veh=count_veh)
                 utils.debug(time_start)
