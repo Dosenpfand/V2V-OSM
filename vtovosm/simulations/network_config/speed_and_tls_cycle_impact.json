@@ -1,0 +1,71 @@
+{
+    "global": {
+        "scenario": "45s15mps",
+        "mail_to": "mgasser@nt.tuwien.ac.at",
+        "send_mail": true,
+        "loglevel": "INFO",
+        "place": "Upper West Side - New York - USA",
+        "which_result": null,
+        "distribution_veh": "SUMO",
+        "density_type": "area",
+        "densities_veh": [
+            {
+                "start": 25e-6,
+                "stop": 75e-6,
+                "num": 3
+            }
+        ],
+        "connection_metric": "distance",
+        "max_connection_metric": {
+            "olos_los": 250,
+            "nlos": 140
+        },
+        "sumo": {
+            "sim_duration": 3000,
+            "warmup_duration": 1000,
+            "fringe_factor": 1,
+            "intermediate_points": 100,
+            "skip_sumo": false,
+            "abort_after_sumo": false
+        },
+        "analyze_results": "all",
+        "building_tolerance": 1,
+        "overwrite_result": false,
+        "show_plot": false,
+        "simulation_mode": "parallel",
+        "results_file_dir": "results/speed_and_tls_cycle_impact"
+    },
+    "45s15mps": {
+        "sumo": {
+            "tls_settings": {
+                "cycle_time": 45,
+                "yellow_time": 2
+            },
+            "max_speed": 15,
+            "directory": "sumo_data/45s15mps/"
+        },
+        "results_file_prefix": "result_45s15mps"
+    },
+    "90s15mps": {
+        "sumo": {
+            "tls_settings": {
+                "cycle_time": 90,
+                "yellow_time": 2
+            },
+            "max_speed": 15,
+            "directory": "sumo_data/90s15mps/"
+        },
+        "results_file_prefix": "result_90s15mps"
+    },
+    "45s10mps": {
+        "sumo": {
+            "tls_settings": {
+                "cycle_time": 45,
+                "yellow_time": 2
+            },
+            "max_speed": 10,
+            "directory": "sumo_data/45s10mps/"
+        },
+        "results_file_prefix": "result_45s10mps"
+    }
+}
