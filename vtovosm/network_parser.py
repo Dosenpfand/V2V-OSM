@@ -139,6 +139,8 @@ def check_fill_config(config):
             config['sumo']['abort_after_sumo'] = False
         if 'skip_sumo' not in config['sumo']:
             config['sumo']['skip_sumo'] = False
+        if 'directory' not in config['sumo']:
+            config['sumo']['directory'] = 'sumo_data/'
 
     # Convert densities
     config['densities_veh'] = convert_densities(config['densities_veh'])
