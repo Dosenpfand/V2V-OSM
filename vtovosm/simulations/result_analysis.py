@@ -208,6 +208,8 @@ def analyze_single(filepath_res, filepath_ana, config_analysis, multiprocess=Fal
         analysis_result['net_connectivities'] = net_connectivities
 
     # Determine path redundancies
+    # TODO: calculates only the center path redundancy and is thus highly dependant on the geometry (of the center) of
+    # the street network
     if 'path_redundancies' in config_analysis:
         logging.info('Determining path redundancies')
 

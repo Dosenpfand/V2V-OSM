@@ -35,7 +35,10 @@ def simple_wrapper(place,
 
 
     filename_place = utils.string_to_filename(place)
-    filename_place_count = filename_place + '.' + str(count_veh)
+    if count_veh is not None:
+        filename_place_count = filename_place + '.' + str(count_veh)
+    else:
+        filename_place_count = filename_place
     path_network_sumo = os.path.join(directory, filename_place + '.net.xml')
     filename_network_osm = filename_place + '_city.osm.xml'
     path_network_osm = os.path.join(
