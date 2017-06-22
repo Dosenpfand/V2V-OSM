@@ -121,6 +121,9 @@ def check_fill_config(config):
     elif not isinstance(config['analyze_results'], (list, tuple)):
         config['analyze_results'] = [config['analyze_results']]
 
+    if (config['simulation_mode'] == 'parallel') and ('processes' not in config):
+        config['processes'] = None
+
     # Optional SUMO settings
     if config['distribution_veh'] == 'SUMO':
         if 'sumo' not in config:

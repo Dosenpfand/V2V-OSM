@@ -42,7 +42,8 @@
         "building_tolerance": 1,
         "overwrite_result": false,
         "show_plot": false,
-        "simulation_mode": "parallel"
+        "simulation_mode": "parallel",
+        "processes": 16
     },
     "default": {
         "sumo": {

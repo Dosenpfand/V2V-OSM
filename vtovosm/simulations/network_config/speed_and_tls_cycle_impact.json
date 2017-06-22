@@ -33,6 +33,7 @@
         "overwrite_result": false,
         "show_plot": false,
         "simulation_mode": "parallel",
+        "processes": 16,
         "results_file_dir": "results/speed_and_tls_cycle_impact"
     },
     "45s15mps": {
