@@ -1,7 +1,7 @@
 """Geometrical functionality"""
 
-import shapely.ops as ops
 import numpy as np
+import shapely.ops as ops
 
 
 def line_intersects_buildings(line, buildings):

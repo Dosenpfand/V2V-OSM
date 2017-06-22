@@ -63,7 +63,6 @@ def analyze_tolerance(conf_path):
 
 
 if __name__ == '__main__':
-
     # Set the config to be used
     config_file_path = os.path.join(nw_p.DEFAULT_CONFIG_DIR, 'tolerance_inspection.json')
 

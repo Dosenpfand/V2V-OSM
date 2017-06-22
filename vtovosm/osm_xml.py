@@ -1,8 +1,9 @@
 """Get street networks from OpenStreetMap in XML format"""
 
 import time
-import requests
+
 import osmnx
+import requests
 
 
 def osm_net_download(polygon,
