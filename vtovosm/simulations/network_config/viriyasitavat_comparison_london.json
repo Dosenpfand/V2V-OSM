@@ -1,0 +1,65 @@
+{
+    "global": {
+        "scenario": "default",
+        "mail_to": "mgasser@nt.tuwien.ac.at",
+        "send_mail": true,
+        "loglevel": "INFO",
+        "place": "City of London - London - UK",
+        "which_result": null,
+        "distribution_veh": "SUMO",
+        "density_type": "area",
+        "densities_veh": [
+            {
+                "start": 10e-6,
+                "stop": 80e-6,
+                "num": 8
+            },
+            {
+                "start": 120e-6,
+                "stop": 160e-6,
+                "num": 2
+            }
+        ],
+        "connection_metric": "distance",
+        "max_connection_metric": {
+            "olos_los": 250,
+            "nlos": 140
+        },
+        "sumo": {
+            "sim_duration": 3000,
+            "warmup_duration": 1000,
+            "fringe_factor": 1,
+            "tls_settings": {
+                "cycle_time": 45,
+                "yellow_time": 2
+            },
+            "max_speed": 15,
+            "intermediate_points": 100
+        },
+        "results_file_dir": "results/viriyasitavat_comparison",
+        "results_file_prefix": "result",
+        "analyze_results": "all",
+        "building_tolerance": 1,
+        "overwrite_result": false,
+        "show_plot": false,
+        "simulation_mode": "parallel"
+    },
+    "default": {
+        "sumo": {
+            "skip_sumo": false,
+            "abort_after_sumo": false
+        }
+    },
+    "only_sumo": {
+        "sumo": {
+            "skip_sumo": false,
+            "abort_after_sumo": true
+        }
+    },
+    "only_connection": {
+        "sumo": {
+            "skip_sumo": true,
+            "abort_after_sumo": false
+        }
+    }
+}
