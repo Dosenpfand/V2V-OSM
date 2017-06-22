@@ -190,6 +190,7 @@ def analyze_single(filepath_res, filepath_ana, config_analysis, multiprocess=Fal
     if not set(config_analysis).issubset(set(all_analysis)):
         raise RuntimeError('Analysis not supported')
 
+    # TODO: multiprocessing!
     graphs_cons = []
     for matrix_cons in matrices_cons:
         graphs_cons.append(nx.from_numpy_matrix(matrix_cons))
