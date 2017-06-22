@@ -500,7 +500,7 @@ class TestConnectionAnalysis(unittest.TestCase):
         self.assertEqual(durations_generated[1], durations_discon_expected)
 
     def test_calc_link_durations_multiprocess(self):
-        """Tests the function test_calc_link_durations_m"""
+        """Tests the function calc_link_durations_multiprocess"""
 
         con_matrices_cond = [
             [1, 0, 0, 1, 0, 1],
@@ -517,8 +517,7 @@ class TestConnectionAnalysis(unittest.TestCase):
         durations_singlep = con_ana.calc_link_durations(graphs_cons)
 
         for chunk_length in chunk_lengths:
-            durations_multip = con_ana.calc_link_durations_multiprocess(graphs_cons, mp_pool=None,
-                                                                        chunk_length=chunk_length)
+            durations_multip = con_ana.calc_link_durations_multiprocess(graphs_cons, chunk_length=chunk_length)
 
             self.assertEqual(durations_multip.durations_con, durations_singlep.durations_con)
             self.assertEqual(durations_multip.durations_discon, durations_singlep.durations_discon)
