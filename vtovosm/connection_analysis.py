@@ -342,30 +342,21 @@ def calc_link_durations(graphs_cons):
     return link_durations
 
 
-def calc_link_durations_multiprocess(graphs_cons, mp_pool=None, chunk_length=None):
+def calc_link_durations_multiprocess(graphs_cons, processes=None, chunk_length=None):
     """Determines the link durations using multiple processes. See also: calc_link_durations"""
 
-    # Paralell computation of chunks' link durations
-    if mp_pool is None:
-        mp_pool = mp.Pool()
-        mp_pool_was_none = True
-    else:
-        mp_pool_was_none = False
-
-    # Determine optimal chunk size
-    if chunk_length is None:
-        # NOTE: _processes() should not be used, but no obvious alternative
-        chunk_length = int(np.ceil(len(graphs_cons) / mp_pool._processes))
-
-    # Split the graphs list in chunks
-    graphs_chunks = [graphs_cons[i:i + chunk_length] for i in range(0, len(graphs_cons), chunk_length)]
-
     # Process chunks in parallel
-    link_chunks = mp_pool.map(calc_link_durations, graphs_chunks)
+    with mp.Pool(processes=processes) as pool:
+        # Determine optimal chunk size
+        if chunk_length is None:
+            # NOTE: _processes() should not be used, but no obvious alternative
+            chunk_length = int(np.ceil(len(graphs_cons) / pool._processes))
 
-    if mp_pool_was_none:
-        mp_pool.close()
-        mp_pool.join()
+        # Split the graphs list in chunks
+        graphs_chunks = [graphs_cons[i:i + chunk_length] for i in range(0, len(graphs_cons), chunk_length)]
+
+        # Run parallel calculation
+        link_chunks = pool.map(calc_link_durations, graphs_chunks)
 
     # Merge link durations
     size_cond = link_chunks[0].durations_matrix_con.size

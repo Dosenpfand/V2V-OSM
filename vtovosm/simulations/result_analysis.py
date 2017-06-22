@@ -196,15 +196,13 @@ def analyze_single(filepath_res, filepath_ana, config_analysis, multiprocess=Fal
 
     analysis_result = {}
 
-    if multiprocess:
-        pool = mp.Pool(processes=processes)
-
     # Determine network connectivities
     if 'net_connectivities' in config_analysis:
         logging.info('Determining network connectivities')
 
         if multiprocess:
-            net_connectivities = pool.map(con_ana.calc_net_connectivity, graphs_cons)
+            with mp.Pool(processes=processes) as pool:
+                net_connectivities = pool.map(con_ana.calc_net_connectivity, graphs_cons)
         else:
             net_connectivities = con_ana.calc_net_connectivities(graphs_cons)
 
@@ -217,7 +215,8 @@ def analyze_single(filepath_res, filepath_ana, config_analysis, multiprocess=Fal
         logging.info('Determining path redundancies')
 
         if multiprocess:
-            path_redundancies_seperate = pool.starmap(con_ana.calc_center_path_redundancy, zip(graphs_cons, vehs))
+            with mp.Pool(processes=processes) as pool:
+                path_redundancies_seperate = pool.starmap(con_ana.calc_center_path_redundancy, zip(graphs_cons, vehs))
             path_redundancies = np.concatenate(path_redundancies_seperate)
         else:
             path_redundancies = con_ana.calc_center_path_redundancies(graphs_cons, vehs)
@@ -228,7 +227,7 @@ def analyze_single(filepath_res, filepath_ana, config_analysis, multiprocess=Fal
     if 'link_durations' in config_analysis:
         logging.info('Determining link durations')
         if multiprocess:
-            link_durations = con_ana.calc_link_durations_multiprocess(graphs_cons, mp_pool=pool)
+            link_durations = con_ana.calc_link_durations_multiprocess(graphs_cons, processes=processes)
         else:
             link_durations = con_ana.calc_link_durations(graphs_cons)
 
@@ -238,10 +237,12 @@ def analyze_single(filepath_res, filepath_ana, config_analysis, multiprocess=Fal
     if 'connection_durations' in config_analysis:
         logging.info('Determining connection durations')
         if multiprocess:
-            graphs_paths = pool.map(con_ana.to_path_graph, graphs_cons)
+            # TODO: to save memory graph_paths could be generated only when needed and then discarded inside function?
+            with mp.Pool(processes=processes) as pool:
+                graphs_paths = pool.map(con_ana.to_path_graph, graphs_cons)
 
             # link duration function is used because the graphs are already "path graphs"
-            connection_durations = con_ana.calc_link_durations_multiprocess(graphs_paths, mp_pool=pool)
+            connection_durations = con_ana.calc_link_durations_multiprocess(graphs_paths, processes=processes)
         else:
             connection_durations = con_ana.calc_connection_durations(graphs_cons)
 
@@ -252,12 +253,9 @@ def analyze_single(filepath_res, filepath_ana, config_analysis, multiprocess=Fal
         analysis_result['connection_duration_mean'] = connection_stats[0]
         analysis_result['connection_periods_mean'] = connection_stats[1]
 
-    # Clean up and save results
-    if multiprocess:
-        pool.close()
-        pool.join()
-
     utils.debug(time_start)
 
+    # Save results
     utils.save(analysis_result, filepath_ana)
+
     return analysis_result
