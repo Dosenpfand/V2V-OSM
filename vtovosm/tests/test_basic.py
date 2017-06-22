@@ -588,7 +588,8 @@ class TestConnectionAnalysis(unittest.TestCase):
         graph.add_edges_from(edges)
         net_connectivity_generated = con_ana.calc_net_connectivity(graph)
 
-        self.assertAlmostEqual(net_connectivity_generated, net_connectivity_expected)
+        # TODO: also test other result of named tuple!
+        self.assertAlmostEqual(net_connectivity_generated.net_connectivity, net_connectivity_expected)
 
     def test_gen_connection_graph(self):
         """Tests the function gen_connection_graph"""

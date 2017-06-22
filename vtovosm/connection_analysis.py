@@ -197,24 +197,36 @@ def calc_net_connectivities(graphs_cons):
     return net_connectivities
 
 
+NetworkConnectivity = namedtuple('NetworkConnectivity', ['net_connectivity', 'min_node_cut', 'count_cluster'])
+
+
 def calc_net_connectivity(graph_cons, vehs=None):
     """Calculates the network connectivity (relative size of the biggest connected cluster)"""
 
-    # Find biggest cluster
     time_start = utils.debug(None, 'Finding biggest cluster')
+
+    # Find biggest cluster
     count_veh = graph_cons.order()
-    clusters = nx.connected_component_subgraphs(graph_cons)
+    clusters = list(nx.connected_component_subgraphs(graph_cons))
     cluster_max = max(clusters, key=len)
-    net_connectivity = cluster_max.order() / count_veh
+    count_veh_max = cluster_max.order()
+    net_connectivity = count_veh_max / count_veh
     if vehs is not None:
-        vehs.add_key('cluster_max', cluster_max.nodes())
+        vehs.add_key('cluster_max', count_veh_max)
         not_cluster_max_nodes = np.arange(count_veh)[~np.in1d(
             np.arange(count_veh), cluster_max.nodes())]
         vehs.add_key('not_cluster_max', not_cluster_max_nodes)
 
+    # Find the minimum node cut
+    min_node_cut = nx.minimum_node_cut(cluster_max)
+    count_cluster = len(clusters)
+
+    result = NetworkConnectivity(net_connectivity=net_connectivity,
+                                 min_node_cut=min_node_cut,
+                                 count_cluster=count_cluster)
     utils.debug(time_start)
 
-    return net_connectivity
+    return result
 
 
 def calc_center_path_redundancies(graphs_cons, vehs):
