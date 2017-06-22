@@ -1,12 +1,13 @@
 """Unit tests for all modules that interact with OpenStreetMaps and therefore execute slower"""
 
 import unittest
+
+import geopandas as geop
 import networkx as nx
 import osmnx as ox
-import geopandas as geop
+
 import vtovosm.osmnx_addons as ox_a
 
-# Setup osmnx non verbose
 
 class TestOsmnxAddons(unittest.TestCase):
     """Provides unit tests for the osmnx_addons module"""
@@ -18,6 +19,8 @@ class TestOsmnxAddons(unittest.TestCase):
     def test_many(self):
         """Tests the functions which_result_polygon, add_geometry, check_geometry"""
 
+        # Setup
+        ox_a.setup()
         self.street_graph = None
         index = ox_a.which_result_polygon(self.place)
 
@@ -39,6 +42,9 @@ class TestOsmnxAddons(unittest.TestCase):
     def test_load_network(self):
         """Tests the function load_network"""
 
+        # Setup
+        ox_a.setup()
+
         # Load the network from the internet
         network = ox_a.load_network(self.place, which_result=None, overwrite=True)
 
@@ -54,8 +60,6 @@ class TestOsmnxAddons(unittest.TestCase):
         self.assertIsInstance(network['graph_streets_wave'], nx.MultiGraph)
         self.assertIsInstance(network['gdf_buildings'], geop.GeoDataFrame)
         self.assertIsInstance(network['gdf_boundary'], geop.GeoDataFrame)
-
-
 
 
 if __name__ == '__main__':

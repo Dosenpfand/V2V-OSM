@@ -7,8 +7,6 @@ import numpy as np
 
 from . import osmnx_addons as ox_a
 
-# TODO: make single/multiscenario more dynamic / transparent for the user!
-
 MODULE_PATH = os.path.dirname(__file__)
 DEFAULT_CONFIG_DIR = os.path.join(MODULE_PATH, 'simulations', 'network_config')
 DEFAULT_CONFIG_PATH = os.path.join(DEFAULT_CONFIG_DIR, 'default.json')

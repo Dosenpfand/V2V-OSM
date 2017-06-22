@@ -547,7 +547,10 @@ def download_streets_from_name(place,
                                debug=False,
                                use_sumo_downloader=False,
                                script_dir=None):
-    """Downloads a street data defined by it's name from OpennStreetMap"""
+    """Downloads a street data defined by it's name from OpenStreetMap"""
+
+    # Setup OSMnx
+    ox_a.setup()
 
     if use_sumo_downloader:
         if script_dir is None:

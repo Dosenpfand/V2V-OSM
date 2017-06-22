@@ -6,7 +6,6 @@ import numpy as np
 
 import vtovosm.sumo as sumo
 
-# TODO: Setup osmnx non verbose
 
 class TestSumo(unittest.TestCase):
     """Provides unit tests for the sumo module"""
