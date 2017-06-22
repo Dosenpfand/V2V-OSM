@@ -72,7 +72,7 @@ To get started on Debian 8 follow these steps.
 
         python3 -m vtovosm.simulations.main -h
 
-12. Optional: For vehicle realistic vehicle placement and movement install [SUMO](http://www.sumo.dlr.de) from the [backports repository](https://backports.debian.org/Instructions/):
+12. Optional: For realistic vehicle placement and movement install [SUMO](http://www.sumo.dlr.de) from the [backports repository](https://backports.debian.org/Instructions/):
 
         apt-get -t jessie-backports install sumo sumo-tools
 

@@ -135,8 +135,7 @@ def load_place(file_prefix, tolerance=0):
     else:
         filename_buildings_simpl = '{}_buildings_{:.2f}.pickle.xz'.format(file_prefix, tolerance)
         if os.path.isfile(filename_buildings_simpl):
-            with open(filename_buildings_simpl, 'rb') as file:
-                buildings = utils.load(file)
+            buildings = utils.load(filename_buildings_simpl)
         else:
             buildings_compl = utils.load(filename_buildings)
             buildings = simplify_buildings(buildings_compl)
