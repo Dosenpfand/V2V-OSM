@@ -5,6 +5,7 @@ International Journal of Antennas and Propagation 2015 (2015).
 """
 
 import logging
+
 import numpy as np
 
 
@@ -64,19 +65,19 @@ class Pathloss:
 
         slope_selector = dist_rx < self.nlos_config['dist_break']
         pathloss_slope_1 = slope_selector \
-            * (3.75 + self.nlos_config['is_sub_urban'] * 2.94 + 10
-               * np.log10((dist_tx ** 0.957 * 4 * np.pi * dist_rx /
-                           (self.nlos_config['dist_tx_wall']
-                            * self.nlos_config['width_rx_street']) **
-                           0.81 / self.nlos_config['wavelength'])
-                          ** self.nlos_config['pathloss_exp']))
+                           * (3.75 + self.nlos_config['is_sub_urban'] * 2.94 + 10
+                              * np.log10((dist_tx ** 0.957 * 4 * np.pi * dist_rx /
+                                          (self.nlos_config['dist_tx_wall']
+                                           * self.nlos_config['width_rx_street']) **
+                                          0.81 / self.nlos_config['wavelength'])
+                                         ** self.nlos_config['pathloss_exp']))
         pathloss_slope_2 = np.invert(slope_selector) \
-            * (3.75 + self.nlos_config['is_sub_urban'] * 2.94 + 10
-               * np.log10((dist_tx ** 0.957 * 4 * np.pi * dist_rx ** 2
-                           / (self.nlos_config['dist_tx_wall'] *
-                              self.nlos_config['width_rx_street']) ** 0.81
-                           / (self.nlos_config['wavelength'] * self.nlos_config['dist_break']))
-                          ** self.nlos_config['pathloss_exp']))
+                           * (3.75 + self.nlos_config['is_sub_urban'] * 2.94 + 10
+                              * np.log10((dist_tx ** 0.957 * 4 * np.pi * dist_rx ** 2
+                                          / (self.nlos_config['dist_tx_wall'] *
+                                             self.nlos_config['width_rx_street']) ** 0.81
+                                          / (self.nlos_config['wavelength'] * self.nlos_config['dist_break']))
+                                         ** self.nlos_config['pathloss_exp']))
 
         pathloss = pathloss_slope_1 + pathloss_slope_2 + sf_loss
         return pathloss
@@ -93,13 +94,13 @@ class Pathloss:
 
         slope_selector = dist < self.los_config['dist_break']
         pathloss_slope_1 = slope_selector \
-            * (self.los_config['pathloss_ref'] + 10 * self.los_config['pathloss_exp_1']
-               * np.log10(dist / self.los_config['dist_ref']))
+                           * (self.los_config['pathloss_ref'] + 10 * self.los_config['pathloss_exp_1']
+                              * np.log10(dist / self.los_config['dist_ref']))
         pathloss_slope_2 = np.invert(slope_selector) \
-            * (self.los_config['pathloss_ref'] + 10 * self.los_config['pathloss_exp_1']
-               * np.log10(self.los_config['dist_break'] / self.los_config['dist_ref'])
-               + 10 * self.los_config['pathloss_exp_2']
-               * np.log10(dist / self.los_config['dist_break']))
+                           * (self.los_config['pathloss_ref'] + 10 * self.los_config['pathloss_exp_1']
+                              * np.log10(self.los_config['dist_break'] / self.los_config['dist_ref'])
+                              + 10 * self.los_config['pathloss_exp_2']
+                              * np.log10(dist / self.los_config['dist_break']))
 
         # NOTE: Invert sign to keep consistency with NLOS
         pathloss = - (pathloss_slope_1 + pathloss_slope_2 + sf_loss)
@@ -117,13 +118,13 @@ class Pathloss:
 
         slope_selector = dist < self.olos_config['dist_break']
         pathloss_slope_1 = slope_selector \
-            * (self.olos_config['pathloss_ref'] + 10 * self.olos_config['pathloss_exp_1']
-               * np.log10(dist / self.olos_config['dist_ref']))
+                           * (self.olos_config['pathloss_ref'] + 10 * self.olos_config['pathloss_exp_1']
+                              * np.log10(dist / self.olos_config['dist_ref']))
         pathloss_slope_2 = np.invert(slope_selector) \
-            * (self.olos_config['pathloss_ref'] + 10 * self.olos_config['pathloss_exp_1']
-               * np.log10(self.olos_config['dist_break'] / self.olos_config['dist_ref'])
-               + 10 * self.olos_config['pathloss_exp_2'] *
-               np.log10(dist / self.olos_config['dist_break']))
+                           * (self.olos_config['pathloss_ref'] + 10 * self.olos_config['pathloss_exp_1']
+                              * np.log10(self.olos_config['dist_break'] / self.olos_config['dist_ref'])
+                              + 10 * self.olos_config['pathloss_exp_2'] *
+                              np.log10(dist / self.olos_config['dist_break']))
 
         # NOTE: Invert sign to keep consistency with NLOS
         pathloss = - (pathloss_slope_1 + pathloss_slope_2 + sf_loss)

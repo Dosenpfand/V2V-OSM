@@ -17,8 +17,8 @@ from . import connection_analysis
 from . import demo
 from . import geometry
 from . import network_parser
-from . import osmnx_addons
 from . import osm_xml
+from . import osmnx_addons
 from . import pathloss
 from . import plot
 from . import propagation
