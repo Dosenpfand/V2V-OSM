@@ -124,15 +124,18 @@ def main(conf_path=None, scenario=None):
 
     if config['simulation_mode'] == 'parallel':
         multiprocess = True
+        processes = config['processes']
     elif config['simulation_mode'] == 'sequential':
         multiprocess = False
+        processes = None
     else:
         raise NotImplementedError('Mode not supported')
 
     # Iterate all result files
     for filepath_res, filepath_ana in zip(filepaths_res, filepaths_ana):
         # Analyze results
-        analyze_single(filepath_res, filepath_ana, config['analyze_results'], multiprocess=multiprocess)
+        analyze_single(filepath_res, filepath_ana, config['analyze_results'], multiprocess=multiprocess,
+                       processes=processes)
 
     logging.info('Merging all analysis results')
     analysis_results = {}
@@ -154,7 +157,7 @@ def main(conf_path=None, scenario=None):
     return analysis_results
 
 
-def analyze_single(filepath_res, filepath_ana, config_analysis, multiprocess=False):
+def analyze_single(filepath_res, filepath_ana, config_analysis, multiprocess=False, processes=None):
     """Runs a single vehicle count analysis of a simulation result.
     Can be run in parallel"""
 
@@ -194,7 +197,7 @@ def analyze_single(filepath_res, filepath_ana, config_analysis, multiprocess=Fal
     analysis_result = {}
 
     if multiprocess:
-        pool = mp.Pool()
+        pool = mp.Pool(processes=processes)
 
     # Determine network connectivities
     if 'net_connectivities' in config_analysis:

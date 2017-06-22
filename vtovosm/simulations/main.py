@@ -300,7 +300,7 @@ def main(conf_path=None, scenario=None):
 
         # Determine connected vehicles
         if config['simulation_mode'] == 'parallel':
-            with mp.Pool() as pool:
+            with mp.Pool(processes=config['processes']) as pool:
                 if config['distribution_veh'] == 'SUMO':
                     if config['connection_metric'] == 'distance':
                         sim_param_list = \
