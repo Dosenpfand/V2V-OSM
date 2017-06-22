@@ -1,6 +1,7 @@
 """ Additional functions missing in the OSMnx package"""
 
-import os.path
+import os
+import logging
 
 import geopandas as gpd
 import osmnx as ox
@@ -10,6 +11,12 @@ import shapely.ops as ops
 from . import propagation as prop
 from . import utils
 
+def setup():
+    """Sets up OSMnx"""
+
+    # TODO: still outputs all and not only >= loglevel!
+    logger = logging.getLogger()
+    ox.config(log_console=False, log_file=os.devnull, log_name=logger.name, use_cache=True)
 
 def load_network(place, which_result=1, overwrite=False, tolerance=0):
     """Generates streets and buildings"""

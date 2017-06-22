@@ -9,9 +9,9 @@ from itertools import repeat
 from optparse import OptionParser
 
 import numpy as np
-import osmnx as ox
 from scipy.special import comb
 
+from . import result_analysis
 from .. import connection_analysis as con_ana
 from .. import demo
 from .. import geometry as geom_o
@@ -21,7 +21,6 @@ from .. import plot
 from .. import sumo
 from .. import utils
 from .. import vehicles
-from . import result_analysis
 
 # Global variables
 rte_count_con_checkpoint = 0
@@ -190,8 +189,7 @@ def main(conf_path=None, scenario=None):
 
     # Setup OSMnx
     # We are logging to dev/null as a workaround to get nice log output and so that specified levels are respected
-    # TODO: still outputs all and not only >= loglevel!
-    ox.config(log_console=False, log_file=os.devnull, log_name=logger.name, use_cache=True)
+    ox_a.setup()
 
     # Load street network
     time_start = utils.debug(None, 'Loading street network')
