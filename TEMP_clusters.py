@@ -16,13 +16,14 @@ config_analysis = ['net_connectivities']
 results_loaded = utils.load(filepath_res)
 
 matrices_cons = results_loaded['results']['matrices_cons']
+processes = 16
 
 graphs_cons = []
-for matrix_cons in matrices_cons[0:2]:
+for matrix_cons in matrices_cons:
     graphs_cons.append(nx.from_numpy_matrix(matrix_cons))
     print('generated graph')
 
-with mp.Pool() as pool:
+with mp.Pool(processes=processes) as pool:
     net_connectivities = pool.map(con_ana.calc_net_connectivity, graphs_cons)
 
 utils.save(net_connectivities, filepath_ana)

@@ -200,7 +200,7 @@ def calc_net_connectivities(graphs_cons):
 NetworkConnectivity = namedtuple('NetworkConnectivity', ['net_connectivity', 'min_node_cut', 'count_cluster'])
 
 
-def calc_net_connectivity(graph_cons, vehs=None):
+def calc_net_connectivity(graph_cons, vehs=None, cut_only_fully_connected=True):
     """Calculates the network connectivity (relative size of the biggest connected cluster)"""
 
     time_start = utils.debug(None, 'Finding biggest cluster')
@@ -218,8 +218,12 @@ def calc_net_connectivity(graph_cons, vehs=None):
         vehs.add_key('not_cluster_max', not_cluster_max_nodes)
 
     # Find the minimum node cut
-    min_node_cut = nx.minimum_node_cut(cluster_max)
     count_cluster = len(clusters)
+    if count_cluster == 1 or not cut_only_fully_connected:
+        min_node_cut = nx.minimum_node_cut(cluster_max)
+    else:
+        min_node_cut = None
+
 
     result = NetworkConnectivity(net_connectivity=net_connectivity,
                                  min_node_cut=min_node_cut,
