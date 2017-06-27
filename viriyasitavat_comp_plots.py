@@ -16,14 +16,11 @@ dir_out = os.path.join('images', 'viriyasitavat_comparison')
 overwrite = False
 
 # Setup
-
-
-os.makedirs(dir_out, exist_ok=True)
-
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
 
 logging.info('Loading files')
+os.makedirs(dir_out, exist_ok=True)
 results_all = vtv.utils.load('results/viriyasitavat_comparison/result_analysis.pickle.xz')
 results_unif = vtv.utils.load('results/viriyasitavat_comparison_uniform/result_analysis.pickle.xz')
 results_neubau = vtv.utils.load('results/viriyasitavat_comparison_neubau/result_analysis.pickle.xz')
