@@ -8,8 +8,7 @@ import osmnx as ox
 from . import utils
 
 
-# TODO: define figure and axis for every plot function call?
-# TODO: add option to save figure for every function?
+# TODO: define figure and axis + add option to save figure for every function?
 
 def show():
     """Shows the figure(s)"""
