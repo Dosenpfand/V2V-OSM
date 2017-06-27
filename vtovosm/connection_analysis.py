@@ -189,7 +189,7 @@ def gen_connection_graph(vehs,
 def calc_net_connectivities(graphs_cons):
     """Calculates the network connectivities (relative size of the biggest connected cluster)"""
 
-    net_connectivities = np.zeros(len(graphs_cons))
+    net_connectivities = np.zeros(len(graphs_cons), dtype=object)
 
     for idx, graph_cons in enumerate(graphs_cons):
         net_connectivities[idx] = calc_net_connectivity(graph_cons)
@@ -223,7 +223,6 @@ def calc_net_connectivity(graph_cons, vehs=None, cut_only_fully_connected=True):
         min_node_cut = nx.minimum_node_cut(cluster_max)
     else:
         min_node_cut = None
-
 
     result = NetworkConnectivity(net_connectivity=net_connectivity,
                                  min_node_cut=min_node_cut,
