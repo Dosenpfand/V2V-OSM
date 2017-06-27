@@ -365,6 +365,7 @@ def calc_link_durations_multiprocess(graphs_cons, processes=None, chunk_length=N
         # Determine optimal chunk size
         if chunk_length is None:
             # NOTE: _processes() should not be used, but no obvious alternative
+            # TODO: maybe use smaller chunks to use less memory at any given time?
             chunk_length = int(np.ceil(len(graphs_cons) / pool._processes))
 
         # Split the graphs list in chunks
@@ -374,6 +375,69 @@ def calc_link_durations_multiprocess(graphs_cons, processes=None, chunk_length=N
         link_chunks = pool.map(calc_link_durations, graphs_chunks)
 
     # Merge link durations
+    durations_merged = merge_link_durations(link_chunks, graphs_cons, chunk_length)
+
+    return durations_merged
+
+
+def calc_connection_durations(graphs_cons):
+    """Determines the connection durations (continuous time period during which 2 nodes have a path between them)
+    and rehealing times (lengths of disconnected periods)"""
+
+    # TODO: back to own function? faster? less memory?
+
+    # Assumes that all graphs have the same number of nodes
+    count_nodes = graphs_cons[0].number_of_nodes()
+    size_cond = count_nodes * (count_nodes - 1) // 2
+
+    durations_matrix_con = np.zeros(size_cond, dtype=object)
+    for idx in range(durations_matrix_con.size):
+        durations_matrix_con[idx] = []
+
+    durations_matrix_discon = np.zeros(size_cond, dtype=object)
+    for idx in range(durations_matrix_discon.size):
+        durations_matrix_discon[idx] = []
+
+    # Convert the graphs to graphs where edges stand for paths
+    graphs_path = []
+    for graph_cons in graphs_cons:
+        graph_paths = to_path_graph(graph_cons)
+        graphs_path.append(graph_paths)
+
+    # Determine connection duration
+    res = calc_link_durations(graphs_path)
+
+    return res
+
+
+def calc_connection_durations_multiprocess(graphs_cons, processes=None, chunk_length=None):
+    """Determines the connection durations using multiple processes. See also: calc_connection_durations"""
+
+    # Process chunks in parallel
+    with mp.Pool(processes=processes) as pool:
+        # Determine optimal chunk size
+        if chunk_length is None:
+            # NOTE: _processes() should not be used, but no obvious alternative
+            # TODO: maybe use smaller chunks to use less memory at any given time?
+            chunk_length = int(np.ceil(len(graphs_cons) / pool._processes))
+
+        # Split the graphs list in chunks
+        graphs_chunks = [graphs_cons[i:i + chunk_length] for i in range(0, len(graphs_cons), chunk_length)]
+
+        # Run parallel calculation
+        link_chunks = pool.map(calc_connection_durations, graphs_chunks)
+
+    # Merge link durations
+    durations_merged = merge_link_durations(link_chunks, graphs_cons, chunk_length)
+
+    return durations_merged
+
+
+def merge_link_durations(link_chunks, graphs_cons, chunk_length):
+    """Merges the link duration chunks from multiprocessing"""
+
+    # TODO: rename function (and local variables) to merge_durations
+
     size_cond = link_chunks[0].durations_matrix_con.size
     durations_matrix_con = np.zeros(size_cond, dtype=object)
     durations_matrix_discon = np.zeros(size_cond, dtype=object)
@@ -415,36 +479,6 @@ def calc_link_durations_multiprocess(graphs_cons, processes=None, chunk_length=N
                                    durations_matrix_discon=durations_matrix_discon)
 
     return link_durations
-
-
-def calc_connection_durations(graphs_cons):
-    """Determines the connection durations (continuous time period during which 2 nodes have a path between them)
-    and rehealing times (lengths of disconnected periods)"""
-
-    # TODO: back to own function? faster? less memory?
-
-    # Assumes that all graphs have the same number of nodes
-    count_nodes = graphs_cons[0].number_of_nodes()
-    size_cond = count_nodes * (count_nodes - 1) // 2
-
-    durations_matrix_con = np.zeros(size_cond, dtype=object)
-    for idx in range(durations_matrix_con.size):
-        durations_matrix_con[idx] = []
-
-    durations_matrix_discon = np.zeros(size_cond, dtype=object)
-    for idx in range(durations_matrix_discon.size):
-        durations_matrix_discon[idx] = []
-
-    # Convert the graphs to graphs where edges stand for paths
-    graphs_path = []
-    for graph_cons in graphs_cons:
-        graph_paths = to_path_graph(graph_cons)
-        graphs_path.append(graph_paths)
-
-    # Determine connection duration
-    res = calc_link_durations(graphs_path)
-
-    return res
 
 
 def to_path_graph(graph):

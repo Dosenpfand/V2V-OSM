@@ -260,12 +260,7 @@ def analyze_single(filepath_res, filepath_ana, config_analysis, multiprocess=Fal
     if 'connection_durations' in config_analysis:
         logging.info('Determining connection durations')
         if multiprocess:
-            # TODO: to save memory graph_paths could be generated only when needed and then discarded inside function?
-            with mp.Pool(processes=processes) as pool:
-                graphs_paths = pool.map(con_ana.to_path_graph, graphs_cons)
-
-            # link duration function is used because the graphs are already "path graphs"
-            connection_durations = con_ana.calc_link_durations_multiprocess(graphs_paths, processes=processes)
+            connection_durations = con_ana.calc_connection_durations_multiprocess(graphs_cons, processes=processes)
         else:
             connection_durations = con_ana.calc_connection_durations(graphs_cons)
 
