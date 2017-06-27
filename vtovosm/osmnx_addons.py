@@ -226,7 +226,7 @@ def simplify_buildings(gdf_buildings, tolerance=1):
 
             geom_union = ops.unary_union([geom1_buf, geom2_buf]).buffer(-buffer, resolution=1)
 
-            # If the union is 2 seperate polygon we keep them otherwise we save the union
+            # If the union is 2 separate polygon we keep them otherwise we save the union
             if not isinstance(geom_union, geom.MultiPolygon):
                 geom1 = geom_union
                 geoms_list[idx2] = None

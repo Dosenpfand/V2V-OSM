@@ -156,28 +156,41 @@ def main(conf_path=None, scenario=None):
 
     return analysis_results
 
-
-def analyze_single(filepath_res, filepath_ana, config_analysis, multiprocess=False, processes=None):
-    """Runs a single vehicle count analysis of a simulation result.
-    Can be run in parallel"""
+def load_results(filepath_res, multiprocess=False, processes=None):
+    "Loads the results file, converts the connection matrices to graphs and returns the connection graphs and vehicles"
 
     # Load the connection results
+    logging.info('Loading results file')
     results_loaded = utils.load(filepath_res)
     matrices_cons = results_loaded['results']['matrices_cons']
     vehs = results_loaded['results']['vehs']
 
     # Check if given connection results are not empty
     if len(matrices_cons) == 0 or vehs[0].count == 1:
-        logging.warning('Nothing to analyze. Skipping')
-        utils.save(None, filepath_ana)
         return
+
+    # Transform connection matrices to graphs
+    if multiprocess:
+        with mp.Pool(processes=processes) as pool:
+            graphs_cons = pool.map(nx.from_numpy_matrix, matrices_cons)
+    else:
+        graphs_cons = []
+        for matrix_cons in matrices_cons:
+            graphs_cons.append(nx.from_numpy_matrix(matrix_cons))
+
+    results_processed = {'graphs_cons': graphs_cons,
+                         'vehs': vehs}
+
+    return results_processed
+
+def analyze_single(filepath_res, filepath_ana, config_analysis, multiprocess=False, processes=None):
+    """Runs a single vehicle count analysis of a simulation result.
+    Can be run in parallel"""
 
     # Check if analysis to be performed is set
     if config_analysis is None:
+        logging.warning('No analysis requested. Exiting')
         return
-
-    # Prepare analysis
-    time_start = utils.debug(None, 'Analyzing results')
 
     all_analysis = ['net_connectivities',
                     'path_redundancies',
@@ -190,11 +203,18 @@ def analyze_single(filepath_res, filepath_ana, config_analysis, multiprocess=Fal
     if not set(config_analysis).issubset(set(all_analysis)):
         raise RuntimeError('Analysis not supported')
 
-    # TODO: multiprocessing!
-    graphs_cons = []
-    for matrix_cons in matrices_cons:
-        graphs_cons.append(nx.from_numpy_matrix(matrix_cons))
 
+    loaded_results = load_results(filepath_res)
+    if loaded_results is None:
+        logging.warning('Nothing to analyze. Exiting')
+        utils.save(None, filepath_ana)
+        return
+
+    graphs_cons = loaded_results['graphs_cons']
+    vehs = loaded_results['vehs']
+
+    # Start main analysis
+    time_start = utils.debug(None, 'Analyzing results')
     analysis_result = {}
 
     # Determine network connectivities
@@ -219,8 +239,8 @@ def analyze_single(filepath_res, filepath_ana, config_analysis, multiprocess=Fal
 
         if multiprocess:
             with mp.Pool(processes=processes) as pool:
-                path_redundancies_seperate = pool.starmap(con_ana.calc_center_path_redundancy, zip(graphs_cons, vehs))
-            path_redundancies = np.concatenate(path_redundancies_seperate)
+                path_redundancies_separate = pool.starmap(con_ana.calc_center_path_redundancy, zip(graphs_cons, vehs))
+            path_redundancies = np.concatenate(path_redundancies_separate)
         else:
             path_redundancies = con_ana.calc_center_path_redundancies(graphs_cons, vehs)
 
