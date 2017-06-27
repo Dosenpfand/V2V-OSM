@@ -478,6 +478,34 @@ class TestConnectionAnalysis(unittest.TestCase):
         self.assertEqual(durations_generated[0], durations_con_expected)
         self.assertEqual(durations_generated[1], durations_discon_expected)
 
+    def test_calc_connection_durations_multiprocess(self):
+        """Tests the function calc_connection_durations_multiprocess"""
+
+        con_matrices_cond = [
+            [1, 0, 0, 1, 0, 1],
+            [1, 0, 0, 1, 0, 1],
+            [1, 0, 1, 1, 0, 0],
+            [1, 0, 0, 1, 0, 1],
+            [0, 0, 1, 1, 0, 1]
+        ]
+        chunk_lengths = list(range(1, 4)) + [None]
+
+        con_matrices = [sp_dist.squareform(con_matrix_cond) for con_matrix_cond in con_matrices_cond]
+        graphs_cons = [nx.from_numpy_matrix(con_matrix) for con_matrix in con_matrices]
+
+        durations_singlep = con_ana.calc_connection_durations(graphs_cons)
+
+        for chunk_length in chunk_lengths:
+            durations_multip = con_ana.calc_connection_durations_multiprocess(graphs_cons, chunk_length=chunk_length)
+
+            self.assertEqual(durations_multip.durations_con, durations_singlep.durations_con)
+            self.assertEqual(durations_multip.durations_discon, durations_singlep.durations_discon)
+            self.assertEqual(durations_multip.durations_matrix_con.tolist(),
+                             durations_singlep.durations_matrix_con.tolist())
+            self.assertEqual(durations_multip.durations_matrix_discon.tolist(),
+                             durations_singlep.durations_matrix_discon.tolist())
+
+
     def test_calc_link_durations(self):
         """Tests the function calc_link_durations"""
 

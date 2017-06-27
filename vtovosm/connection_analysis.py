@@ -380,11 +380,14 @@ def calc_link_durations_multiprocess(graphs_cons, processes=None, chunk_length=N
     return durations_merged
 
 
+ConnectionDurations = namedtuple('ConnectionDurations',
+                                 ['durations_con', 'durations_discon', 'durations_matrix_con',
+                                  'durations_matrix_discon'])
+
+
 def calc_connection_durations(graphs_cons):
     """Determines the connection durations (continuous time period during which 2 nodes have a path between them)
     and rehealing times (lengths of disconnected periods)"""
-
-    # TODO: back to own function? faster? less memory?
 
     # Assumes that all graphs have the same number of nodes
     count_nodes = graphs_cons[0].number_of_nodes()
@@ -398,16 +401,63 @@ def calc_connection_durations(graphs_cons):
     for idx in range(durations_matrix_discon.size):
         durations_matrix_discon[idx] = []
 
-    # Convert the graphs to graphs where edges stand for paths
-    graphs_path = []
+    active_matrix = np.zeros(size_cond, bool)
+
+    # TODO: quick and dirty hack to make it multiprocess-able. Would be better to move the mp-part outside AND merge
+    # connection and link duration functions
+
     for graph_cons in graphs_cons:
-        graph_paths = to_path_graph(graph_cons)
-        graphs_path.append(graph_paths)
 
-    # Determine connection duration
-    res = calc_link_durations(graphs_path)
+        # Determine all nodes that have a path between them
+        has_path_matrix = to_has_path_matrix(graph_cons)
 
-    return res
+        # Search for all active connections
+        connections = []
+        for idx_u, node_u in enumerate(graph_cons.nodes()):
+            for node_v in graph_cons.nodes()[idx_u + 1:]:
+                idx_cond = utils.square_to_condensed(node_u, node_v, count_nodes)
+                is_connected = has_path_matrix[idx_cond]
+                if is_connected:
+                    if not active_matrix[idx_cond]:
+                        durations_matrix_con[idx_cond].append(0)
+                        active_matrix[idx_cond] = True
+                    durations_matrix_con[idx_cond][-1] += 1
+                    connections.append((node_u, node_v))
+                else:
+                    if active_matrix[idx_cond] or durations_matrix_discon[idx_cond] == []:
+                        durations_matrix_discon[idx_cond].append(0)
+                        active_matrix[idx_cond] = False
+                    durations_matrix_discon[idx_cond][-1] += 1
+
+    durations_con = [item for sublist in durations_matrix_con.tolist() for item in sublist]
+    durations_discon = [item for sublist in durations_matrix_discon.tolist() for item in sublist]
+
+    connection_durations = ConnectionDurations(durations_con=durations_con,
+                                               durations_discon=durations_discon,
+                                               durations_matrix_con=durations_matrix_con,
+                                               durations_matrix_discon=durations_matrix_discon)
+
+    return connection_durations
+
+
+def to_has_path_matrix(graph):
+    """Determine all nodes that have a path between them"""
+
+    count_nodes = graph.number_of_nodes()
+    size_cond = count_nodes * (count_nodes - 1) // 2
+    has_path_matrix = np.zeros(size_cond, dtype=bool)
+
+    # This is much faster than calling nx.has_path() for every source and destination node
+    path_lengths = nx.all_pairs_shortest_path_length(graph)
+
+    for node_u, nodes_v in path_lengths.items():
+        for node_v in nodes_v.keys():
+            if node_u <= node_v:
+                continue
+            idx_cond = utils.square_to_condensed(node_v, node_u, count_nodes)
+            has_path_matrix[idx_cond] = True
+
+    return has_path_matrix
 
 
 def calc_connection_durations_multiprocess(graphs_cons, processes=None, chunk_length=None):
@@ -425,18 +475,16 @@ def calc_connection_durations_multiprocess(graphs_cons, processes=None, chunk_le
         graphs_chunks = [graphs_cons[i:i + chunk_length] for i in range(0, len(graphs_cons), chunk_length)]
 
         # Run parallel calculation
-        link_chunks = pool.map(calc_connection_durations, graphs_chunks)
+        connection_chunks = pool.map(calc_connection_durations, graphs_chunks)
 
     # Merge link durations
-    durations_merged = merge_link_durations(link_chunks, graphs_cons, chunk_length)
+    durations_merged = merge_connection_durations(connection_chunks, graphs_cons, chunk_length)
 
     return durations_merged
 
 
 def merge_link_durations(link_chunks, graphs_cons, chunk_length):
     """Merges the link duration chunks from multiprocessing"""
-
-    # TODO: rename function (and local variables) to merge_durations
 
     size_cond = link_chunks[0].durations_matrix_con.size
     durations_matrix_con = np.zeros(size_cond, dtype=object)
@@ -481,25 +529,52 @@ def merge_link_durations(link_chunks, graphs_cons, chunk_length):
     return link_durations
 
 
-def to_path_graph(graph):
-    """Converts a graph to another graph where edges are the equivalent of paths in the old graph"""
+def merge_connection_durations(connection_chunks, graphs_cons, chunk_length):
+    """Merges the connection duration chunks from multiprocessing"""
 
-    count_nodes = graph.number_of_nodes()
-    size_cond = count_nodes * (count_nodes - 1) // 2
-    has_path_matrix = np.zeros(size_cond, dtype=bool)
+    size_cond = connection_chunks[0].durations_matrix_con.size
+    durations_matrix_con = np.zeros(size_cond, dtype=object)
+    durations_matrix_discon = np.zeros(size_cond, dtype=object)
 
-    # This is much faster than calling nx.has_path() for every source and destination node
-    path_lengths = nx.all_pairs_shortest_path_length(graph)
+    for idx_link in range(size_cond):
+        connection_pair_durations_con = connection_chunks[0].durations_matrix_con[idx_link]
+        connection_pair_durations_discon = connection_chunks[0].durations_matrix_discon[idx_link]
+        idx_square1, idx_square2 = utils.condensed_to_square(idx_link, graphs_cons[0].number_of_nodes())
+        for idx_chunk in range(1, len(connection_chunks)):
+            connection_pair_durations_con_iter = connection_chunks[idx_chunk].durations_matrix_con[idx_link]
+            connection_pair_durations_discon_iter = connection_chunks[idx_chunk].durations_matrix_discon[idx_link]
+            idx_graph = chunk_length * idx_chunk
 
-    for node_u, nodes_v in path_lengths.items():
-        for node_v in nodes_v.keys():
-            if node_u <= node_v:
-                continue
-            idx_cond = utils.square_to_condensed(node_v, node_u, count_nodes)
-            has_path_matrix[idx_cond] = True
+            # TODO: change following 2 lines to use to_has_path_matrix
+            has_path_1 = nx.has_path(graphs_cons[idx_graph], idx_square1, idx_square2)
+            has_path_2 = nx.has_path(graphs_cons[idx_graph - 1], idx_square1, idx_square2)
 
-    graph_path = nx.from_numpy_matrix(sp_dist.squareform(has_path_matrix))
-    return graph_path
+            to_merge_con = has_path_1 and has_path_2
+            to_merge_discon = not (has_path_1 or has_path_2)
+
+            if to_merge_con:
+                connection_pair_durations_con[-1] += connection_pair_durations_con_iter[0]
+                connection_pair_durations_con_iter.pop(0)
+
+            if to_merge_discon:
+                connection_pair_durations_discon[-1] += connection_pair_durations_discon_iter[0]
+                connection_pair_durations_discon_iter.pop(0)
+
+            connection_pair_durations_con += connection_pair_durations_con_iter
+            connection_pair_durations_discon += connection_pair_durations_discon_iter
+
+        durations_matrix_con[idx_link] = connection_pair_durations_con
+        durations_matrix_discon[idx_link] = connection_pair_durations_discon
+
+    durations_con = [item for sublist in durations_matrix_con.tolist() for item in sublist]
+    durations_discon = [item for sublist in durations_matrix_discon.tolist() for item in sublist]
+
+    connection_durations = LinkDurations(durations_con=durations_con,
+                                   durations_discon=durations_discon,
+                                   durations_matrix_con=durations_matrix_con,
+                                   durations_matrix_discon=durations_matrix_discon)
+
+    return connection_durations
 
 
 def calc_connection_stats(durations, count_nodes):
