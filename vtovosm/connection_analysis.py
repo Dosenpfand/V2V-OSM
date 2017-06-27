@@ -360,6 +360,8 @@ def calc_link_durations(graphs_cons):
 def calc_link_durations_multiprocess(graphs_cons, processes=None, chunk_length=None):
     """Determines the link durations using multiple processes. See also: calc_link_durations"""
 
+    # TODO: optionally return 1st and last con/discon matrix to speed up merge in multiprocessing case?
+
     # Process chunks in parallel
     with mp.Pool(processes=processes) as pool:
         # Determine optimal chunk size
@@ -389,6 +391,8 @@ def calc_connection_durations(graphs_cons):
     """Determines the connection durations (continuous time period during which 2 nodes have a path between them)
     and rehealing times (lengths of disconnected periods)"""
 
+    # TODO: optionally return 1st and last con/discon matrix to speed up merge in multiprocessing case?
+
     # Assumes that all graphs have the same number of nodes
     count_nodes = graphs_cons[0].number_of_nodes()
     size_cond = count_nodes * (count_nodes - 1) // 2
@@ -402,9 +406,6 @@ def calc_connection_durations(graphs_cons):
         durations_matrix_discon[idx] = []
 
     active_matrix = np.zeros(size_cond, bool)
-
-    # TODO: quick and dirty hack to make it multiprocess-able. Would be better to move the mp-part outside AND merge
-    # connection and link duration functions
 
     for graph_cons in graphs_cons:
 

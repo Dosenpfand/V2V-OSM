@@ -259,7 +259,7 @@ def main_sim():
 
         count_veh = np.shape(coords_veh)[0]
         if count_veh == 0:
-            # TODO: or completely ingore?
+            # TODO: or completely ignore?
             cons[:, i_rep] = 0
             continue
 
@@ -281,10 +281,9 @@ def main_sim():
         coords_very_high_pl = coords_other_streets[ind_very_high_pl, :]
 
         # Pathloss calculation
-        # TODO optimize
         distances_same_street = np.linalg.norm(coords_same_street[:, 0:2] - coords_own[0:2],
                                                ord=2, axis=1)
-        # TODO: own vehicle assumed to be receiver
+        # NOTE: own vehicle assumed to be receiver
         dir_own = int(coords_own[2])
         distances_nlos_rx = np.abs(
             coords_nlos[:, 1 - dir_own] - coords_own[1 - dir_own])
