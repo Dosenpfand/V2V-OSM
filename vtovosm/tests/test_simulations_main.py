@@ -19,14 +19,7 @@ class TestSimulationsMain(unittest.TestCase):
     def test_main(self):
         """Tests the function main"""
 
-        with open(self.conf_file_path, 'r') as file:
-            config_all = json.load(file)
-
-        for scenario in config_all:
-            if scenario == 'global':
-                continue
-
-            main_sim.main(conf_path=self.conf_file_path, scenario=scenario)
+        main_sim.main_multi_scenario(conf_path=self.conf_file_path)
 
 
 if __name__ == '__main__':

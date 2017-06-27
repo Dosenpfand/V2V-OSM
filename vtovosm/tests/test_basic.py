@@ -13,6 +13,7 @@ import shapely.geometry as geom
 
 import vtovosm.connection_analysis as con_ana
 import vtovosm.geometry as geom_o
+import vtovosm.osmnx_addons as ox_a
 import vtovosm.pathloss as pathloss
 import vtovosm.propagation as prop
 import vtovosm.utils as utils
@@ -64,10 +65,10 @@ class DemoNetwork:
         """Returns a very simple geodataframe with polygons representing builings"""
 
         buildings_coords = ([[20, 20], [60, 20], [60, 60], [20, 60]],
-                            [[100, 20], [240, 20], [240, 60], [220, 60], [
-                                220, 40], [200, 40], [200, 60], [100, 60]],
+                            [[100, 20], [240, 20], [240, 60], [220, 60], [220, 40], [200, 40], [200, 60], [100, 60]],
                             [[100, 100], [140, 100], [140, 120], [100, 120]],
-                            [[100, 160], [200, 160], [200, 180], [100, 180]])
+                            [[100, 160], [200, 160], [200, 180], [100, 180]],
+                            [[220, 160], [240, 160], [240, 180], [220, 180]])
 
         buildings = {}
         for idx, building_coords in enumerate(buildings_coords):
@@ -505,7 +506,6 @@ class TestConnectionAnalysis(unittest.TestCase):
             self.assertEqual(durations_multip.durations_matrix_discon.tolist(),
                              durations_singlep.durations_matrix_discon.tolist())
 
-
     def test_calc_link_durations(self):
         """Tests the function calc_link_durations"""
 
@@ -747,6 +747,25 @@ class TestConnectionAnalysis(unittest.TestCase):
                 max_dist,
                 metric=metric_not_implemented,
                 graph_streets_wave=graph_streets_wave)
+
+
+class TestOsmnxAddons(unittest.TestCase):
+    """Provides unit tests for the osmnx_addons module"""
+
+    def test_simplify_buildings(self):
+        """Tests the function simplify_buildings"""
+
+        # TODO: still fails for tolerance = 40 => size = 1
+        tolerances = [1, 20]
+        sizes_gdf_expected = [5, 4]
+
+        network = DemoNetwork()
+        gdf_buildings = network.build_gdf_buildings()
+
+        for tolerance, size_gdf_expected in zip(tolerances, sizes_gdf_expected):
+            gdf_buildings_simplified = ox_a.simplify_buildings(gdf_buildings, tolerance=tolerance)
+
+            self.assertEqual(len(gdf_buildings_simplified), size_gdf_expected)
 
 
 class TestPropagation(unittest.TestCase):

@@ -26,6 +26,24 @@
         "show_plot": false,
         "analyze_results": "all"
     },
+    "simplify_buildings": {
+        "place": "Salmannsdorf - Vienna - Austria",
+        "which_result": null,
+        "distribution_veh": "uniform",
+        "iterations": 3,
+        "density_type": "absolute",
+        "densities_veh": [
+            1
+        ],
+        "connection_metric": "distance",
+        "max_connection_metric": {
+            "olos_los": 250,
+            "nlos": 140
+        },
+        "simulation_mode": "sequential",
+        "show_plot": false,
+        "building_tolerance": 1
+    },
     "sumo_distance_paralell": {
         "place": "Salmannsdorf - Vienna - Austria",
         "which_result": null,
