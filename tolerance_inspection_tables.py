@@ -6,7 +6,7 @@ import pandas as pd
 import vtovosm as vtv
 
 # Config
-dir_out = os.path.join('images', 'tolerance inspection')
+dir_out = os.path.join('images', 'tolerance_inspection')
 overwrite = True
 
 # Functions
@@ -18,7 +18,7 @@ def frame_merge(df1, df2):
     out = out[['count_vehs', 'count_con_tot', 'ratio_con_diff', 'ratio_run']]
     out['ratio_diff_5'] = df2['ratio_con_diff']
     out['ratio_run_5'] = df2['run_time_w'] / df2['run_time_wo']
-    out.columns = ['Number of vehicles', 'Number of connections', 'Error ratio - 1 m tolerance', 'Run time ratio - 1 meter tolerance', 'Error ratio - 5 m tolerance', 'Run time ratio - 5 meter tolerance']
+    out.columns = ['Vehicle count', 'Connection count', 'Error ratio - 1 m', 'Time ratio - 1 m', 'Error ratio - 5 m', 'Time ratio - 5 m',]
 
     return out
 

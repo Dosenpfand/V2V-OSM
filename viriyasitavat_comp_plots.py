@@ -9,10 +9,12 @@ import vtovosm as vtv
 # Config
 plt.rcParams["figure.figsize"] = (8, 5)
 densities = [10, 20, 30, 40, 50, 60, 70, 80, 120, 160]
+density_veh = 70 # veh/km^2
 count_veh = 337  # from results_all.keys() = [48, 96, 145, 193, 241, 289, 337, 386, 578, 771]
 count_veh_neubau = 112  # from results_neubau.keys() = [16, 32, 48, 64, 80, 96, 112, 129, 193, 257]
 dir_out = os.path.join('images', 'viriyasitavat_comparison')
-overwrite = False
+overwrite = True
+show_titles = False
 
 # Setup
 logger = logging.getLogger()
@@ -47,7 +49,8 @@ else:
     plt.grid(True)
     plt.xlabel(r'Vehicle density $[1/km^2]$')
     plt.ylabel('Relative size of largest cluster')
-    plt.title('Network Connectivity')
+    if show_titles:
+        plt.title('Network Connectivity')
     plt.legend()
     plt.savefig(path_out)
     logging.info('Saved {}'.format(filename))
@@ -72,7 +75,8 @@ else:
     plt.grid(True)
     plt.xlabel('Link duration [s]')
     plt.ylabel('Probability')
-    plt.title('Link Duration Distribution')
+    if show_titles:
+        plt.title('Link Duration Distribution')
     plt.legend()
     plt.savefig(path_out)
     logging.info('Saved {}'.format(filename))
@@ -94,7 +98,8 @@ else:
     plt.grid(True)
     plt.xlabel('Link duration [s]')
     plt.ylabel('Probability')
-    plt.title('Link Duration Distribution - Weighted 1')
+    if show_titles:
+        plt.title('Link Duration Distribution - Weighted 1')
     plt.legend()
     plt.savefig(path_out)
     logging.info('Saved {}'.format(filename))
@@ -128,7 +133,8 @@ else:
     plt.grid(True)
     plt.xlabel('Link duration [s]')
     plt.ylabel('Probability')
-    plt.title('Link Duration Distribution - Weighted 2')
+    if show_titles:
+        plt.title('Link Duration Distribution - Weighted 2')
     plt.legend()
     plt.savefig(path_out)
     logging.info('Saved {}'.format(filename))
@@ -163,7 +169,8 @@ else:
     plt.grid(True)
     plt.xlabel(r'Vehicle density $[1/km^2]$')
     plt.ylabel('Average link duration (s)')
-    plt.title('Link Duration')
+    if show_titles:
+        plt.title('Link Duration')
     plt.legend()
     plt.savefig(path_out)
     logging.info('Saved {}'.format(filename))
@@ -186,12 +193,14 @@ else:
     plt.grid(True)
     plt.xlabel(r'Vehicle density $[1/km^2]$')
     plt.ylabel('Average number of connection periods per vehicle pair')
-    plt.title('Connection Periods')
+    if show_titles:
+        plt.title('Connection Periods')
     plt.legend()
     plt.savefig(path_out)
     logging.info('Saved {}'.format(filename))
 
 # Plot average connection durations vs. vehicle densities
+filename = 'con_dur_vs_veh_dens.pdf'
 path_out = os.path.join(dir_out, filename)
 
 if os.path.isfile(path_out) and not overwrite:
@@ -208,7 +217,8 @@ else:
     plt.grid(True)
     plt.xlabel(r'Vehicle density $[1/km^2]$')
     plt.ylabel('Average connection duration [s]')
-    plt.title('Connection Duration')
+    if show_titles:
+        plt.title('Connection Duration')
     plt.legend()
     filename = 'con_dur_vs_veh_dens.pdf'
     plt.savefig(path_out)
@@ -232,7 +242,8 @@ else:
     plt.grid(True)
     plt.xlabel(r'Vehicle density $[1/km^2]$')
     plt.ylabel('Average rehealing time [s]')
-    plt.title('Reahaling Time')
+    if show_titles:
+        plt.title('Reahaling Time')
     plt.legend()
     plt.savefig(path_out)
     logging.info('Saved {}'.format(filename))
@@ -257,7 +268,8 @@ else:
     plt.grid(True)
     plt.xlabel('Connection duration [s]')
     plt.ylabel('Probability')
-    plt.title('Connection Duration Distribution')
+    if show_titles:
+        plt.title('Connection Duration Distribution')
     plt.legend()
     plt.savefig(path_out)
     logging.info('Saved {}'.format(filename))
@@ -279,7 +291,8 @@ else:
     plt.xlabel('Connection duration [s]')
     plt.ylabel('Probability')
     plt.title('Connection Duration Distribution - Weighted 1')
-    plt.legend()
+    if show_titles:
+        plt.legend()
     plt.savefig(path_out)
     logging.info('Saved {}'.format(filename))
 
@@ -312,7 +325,8 @@ else:
     plt.grid(True)
     plt.xlabel('Connection duration [s]')
     plt.ylabel('Probability')
-    plt.title('Connection Duration Distribution - Weighted 2')
+    if show_titles:
+        plt.title('Connection Duration Distribution - Weighted 2')
     plt.legend()
     plt.savefig(path_out)
     logging.info('Saved {}'.format(filename))
