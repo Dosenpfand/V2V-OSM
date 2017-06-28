@@ -9,7 +9,8 @@ import vtovosm as vtv
 plt.rcParams["figure.figsize"] = (8, 5)
 count_veh = 362  # from [121, 362, 241]
 dir_out = os.path.join('images', 'speed_and_tls_cycle_impact')
-overwrite = False
+overwrite = True
+show_titles = False
 
 # Setup
 logger = logging.getLogger()
@@ -44,7 +45,8 @@ else:
     plt.grid(True)
     plt.xlabel('Link duration [s]')
     plt.ylabel('Probability')
-    plt.title('Link Duration Distribution - Maximum Speed Impact')
+    if show_titles:
+        plt.title('Unweighted Link Duration Distribution - Maximum Speed Impact')
     plt.legend()
     plt.savefig(path_out)
     logging.info('Saved {}'.format(filename))
@@ -65,7 +67,8 @@ else:
     plt.grid(True)
     plt.xlabel('Link duration [s]')
     plt.ylabel('Probability')
-    plt.title('Link Duration Distribution - TLS Cycle Time Impact')
+    if show_titles:
+        plt.title('Unweighted Link Duration Distribution - TLS Cycle Time Impact')
     plt.legend()
     plt.savefig(path_out)
     logging.info('Saved {}'.format(filename))
@@ -86,7 +89,8 @@ else:
     plt.grid(True)
     plt.xlabel('Link duration [s]')
     plt.ylabel('Probability')
-    plt.title('Weighted Link Duration Distribution - Maximum Speed Impact')
+    if show_titles:
+        plt.title('Weighted Link Duration Distribution - Maximum Speed Impact')
     plt.legend()
     plt.savefig(path_out)
     logging.info('Saved {}'.format(filename))
@@ -107,7 +111,8 @@ else:
     plt.grid(True)
     plt.xlabel('Link duration [s]')
     plt.ylabel('Probability')
-    plt.title('Weighted Link Duration Distribution - TLS Cycle Time Impact')
+    if show_titles:
+        plt.title('Weighted Link Duration Distribution - TLS Cycle Time Impact')
     plt.legend()
     plt.savefig(path_out)
     logging.info('Saved {}'.format(filename))
