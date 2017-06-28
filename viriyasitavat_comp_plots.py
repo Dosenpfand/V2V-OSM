@@ -1,10 +1,10 @@
+import logging
 import os
 
 import matplotlib.pyplot as plt
 import numpy as np
 
 import vtovosm as vtv
-import logging
 
 # Config
 plt.rcParams["figure.figsize"] = (8, 5)
@@ -57,16 +57,17 @@ else:
 filename = 'link_dur_pmf_unweighted.pdf'
 path_out = os.path.join(dir_out, filename)
 
+link_durations = results_all[count_veh]['link_durations']
+link_durations_neubau = results_neubau[count_veh_neubau]['link_durations'].durations_con
+
 if os.path.isfile(path_out) and not overwrite:
     logging.warning('file {} already exists. Skipping'.format(filename))
 else:
-    link_durations = results_all[count_veh]['link_durations']
-    link_durations_neubau = results_neubau[count_veh_neubau]['link_durations'].durations_con
     bins = int(max(link_durations) - min(link_durations))
+    bins_neubau = int(max(link_durations_neubau) - min(link_durations_neubau))
 
     plt.figure()
     hist = plt.hist(link_durations, bins=bins, normed=True, alpha=0.6, label='Upper West Side, New York City')
-    bins_neubau = int(max(link_durations_neubau) - min(link_durations_neubau))
     hist_neubau = plt.hist(link_durations_neubau, bins=bins_neubau, normed=True, alpha=0.6, label='Neubau, Vienna')
     plt.xlim((0, 100))
     plt.grid(True)
@@ -87,7 +88,8 @@ else:
     plt.figure()
     hist = plt.hist(link_durations, bins=bins, normed=True, weights=link_durations, alpha=0.6,
                     label='Upper West Side, New York City')
-    hist_neubau = plt.hist(link_durations_neubau, bins=bins_neubau, normed=True, weights=link_durations_neubau, alpha=0.6,
+    hist_neubau = plt.hist(link_durations_neubau, bins=bins_neubau, normed=True, weights=link_durations_neubau,
+                           alpha=0.6,
                            label='Neubau, Vienna')
     plt.xlim((0, 100))
     plt.grid(True)
@@ -118,10 +120,10 @@ else:
         idx += duration
 
     bins = int(max(link_durations_w) - min(link_durations_w))
+    bins_neubau = int(max(link_durations_w_neubau) - min(link_durations_w_neubau))
 
     plt.figure()
     hist = plt.hist(link_durations_w, bins=bins, normed=True, alpha=0.6, label='Upper West Side, New York City')
-    bins_neubau = int(max(link_durations_w_neubau) - min(link_durations_w_neubau))
     hist = plt.hist(link_durations_w_neubau, bins=bins_neubau, normed=True, alpha=0.6, label='Neubau, Vienna')
     plt.xlim((0, 100))
     plt.grid(True)
@@ -142,7 +144,8 @@ else:
     mean_link_durations = np.array(
         [(density, np.mean(result['link_durations'])) for density, result in sorted(results_all.items())])
     mean_link_durations_neubau = np.array(
-        [(density, np.mean(result['link_durations'].durations_con)) for density, result in sorted(results_neubau.items())])
+        [(density, np.mean(result['link_durations'].durations_con)) for density, result in
+         sorted(results_neubau.items())])
 
     mean_link_durations_w = np.zeros([len(results_all), 2])
     for idx, (density, result) in enumerate(sorted(results_all.items())):
@@ -239,16 +242,17 @@ else:
 filename = 'con_dur_pmf_unweighted.pdf'
 path_out = os.path.join(dir_out, filename)
 
+con_durations = results_all[count_veh]['connection_durations']
+con_durations_neubau = results_neubau[count_veh_neubau]['connection_durations']
+
 if os.path.isfile(path_out) and not overwrite:
     logging.warning('file {} already exists. Skipping'.format(filename))
 else:
-    con_durations = results_all[count_veh]['connection_durations']
-    con_durations_neubau = results_neubau[count_veh_neubau]['connection_durations']
     bins = int(max(con_durations) - min(con_durations))
+    bins_neubau = int(max(con_durations_neubau) - min(con_durations_neubau))
 
     plt.figure()
     hist = plt.hist(con_durations, bins=bins, normed=True, alpha=0.6, label='Upper West Side, New York City')
-    bins_neubau = int(max(con_durations_neubau) - min(con_durations_neubau))
     hist_neubau = plt.hist(con_durations_neubau, bins=bins_neubau, normed=True, alpha=0.6, label='Neubau - Vienna')
     plt.xlim((0, 100))
     plt.grid(True)
@@ -300,10 +304,10 @@ else:
         idx += duration
 
     bins = int(max(con_durations_w) - min(con_durations_w))
+    bins_neubau = int(max(con_durations_w_neubau) - min(con_durations_w_neubau))
 
     plt.figure()
     hist = plt.hist(con_durations_w, bins=bins, normed=True, alpha=0.6, label='Upper West Side, New York City')
-    bins_neubau = int(max(con_durations_w_neubau) - min(con_durations_w_neubau))
     hist_neubau = plt.hist(con_durations_w_neubau, bins=bins_neubau, normed=True, alpha=0.6, label='Neubau, Vienna')
     plt.xlim((0, 300))
     plt.grid(True)
@@ -313,5 +317,3 @@ else:
     plt.legend()
     plt.savefig(path_out)
     logging.info('Saved {}'.format(filename))
-
-# TODO: plot results of building tolerance analysis
