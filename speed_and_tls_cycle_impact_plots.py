@@ -7,7 +7,6 @@ import vtovosm as vtv
 
 # Config
 plt.rcParams["figure.figsize"] = (8, 5)
-
 count_veh = 362  # from [121, 362, 241]
 dir_out = os.path.join('images', 'speed_and_tls_cycle_impact')
 overwrite = False
