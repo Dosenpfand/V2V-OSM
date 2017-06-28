@@ -4,7 +4,6 @@ language: python
 python:
   - "3.4"
   - "3.6"
-
 env:
 # Has to be set so that the TLS coordinator script works
   - SUMO_HOME=$TRAVIS_BUILD_DIR/sumo/sumo
@@ -36,6 +35,12 @@ branches:
   except:
   - travis
   - dev
+# Configure a headless display to test plot generation
+before_script:
+  - "export DISPLAY=:99.0"
+  - "sh -e /etc/init.d/xvfb start"
+  # Give xvfb some time to start
+  - sleep 3
 script:
   - nosetests --with-coverage --cover-html --cover-tests --cover-package=vtovosm --verbose
 after_success:
