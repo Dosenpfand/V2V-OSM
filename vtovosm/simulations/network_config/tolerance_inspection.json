@@ -19,7 +19,6 @@
             "nlos": 0
         },
         "simulation_mode": "parallel",
-        "show_plot": false,
         "overwrite_result": false,
         "results_file_dir": "results/tolerance_inspection"
     },

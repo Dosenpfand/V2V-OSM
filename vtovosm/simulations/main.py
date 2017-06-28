@@ -486,20 +486,33 @@ def main(conf_path=None, scenario=None):
     if config['send_mail']:
         utils.send_mail_finish(config['mail_to'], time_start=time_start_total)
 
-    # TODO: other plots?
-    if config['show_plot']:
+    # TODO: when to call plot_cluster_max?
+    if config['save_plot']:
+        if config['plot_dir'] is None:
+            plot_dir = 'images'
+        else:
+            plot_dir = config['plot_dir']
+
+        if not os.path.isdir(plot_dir):
+            os.makedirs(plot_dir)
+
         if config['simulation_mode'] == 'demo':
+            # TODO: too much white border in PDFs
+            plot.setup()
+            path = os.path.join(plot_dir, 'prop_cond.pdf')
             plot.plot_prop_cond(net['graph_streets'], net['gdf_buildings'],
-                                net['vehs'], show=False)
+                                net['vehs'], show=False, path=path, overwrite=config['overwrite_result'])
+            path = os.path.join(plot_dir, 'pathloss.pdf')
             plot.plot_pathloss(net['graph_streets'], net['gdf_buildings'],
-                               net['vehs'], show=False)
+                               net['vehs'], show=False, path=path, overwrite=config['overwrite_result'])
+            path = os.path.join(plot_dir, 'con_status.pdf')
             plot.plot_con_status(net['graph_streets'], net['gdf_buildings'],
-                                 net['vehs'], show=False)
-            plot.show()
+                                 net['vehs'], show=False, path=path, overwrite=config['overwrite_result'])
+        # TODO: make own mode SUMO_demo? and test function!
         elif config['distribution_veh'] == 'SUMO':
             time_start = utils.debug(None, 'Plotting animation')
             plot.plot_veh_traces_animation(
-                veh_traces, net['graph_streets'], net['gdf_buildings'])
+                veh_traces, net['graph_streets'], net['gdf_buildings'], show=False)
             utils.debug(time_start)
 
 

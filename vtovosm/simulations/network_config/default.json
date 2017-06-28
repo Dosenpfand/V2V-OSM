@@ -23,7 +23,6 @@
             "nlos": 140
         },
         "simulation_mode": "sequential",
-        "show_plot": false,
         "building_tolerance": 1
     },
     "uniform_distance_sequential": {
@@ -41,8 +40,7 @@
             "olos_los": 250,
             "nlos": 140
         },
-        "simulation_mode": "sequential",
-        "show_plot": false
+        "simulation_mode": "sequential"
     },
     "sumo_distance_sequential": {
         "place": "Neubau - Vienna - Austria",
@@ -59,7 +57,6 @@
             "nlos": 140
         },
         "simulation_mode": "sequential",
-        "show_plot": false,
         "sumo": {
             "sim_duration": 200,
             "warmup_duration": 100,
@@ -87,10 +84,9 @@
         ],
         "connection_metric": "pathloss",
         "max_connection_metric": 116,
-        "simulation_mode": "sequential",
-        "show_plot": false
+        "simulation_mode": "sequential"
     },
-    "demo": {
+    "demo_neubau": {
         "place": "Neubau - Vienna - Austria",
         "which_result": null,
         "distribution_veh": "uniform",
@@ -99,6 +95,19 @@
         "connection_metric": "pathloss",
         "max_connection_metric": 150,
         "simulation_mode": "demo",
-        "show_plot": true
+        "save_plot": true,
+        "plot_dir": "images/demo_neubau"
+    },
+    "demo_upperwestside": {
+        "place": "Upper West Side - New York - USA",
+        "which_result": null,
+        "distribution_veh": "uniform",
+        "density_type": "absolute",
+        "densities_veh": 300,
+        "connection_metric": "pathloss",
+        "max_connection_metric": 150,
+        "simulation_mode": "demo",
+        "save_plot": true,
+        "plot_dir": "images/demo_upperwestside"
     }
 }

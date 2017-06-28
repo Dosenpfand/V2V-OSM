@@ -96,8 +96,12 @@ def check_fill_config(config):
             if 'mail_to' not in config:
                 raise KeyError('Email address not set')
 
-    if 'show_plot' not in config:
-        config['show_plot'] = False
+    if 'save_plot' not in config:
+        config['save_plot'] = False
+
+    if config['save_plot']:
+        if 'plot_dir' not in config:
+            config['plot_dir'] = None
 
     if 'loglevel' not in config:
         config['loglevel'] = 'INFO'
