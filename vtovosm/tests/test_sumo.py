@@ -1,5 +1,6 @@
 """Unit tests for all modules that interact with SUMO and therefore execute slower and need SUMO installed"""
 
+import os
 import unittest
 
 import numpy as np
@@ -12,6 +13,22 @@ class TestSumo(unittest.TestCase):
 
     slow = True
     network = True
+
+    def test_download_streets_from_id(self):
+        """Tests the function download_streets_from_id"""
+
+        # OSM id for Salmannsdorf, Vienna, Austria
+        osm_id = 5875884
+        directory = 'sumo_data'
+        path_out = os.path.join(directory, 'test_download_streets_from_id_city.osm.xml')
+
+        if os.path.isfile(path_out):
+            os.remove(path_out)
+        os.makedirs(directory, exist_ok=True)
+        return_code = sumo.download_streets_from_id(osm_id, prefix='test_download_streets_from_id', directory=directory)
+
+        self.assertIs(return_code, 0)
+        self.assertTrue(os.path.isfile(path_out))
 
     def test_simple_wrapper(self):
         """Tests the function simple_wrapper"""

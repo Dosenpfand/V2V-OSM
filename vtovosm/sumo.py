@@ -513,7 +513,7 @@ def download_streets_from_id(area_id,
                              directory='',
                              debug=False,
                              script_dir=None):
-    """Downloads a street data defined by it's id from OpennStreetMap
+    """Downloads a street data defined by it's id from OpenStreetMap
     with the SUMO helper script"""
 
     if script_dir is None:
@@ -690,30 +690,6 @@ def get_coordinates_offset(filename):
     offset_y = float(offset_string_y)
     offsets = [offset_x, offset_y]
     return offsets
-
-
-def min_max_coords(traces):
-    """Determines the min and max x and y coordinates of all vehicle traces"""
-
-    x_min, x_max = traces[0][0]['x'], traces[0][0]['x']
-    y_min, y_max = traces[0][0]['y'], traces[0][0]['y']
-    for trace in traces:
-        if np.size(trace) == 0:
-            continue
-        x_min_iter = trace['x'].min()
-        x_max_iter = trace['x'].max()
-        y_min_iter = trace['y'].min()
-        y_max_iter = trace['y'].max()
-        if x_min_iter < x_min:
-            x_min = x_min_iter
-        if x_max_iter > x_max:
-            x_max = x_max_iter
-        if y_min_iter < y_min:
-            y_min = y_min_iter
-        if y_max_iter > y_max:
-            y_max = y_max_iter
-
-    return x_min, x_max, y_min, y_max
 
 
 def search_tool_dir():

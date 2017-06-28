@@ -204,7 +204,7 @@ def analyze_single(filepath_res, filepath_ana, config_analysis, multiprocess=Fal
         raise RuntimeError('Analysis not supported')
 
 
-    loaded_results = load_results(filepath_res)
+    loaded_results = load_results(filepath_res, multiprocess=multiprocess, processes=processes)
     if loaded_results is None:
         logging.warning('Nothing to analyze. Exiting')
         utils.save(None, filepath_ana)
