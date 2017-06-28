@@ -298,72 +298,68 @@ def main(conf_path=None, scenario=None):
 
         # Determine connected vehicles
         if config['simulation_mode'] == 'parallel':
-            with mp.Pool(processes=config['processes']) as pool:
-                if config['distribution_veh'] == 'SUMO':
-                    if config['connection_metric'] == 'distance':
-                        sim_param_list = \
-                            zip(veh_traces,
-                                repeat(net['graph_streets']),
-                                repeat(net['gdf_buildings']),
-                                repeat(config['max_connection_metric']),
-                                repeat(config['connection_metric']))
-                    elif config['connection_metric'] == 'pathloss':
-                        sim_param_list = \
-                            zip(veh_traces,
-                                repeat(net['graph_streets']),
-                                repeat(net['gdf_buildings']),
-                                repeat(config['max_connection_metric']),
-                                repeat(config['connection_metric']),
-                                repeat(net['graph_streets_wave']))
-                    else:
-                        raise NotImplementedError(
-                            'Connection metric not supported')
-
+            if config['distribution_veh'] == 'SUMO':
+                if config['connection_metric'] == 'distance':
+                    sim_param_list = \
+                        zip(veh_traces,
+                            repeat(net['graph_streets']),
+                            repeat(net['gdf_buildings']),
+                            repeat(config['max_connection_metric']),
+                            repeat(config['connection_metric']))
+                elif config['connection_metric'] == 'pathloss':
+                    sim_param_list = \
+                        zip(veh_traces,
+                            repeat(net['graph_streets']),
+                            repeat(net['gdf_buildings']),
+                            repeat(config['max_connection_metric']),
+                            repeat(config['connection_metric']),
+                            repeat(net['graph_streets_wave']))
+                else:
+                    raise NotImplementedError(
+                        'Connection metric not supported')
+                with mp.Pool(processes=config['processes']) as pool:
                     mp_res = pool.starmap(
                         sim_single_sumo,
                         sim_param_list
                     )
-                    if len(mp_res) == 0:
-                        matrices_cons, vehs = [], []
-                        logging.warning('Simulation results are empty')
-                    else:
-                        matrices_cons, vehs = list(zip(*mp_res))
 
-                elif config['distribution_veh'] == 'uniform':
-                    random_seeds = np.arange(config['iterations'])
+            elif config['distribution_veh'] == 'uniform':
+                random_seeds = np.arange(config['iterations'])
 
-                    if config['connection_metric'] == 'distance':
-                        sim_param_list = \
-                            zip(random_seeds,
-                                repeat(count_veh),
-                                repeat(net['graph_streets']),
-                                repeat(net['gdf_buildings']),
-                                repeat(config['max_connection_metric']),
-                                repeat(config['connection_metric']))
-                    elif config['connection_metric'] == 'pathloss':
-                        sim_param_list = \
-                            zip(random_seeds,
-                                repeat(count_veh),
-                                repeat(net['graph_streets']),
-                                repeat(net['gdf_buildings']),
-                                repeat(config['max_connection_metric']),
-                                repeat(config['connection_metric']),
-                                repeat(net['graph_streets_wave']))
-                    else:
-                        raise NotImplementedError(
-                            'Connection metric not supported')
-
+                if config['connection_metric'] == 'distance':
+                    sim_param_list = \
+                        zip(random_seeds,
+                            repeat(count_veh),
+                            repeat(net['graph_streets']),
+                            repeat(net['gdf_buildings']),
+                            repeat(config['max_connection_metric']),
+                            repeat(config['connection_metric']))
+                elif config['connection_metric'] == 'pathloss':
+                    sim_param_list = \
+                        zip(random_seeds,
+                            repeat(count_veh),
+                            repeat(net['graph_streets']),
+                            repeat(net['gdf_buildings']),
+                            repeat(config['max_connection_metric']),
+                            repeat(config['connection_metric']),
+                            repeat(net['graph_streets_wave']))
+                else:
+                    raise NotImplementedError(
+                        'Connection metric not supported')
+                with mp.Pool(processes=config['processes']) as pool:
                     mp_res = pool.starmap(
                         sim_single_uniform,
                         sim_param_list)
-                    if len(mp_res) == 0:
-                        matrices_cons, vehs = [], []
-                    else:
-                        matrices_cons, vehs = list(zip(*mp_res))
 
-                else:
-                    raise NotImplementedError(
-                        'Vehicle distribution type not supported')
+            else:
+                raise NotImplementedError(
+                    'Vehicle distribution type not supported')
+
+            # Check result
+            if len(mp_res) == 0:
+                matrices_cons, vehs = [], []
+            else:
+                matrices_cons, vehs = list(zip(*mp_res))
 
             # Define which variables to save in a file
             results = {'matrices_cons': matrices_cons, 'vehs': vehs}
