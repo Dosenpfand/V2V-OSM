@@ -4,7 +4,8 @@
         "mail_to": "mgasser@nt.tuwien.ac.at",
         "send_mail": true,
         "loglevel": "WARNING",
-        "overwrite_result": true
+        "overwrite_result": true,
+        "results_file_dir": "results/tests"
     },
     "default": {
         "place": "Salmannsdorf - Vienna - Austria",
@@ -78,7 +79,8 @@
             "max_speed": 15,
             "intermediate_points": 100,
             "skip_sumo": false,
-            "abort_after_sumo": false
+            "abort_after_sumo": false,
+            "directory": "sumo_data/tests"
         },
         "show_plot": false,
         "analyze_results": "all"
