@@ -24,7 +24,6 @@
             "nlos": 140
         },
         "simulation_mode": "sequential",
-        "show_plot": false,
         "analyze_results": "all"
     },
     "simplify_buildings": {
@@ -42,7 +41,6 @@
             "nlos": 140
         },
         "simulation_mode": "sequential",
-        "show_plot": false,
         "building_tolerance": 1
     },
     "sumo_distance_paralell": {
@@ -82,7 +80,6 @@
             "abort_after_sumo": false,
             "directory": "sumo_data/tests"
         },
-        "show_plot": false,
         "analyze_results": "all"
     },
     "uniform_distance_sequential": {
@@ -101,7 +98,6 @@
             "nlos": 140
         },
         "simulation_mode": "sequential",
-        "show_plot": false,
         "analyze_results": "all"
     },
     "uniform_distance_parallel": {
@@ -120,7 +116,6 @@
             "nlos": 140
         },
         "simulation_mode": "parallel",
-        "show_plot": false,
         "analyze_results": "all"
     },
     "uniform_pathloss_sequential": {
@@ -137,7 +132,6 @@
         "connection_metric": "pathloss",
         "max_connection_metric": 116,
         "simulation_mode": "sequential",
-        "show_plot": false,
         "analyze_results": "all"
     },
     "demo": {
@@ -149,6 +143,7 @@
         "connection_metric": "pathloss",
         "max_connection_metric": 150,
         "simulation_mode": "demo",
-        "show_plot": false
+        "save_plot": true,
+        "plot_dir": "images/demo_tests"
     }
 }

@@ -18,7 +18,6 @@
             "nlos": 0
         },
         "simulation_mode": "parallel",
-        "show_plot": false,
         "overwrite_result": true,
         "results_file_dir": "results/tests"
     },
