@@ -19,7 +19,7 @@ class TestSumo(unittest.TestCase):
 
         # OSM id for Salmannsdorf, Vienna, Austria
         osm_id = 5875884
-        directory = 'sumo_data'
+        directory = os.path.join('sumo_data', 'tests')
         path_out = os.path.join(directory, 'test_download_streets_from_id_city.osm.xml')
 
         if os.path.isfile(path_out):
@@ -34,6 +34,7 @@ class TestSumo(unittest.TestCase):
         """Tests the function simple_wrapper"""
 
         place = 'Salmannsdorf - Vienna - Austria'
+        directory = os.path.join('sumo_data', 'tests')
 
         # Run simulation with overwrite
         traces = sumo.simple_wrapper(
@@ -48,7 +49,7 @@ class TestSumo(unittest.TestCase):
             intermediate_points=None,
             start_veh_simult=True,
             coordinate_tls=True,
-            directory='sumo_data',
+            directory=directory,
             skip_if_exists=False,
             veh_class='passenger'
         )
@@ -68,7 +69,7 @@ class TestSumo(unittest.TestCase):
             intermediate_points=None,
             start_veh_simult=True,
             coordinate_tls=True,
-            directory='sumo_data',
+            directory=directory,
             skip_if_exists=True,
             veh_class='passenger'
         )

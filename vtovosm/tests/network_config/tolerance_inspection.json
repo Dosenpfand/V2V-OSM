@@ -20,7 +20,7 @@
         "simulation_mode": "parallel",
         "show_plot": false,
         "overwrite_result": true,
-        "results_file_dir": "results/tolerance_inspection"
+        "results_file_dir": "results/tests"
     },
     "tolerance_0_test": {
         "place": "Salmannsdorf - Vienna - Austria",
