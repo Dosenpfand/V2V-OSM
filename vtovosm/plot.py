@@ -1,10 +1,11 @@
 """ Plot functionality"""
 
+import os
+
 import matplotlib.animation as animation
 import matplotlib.pyplot as plt
 import numpy as np
 import osmnx as ox
-import os
 
 
 # TODO: define figure and axis?
@@ -19,6 +20,7 @@ def setup(figsize=(8, 5)):
     """Sets up plotting"""
 
     plt.rcParams["figure.figsize"] = figsize
+
 
 def plot_streets_and_buildings(streets, buildings=None, show=True, dpi=300, path=None, overwrite=False):
     """ Plots streets and buildings"""
@@ -186,19 +188,18 @@ def plot_cluster_max(streets, buildings, coordinates_vehs, show=True, path=None,
     return fig, axi
 
 
-def plot_veh_traces_animation(traces, streets, buildings=None, show=True, filename=None, path=None, overwrite=False):
+def plot_veh_traces_animation(traces, streets, buildings=None, show=True, path=None, overwrite=False):
     """Plots an animation of the vehicle traces"""
-
-    # TODO: make whole function prettier
 
     def update_line(timestep, traces, line):
         """Updates the animation periodically"""
+
         line.set_data([traces[timestep]['x'], traces[timestep]['y']])
         return line,
 
     fig, _ = plot_streets_and_buildings(
         streets, buildings=buildings, show=False)
-    line, = plt.plot([], [], 'ro')
+    line, = plt.plot([], [], linewidth=0, marker='o')
 
     line_anim = animation.FuncAnimation(fig, update_line, len(traces), fargs=(traces, line),
                                         interval=25, blit=True)
@@ -208,5 +209,5 @@ def plot_veh_traces_animation(traces, streets, buildings=None, show=True, filena
     if path is not None:
         if overwrite or not os.path.isfile(path):
             writer = animation.writers['ffmpeg']
-            writer_inst = writer(fps=15, bitrate=1800)
-            line_anim.save(filename, writer=writer_inst)
+            writer_inst = writer(fps=25, bitrate=1800)
+            line_anim.save(path, writer=writer_inst)
