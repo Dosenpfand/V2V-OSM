@@ -30,6 +30,7 @@ addons:
     - liblapack-dev
     - gfortran
     - sumo
+    - libav-tools
 cache: pip
 branches:
   except:
