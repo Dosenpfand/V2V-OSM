@@ -493,7 +493,7 @@ def main(conf_path=None, scenario=None):
             os.makedirs(plot_dir)
 
         if config['simulation_mode'] == 'demo':
-            # TODO: too much white border in PDFs
+            # TODO: too much white border in PDFs and map cut on right and top!
             plot.setup()
             path = os.path.join(plot_dir, 'prop_cond.pdf')
             plot.plot_prop_cond(net['graph_streets'], net['gdf_buildings'],
@@ -504,11 +504,14 @@ def main(conf_path=None, scenario=None):
             path = os.path.join(plot_dir, 'con_status.pdf')
             plot.plot_con_status(net['graph_streets'], net['gdf_buildings'],
                                  net['vehs'], show=False, path=path, overwrite=config['overwrite_result'])
-        # TODO: make own mode SUMO_demo? and test function!
         elif config['distribution_veh'] == 'SUMO':
+            if len(counts_veh) > 1:
+                logging.warning('Multiple vehicle counts simulated, but will only generate plot for last one')
             time_start = utils.debug(None, 'Plotting animation')
+            path = os.path.join(plot_dir, 'veh_traces.mp4')
             plot.plot_veh_traces_animation(
-                veh_traces, net['graph_streets'], net['gdf_buildings'], show=False)
+                veh_traces, net['graph_streets'], net['gdf_buildings'], show=False, path=path,
+                overwrite=config['overwrite_result'])
             utils.debug(time_start)
 
 
