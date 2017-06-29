@@ -10,8 +10,9 @@ env:
 # SUMO ppa can not be added with the apt addon because it is not whitelisted
 before_install:
   - sudo add-apt-repository ppa:sumo/stable -y
+  - sudo add-apt-repository ppa:jonathonf/ffmpeg-3 -y
   - sudo apt-get update -q
-  - sudo apt-get install sumo
+  - sudo apt-get install sumo ffmpeg
 install:
   - pip install --upgrade pip
   - pip install -r requirements-test.txt
@@ -30,7 +31,6 @@ addons:
     - liblapack-dev
     - gfortran
     - sumo
-    - libav-tools
 cache: pip
 branches:
   except:
