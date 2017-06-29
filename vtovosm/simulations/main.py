@@ -367,7 +367,7 @@ def main(conf_path=None, scenario=None):
         elif config['simulation_mode'] == 'sequential':
             if config['distribution_veh'] == 'SUMO':
                 matrices_cons = np.zeros(veh_traces.size, dtype=object)
-                vehs = np.zeros(config['iterations'], dtype=object)
+                vehs = np.zeros(veh_traces.size, dtype=object)
                 for idx, snapshot in enumerate(veh_traces):
                     time_start = utils.debug(
                         None, 'Analyzing snapshot {:d}'.format(idx))
@@ -394,6 +394,7 @@ def main(conf_path=None, scenario=None):
                             'Connection metric not supported')
 
                     matrices_cons[idx] = matrix_cons_snapshot
+                    vehs[idx] = vehs_snapshot
                     utils.debug(time_start)
             elif config['distribution_veh'] == 'uniform':
                 matrices_cons = np.zeros(config['iterations'], dtype=object)
@@ -492,27 +493,45 @@ def main(conf_path=None, scenario=None):
         if not os.path.isdir(plot_dir):
             os.makedirs(plot_dir)
 
+        plot.setup()
+        time_start = utils.debug(None, 'Plotting')
+
         if config['simulation_mode'] == 'demo':
             # TODO: too much white border in PDFs and map cut on right and top!
-            plot.setup()
+
+            # Plot propagation conditions
             path = os.path.join(plot_dir, 'prop_cond.pdf')
             plot.plot_prop_cond(net['graph_streets'], net['gdf_buildings'],
                                 net['vehs'], show=False, path=path, overwrite=config['overwrite_result'])
+
+            # Plot pathloss
             path = os.path.join(plot_dir, 'pathloss.pdf')
             plot.plot_pathloss(net['graph_streets'], net['gdf_buildings'],
                                net['vehs'], show=False, path=path, overwrite=config['overwrite_result'])
+
+            # Plot connection status
             path = os.path.join(plot_dir, 'con_status.pdf')
             plot.plot_con_status(net['graph_streets'], net['gdf_buildings'],
                                  net['vehs'], show=False, path=path, overwrite=config['overwrite_result'])
         elif config['distribution_veh'] == 'SUMO':
+
             if len(counts_veh) > 1:
                 logging.warning('Multiple vehicle counts simulated, but will only generate plot for last one')
-            time_start = utils.debug(None, 'Plotting animation')
+
+            # Plot animation of vehicle traces
             path = os.path.join(plot_dir, 'veh_traces.mp4')
             plot.plot_veh_traces_animation(
                 veh_traces, net['graph_streets'], net['gdf_buildings'], show=False, path=path,
                 overwrite=config['overwrite_result'])
-            utils.debug(time_start)
+
+            # Plot vehicle positions at the end of simulation time
+            vehs_snapshot = veh_traces[-1]
+            vehs = sumo.vehicles_from_traces(net['graph_streets'], vehs_snapshot)
+            path = os.path.join(plot_dir, 'vehs_snapshot_end.pdf')
+            plot.plot_vehs(net['graph_streets'], net['gdf_buildings'], vehs, show=False, path=path,
+                           overwrite=config['overwrite_result'])
+
+        utils.debug(time_start)
 
 
 if __name__ == '__main__':
