@@ -43,8 +43,30 @@ def plot_streets_and_buildings(streets, buildings=None, show=True, dpi=300, path
 
     return fig, axi
 
+def plot_vehs(streets, buildings, vehicles, show=True, path=None, overwrite=False):
+    """ Plots vehicles"""
 
-def plot_prop_cond(streets, buildings, coordinates_vehs, show=True, path=None, overwrite=False):
+    # Plot streets and buildings
+    fig, axi = plot_streets_and_buildings(
+        streets, buildings, show=False, dpi=300)
+
+    # Plot vehicles with propagation conditions
+    plt.scatter(vehicles.get()[:, 0], vehicles.get()[:, 1])
+
+    # Add additional information to plot
+    plt.xlabel('X coordinate [m]')
+    plt.ylabel('Y coordinate [m]')
+
+    if path is not None:
+        if overwrite or not os.path.isfile(path):
+            plt.savefig(path)
+
+    if show:
+        plt.show()
+
+    return fig, axi
+
+def plot_prop_cond(streets, buildings, vehicles, show=True, path=None, overwrite=False):
     """ Plots vehicles and their respective propagation condition (LOS/OLOS/NLOS parallel/NLOS
     orthogonal)"""
 
@@ -53,15 +75,15 @@ def plot_prop_cond(streets, buildings, coordinates_vehs, show=True, path=None, o
         streets, buildings, show=False, dpi=300)
 
     # Plot vehicles with propagation conditions
-    plt.scatter(coordinates_vehs.get('center')[0], coordinates_vehs.get('center')[1], label='Own',
+    plt.scatter(vehicles.get('center')[0], vehicles.get('center')[1], label='Own',
                 marker='x', zorder=10, s=2 * plt.rcParams['lines.markersize'] ** 2, c='black')
-    plt.scatter(coordinates_vehs.get('los')[:, 0], coordinates_vehs.get('los')[:, 1], label='LOS',
+    plt.scatter(vehicles.get('los')[:, 0], vehicles.get('los')[:, 1], label='LOS',
                 zorder=9, alpha=0.75)
-    plt.scatter(coordinates_vehs.get('olos')[:, 0], coordinates_vehs.get('olos')[:, 1],
+    plt.scatter(vehicles.get('olos')[:, 0], vehicles.get('olos')[:, 1],
                 label='OLOS', zorder=8, alpha=0.75)
-    plt.scatter(coordinates_vehs.get('ort')[:, 0], coordinates_vehs.get('ort')[:, 1],
+    plt.scatter(vehicles.get('ort')[:, 0], vehicles.get('ort')[:, 1],
                 label='NLOS orth', zorder=5, alpha=0.5)
-    plt.scatter(coordinates_vehs.get('par')[:, 0], coordinates_vehs.get('par')[:, 1],
+    plt.scatter(vehicles.get('par')[:, 0], vehicles.get('par')[:, 1],
                 label='NLOS par', zorder=5, alpha=0.5)
 
     # Add additional information to plot
@@ -126,7 +148,7 @@ def plot_pathloss(streets, buildings, vehicles, show=True, path=None, overwrite=
     return fig, axi
 
 
-def plot_con_status(streets, buildings, coordinates_vehs, show=True, path=None, overwrite=False):
+def plot_con_status(streets, buildings, vehicles, show=True, path=None, overwrite=False):
     """ Plots the connection status (connected/not conected) in regard to another vehicle"""
 
     # Plot streets and buildings
@@ -134,11 +156,11 @@ def plot_con_status(streets, buildings, coordinates_vehs, show=True, path=None, 
         streets, buildings, show=False, dpi=300)
 
     # Plot vehicles with connection status
-    plt.scatter(coordinates_vehs.get('center')[0], coordinates_vehs.get('center')[1], label='Own',
+    plt.scatter(vehicles.get('center')[0], vehicles.get('center')[1], label='Own',
                 c='black', marker='x', s=2 * plt.rcParams['lines.markersize'] ** 2, zorder=3)
-    plt.scatter(coordinates_vehs.get('in_range')[:, 0], coordinates_vehs.get('in_range')[:, 1],
+    plt.scatter(vehicles.get('in_range')[:, 0], vehicles.get('in_range')[:, 1],
                 label='In range', marker='o', zorder=2)
-    plt.scatter(coordinates_vehs.get('out_range')[:, 0], coordinates_vehs.get('out_range')[:, 1],
+    plt.scatter(vehicles.get('out_range')[:, 0], vehicles.get('out_range')[:, 1],
                 label='Out of range', marker='o', alpha=0.75, zorder=1)
 
     # Add additional information to plot
@@ -157,7 +179,7 @@ def plot_con_status(streets, buildings, coordinates_vehs, show=True, path=None, 
     return fig, axi
 
 
-def plot_cluster_max(streets, buildings, coordinates_vehs, show=True, path=None, overwrite=False):
+def plot_cluster_max(streets, buildings, vehicles, show=True, path=None, overwrite=False):
     """ Plots the biggest cluster and the remaining vehicles"""
 
     # Plot streets and buildings
@@ -165,11 +187,11 @@ def plot_cluster_max(streets, buildings, coordinates_vehs, show=True, path=None,
         streets, buildings, show=False, dpi=300)
 
     # Plot vehicles with connection status
-    plt.scatter(coordinates_vehs.get('cluster_max')[:, 0],
-                coordinates_vehs.get('cluster_max')[:, 1],
+    plt.scatter(vehicles.get('cluster_max')[:, 0],
+                vehicles.get('cluster_max')[:, 1],
                 label='Biggest cluster', marker='o', zorder=2)
-    plt.scatter(coordinates_vehs.get('not_cluster_max')[:, 0],
-                coordinates_vehs.get('not_cluster_max')[:, 1],
+    plt.scatter(vehicles.get('not_cluster_max')[:, 0],
+                vehicles.get('not_cluster_max')[:, 1],
                 label='Other vehicles', marker='o', alpha=0.75, zorder=1)
 
     # Add additional information to plot
