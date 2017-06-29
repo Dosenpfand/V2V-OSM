@@ -129,7 +129,7 @@
         },
         "simulation_mode": "sequential",
         "sumo": {
-            "sim_duration": 300,
+            "sim_duration": 600,
             "warmup_duration": 0,
             "fringe_factor": 1,
             "tls_settings": {
@@ -150,7 +150,7 @@
         "distribution_veh": "SUMO",
         "density_type": "absolute",
         "densities_veh": [
-            100
+            200
         ],
         "connection_metric": "distance",
         "max_connection_metric": {
@@ -159,7 +159,7 @@
         },
         "simulation_mode": "sequential",
         "sumo": {
-            "sim_duration": 300,
+            "sim_duration": 600,
             "warmup_duration": 0,
             "fringe_factor": 1,
             "tls_settings": {
