@@ -23,7 +23,8 @@
             "nlos": 140
         },
         "simulation_mode": "sequential",
-        "building_tolerance": 1
+        "building_tolerance": 1,
+        "analyze_results": "all"
     },
     "uniform_distance_sequential": {
         "place": "Neubau - Vienna - Austria",
@@ -40,7 +41,8 @@
             "olos_los": 250,
             "nlos": 140
         },
-        "simulation_mode": "sequential"
+        "simulation_mode": "sequential",
+        "analyze_results": "all"
     },
     "sumo_distance_sequential": {
         "place": "Neubau - Vienna - Austria",
@@ -57,6 +59,7 @@
             "nlos": 140
         },
         "simulation_mode": "sequential",
+        "analyze_results": "all",
         "sumo": {
             "sim_duration": 200,
             "warmup_duration": 100,
@@ -84,7 +87,8 @@
         ],
         "connection_metric": "pathloss",
         "max_connection_metric": 116,
-        "simulation_mode": "sequential"
+        "simulation_mode": "sequential",
+        "analyze_results": "all"
     },
     "demo_neubau": {
         "place": "Neubau - Vienna - Austria",
@@ -139,5 +143,35 @@
         },
         "save_plot": true,
         "plot_dir": "images/demo_sumo_neubau"
+    },
+    "demo_sumo_upperwestside": {
+        "place": "Upper West Side - New York - USA",
+        "which_result": null,
+        "distribution_veh": "SUMO",
+        "density_type": "absolute",
+        "densities_veh": [
+            100
+        ],
+        "connection_metric": "distance",
+        "max_connection_metric": {
+            "olos_los": 250,
+            "nlos": 140
+        },
+        "simulation_mode": "sequential",
+        "sumo": {
+            "sim_duration": 300,
+            "warmup_duration": 0,
+            "fringe_factor": 1,
+            "tls_settings": {
+                "cycle_time": 45,
+                "yellow_time": 2
+            },
+            "max_speed": 15,
+            "intermediate_points": 100,
+            "skip_sumo": false,
+            "abort_after_sumo": true
+        },
+        "save_plot": true,
+        "plot_dir": "images/demo_sumo_upperwestside"
     }
 }
