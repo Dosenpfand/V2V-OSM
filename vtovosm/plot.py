@@ -230,6 +230,13 @@ def plot_veh_traces_animation(traces, streets, buildings=None, show=True, path=N
 
     if path is not None:
         if overwrite or not os.path.isfile(path):
-            writer = animation.writers['ffmpeg']
-            writer_inst = writer(fps=25, bitrate=1800)
+            if os.path.splitext(path)[1] == '.mp4':
+                writer = animation.writers['ffmpeg']
+                writer_inst = writer(fps=25, bitrate=1800)
+            elif os.path.splitext(path)[1] == '.gif':
+                writer = animation.writers['imagemagick']
+                writer_inst = writer(fps=12, bitrate=-1)
+            else:
+                raise RuntimeError('File extension not supported')
+
             line_anim.save(path, writer=writer_inst)
