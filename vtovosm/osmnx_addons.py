@@ -4,6 +4,7 @@ import logging
 import os
 
 import geopandas as gpd
+import numpy as np
 import osmnx as ox
 import shapely.geometry as geom
 import shapely.ops as ops
@@ -185,15 +186,16 @@ def which_result_polygon(query, limit=5):
     return None
 
 
-def simplify_buildings(gdf_buildings, tolerance=1):
-    """Simplifies the building polygons by reducing the number of edges"""
-    # TODO: actual tolerance is higher because two different algorithms (merge + simplify) applied
+def simplify_buildings(gdf_buildings, tolerance=1, merge_by_fill=True):
+    """Simplifies the building polygons by reducing the number of edges.
+    Notes: The resulting deviation can be larger than tolerance, because both merging and simplifying use tolerance."""
 
     geoms_list = gdf_buildings.geometry.tolist()
     geoms_list_comb = []
 
-    # Merge polygons
-    for idx1, geom1 in enumerate(geoms_list):
+    # Merge polygons if they are near each other
+    for idx1 in range(len(geoms_list)):
+        geom1 = geoms_list[idx1]
 
         if geom1 is None:
             continue
@@ -201,13 +203,15 @@ def simplify_buildings(gdf_buildings, tolerance=1):
             geoms_list_comb.append(geom1)
             continue
 
-        # NOTE: because of previous merges we need to check from the beginning and not from idx+1
-        for idx2, geom2 in enumerate(geoms_list):
+        # Because of previous merges we need to check from the beginning and not from idx+1
+        for idx2 in range(len(geoms_list)):
+            geom2 = geoms_list[idx2]
 
             if idx1 == idx2:
                 continue
-
-            if not isinstance(geom2, geom.Polygon):
+            elif geom2 is None:
+                continue
+            elif not isinstance(geom2, geom.Polygon):
                 continue
 
             dist = geom1.distance(geom2)
@@ -215,18 +219,12 @@ def simplify_buildings(gdf_buildings, tolerance=1):
             if dist > tolerance:
                 continue
 
-            # NOTE: setting the buffer to dist/2 does not guarantee that the 2 polygons will intersect and resulting in
-            # a single polygon. Therefore we need the check at the end of the inner loop.
-            buffer = dist / 2
-            geom1_buf = geom1.buffer(buffer, resolution=1)
-            geom2_buf = geom2.buffer(buffer, resolution=1)
+            if merge_by_fill:
+                geom_union = merge_polygons_by_fill(geom1, geom2)
+            else:
+                geom_union = merge_polygons_by_buffer(geom1, geom2)
 
-            if not geom1_buf.intersects(geom2_buf):
-                continue
-
-            geom_union = ops.unary_union([geom1_buf, geom2_buf]).buffer(-buffer, resolution=1)
-
-            # If the union is 2 separate polygon we keep them otherwise we save the union
+            # If the union is 2 separate polygons we keep them otherwise we save the union
             if not isinstance(geom_union, geom.MultiPolygon):
                 geom1 = geom_union
                 geoms_list[idx2] = None
@@ -235,32 +233,10 @@ def simplify_buildings(gdf_buildings, tolerance=1):
         geoms_list_comb.append(geom1)
 
     # Remove interiors of polygons
-    geoms_list_ext = []
-    for geometry in geoms_list_comb:
-        if not isinstance(geometry, geom.Polygon):
-            geoms_list_ext.append(geometry)
-        else:
-            poly_simp = geom.Polygon(geometry.exterior)
-            geoms_list_ext.append(poly_simp)
+    geoms_list_ext = remove_interior_polygons(geoms_list_comb)
 
     # Simplify polygons
-    geoms_list_simpl = []
-    for geometry in geoms_list_ext:
-        if not isinstance(geometry, geom.Polygon):
-            geoms_list_simpl.append(geometry)
-            continue
-
-        geometry_simpl = geometry.simplify(tolerance, preserve_topology=False)
-
-        if isinstance(geometry_simpl, geom.MultiPolygon):
-            for poly in geometry_simpl:
-                if not poly.is_empty:
-                    geoms_list_simpl.append(poly)
-        else:
-            if not geometry_simpl.is_empty:
-                geoms_list_simpl.append(geometry_simpl)
-            else:
-                geoms_list_simpl.append(geometry)
+    geoms_list_simpl = simplify_polygons(geoms_list_ext, tolerance=tolerance)
 
     # Build a new GDF
     buildings = {}
@@ -272,3 +248,124 @@ def simplify_buildings(gdf_buildings, tolerance=1):
     gdf_buildings_opt = gpd.GeoDataFrame(buildings).T
 
     return gdf_buildings_opt
+
+
+def simplify_polygons(polygons_list, tolerance=1):
+    """Simplifies a list of polygons"""
+
+    polygons_list_simpl = []
+    for geometry in polygons_list:
+        if not isinstance(geometry, geom.Polygon):
+            polygons_list_simpl.append(geometry)
+            continue
+
+        geometry_simpl = geometry.simplify(tolerance, preserve_topology=False)
+
+        if isinstance(geometry_simpl, geom.MultiPolygon):
+            for poly in geometry_simpl:
+                if not poly.is_empty:
+                    polygons_list_simpl.append(poly)
+        else:
+            if not geometry_simpl.is_empty:
+                polygons_list_simpl.append(geometry_simpl)
+            else:
+                polygons_list_simpl.append(geometry)
+
+    return polygons_list_simpl
+
+
+def remove_interior_polygons(polygons_list):
+    """Removes all interiors of a list of polygons"""
+
+    polygons_list_exterior = []
+    for geometry in polygons_list:
+        if not isinstance(geometry, geom.Polygon):
+            polygons_list_exterior.append(geometry)
+        else:
+            poly_simp = geom.Polygon(geometry.exterior)
+            polygons_list_exterior.append(poly_simp)
+
+    return polygons_list_exterior
+
+
+def merge_polygons_by_fill(polygon1, polygon2):
+    """Merges 2 polygons by searching for the 2 nearest nodes on each and constructing a square to fill the gap
+    region"""
+
+    if polygon1.intersects(polygon2):
+        geom_union = ops.unary_union([polygon1, polygon2])
+        return geom_union
+
+    coords1 = np.array(polygon1.exterior.coords.xy)
+    coords2 = np.array(polygon2.exterior.coords.xy)
+    points1 = [geom.Point(coord) for coord in coords1.T][:-1]
+    points2 = [geom.Point(coord) for coord in coords2.T][:-1]
+
+    # TODO: speedup, only one loop?
+    min_dist_1 = np.inf
+    min_idx1_1 = None
+    min_idx2_1 = None
+    for idx1, point1 in enumerate(points1):
+        for idx2, point2 in enumerate(points2):
+            cur_dist = point1.distance(point2)
+            if cur_dist < min_dist_1:
+                min_dist_1 = cur_dist
+                min_idx1_1 = idx1
+                min_idx2_1 = idx2
+
+    min_dist_2 = np.inf
+    min_idx1_2 = None
+    min_idx2_2 = None
+    for idx1, point1 in enumerate(points1):
+        # TODO: "or" really necessary?
+        if (idx1 == min_idx1_1) or (list(point1.coords) == list(points1[min_idx1_1].coords)):
+            continue
+        for idx2, point2 in enumerate(points2):
+            if (idx2 == min_idx2_1) or (list(point2.coords) == list(points2[min_idx2_1].coords)):
+                continue
+            cur_dist = point1.distance(point2)
+            if cur_dist < min_dist_2:
+                min_dist_2 = cur_dist
+                min_idx1_2 = idx1
+                min_idx2_2 = idx2
+
+    points_fill = [points1[min_idx1_1], points2[min_idx2_1], points2[min_idx2_2], points1[min_idx1_2]]
+    points_fill_idxs = [(0,1,2,3), (1,0,2,3), (0,2,1,3)]
+
+    poly_fill = None
+    for idxs in points_fill_idxs:
+        points_fill_iter = [points_fill[idx] for idx in idxs]
+        coords_fill = [point.coords[:][0] for point in points_fill_iter]
+        poly_fill = geom.Polygon(coords_fill)
+        if poly_fill.is_valid:
+            break
+
+    if not poly_fill.is_valid:
+        # TODO: !
+        raise RuntimeError('TODO!')
+
+    geom_union = ops.unary_union([polygon1, poly_fill, polygon2]).simplify(0)
+    return geom_union
+
+
+def merge_polygons_by_buffer(polygon1, polygon2):
+    """Merges 2 polygons by creating a buffer around them so they intersect and appliend a negative buffer after the
+    merge"""
+
+    dist = polygon1.distance(polygon2)
+    if polygon1.intersects(polygon2):
+        geom_union = ops.unary_union([polygon1, polygon2])
+        return geom_union
+
+    # Setting the buffer to dist/2 does not guarantee that the 2 polygons will intersect and resulting in
+    # a single polygon. Therefore we need the check at the end of the inner loop.
+    buffer = dist / 2
+    geom1_buf = polygon1.buffer(buffer, resolution=1)
+    geom2_buf = polygon2.buffer(buffer, resolution=1)
+
+    if not geom1_buf.intersects(geom2_buf):
+        geom_union = geom.MultiPolygon(polygon1, polygon2)
+    else:
+        geom_union = ops.unary_union([geom1_buf, geom2_buf]).buffer(-buffer, resolution=1)
+
+    return geom_union

@@ -755,16 +755,14 @@ class TestOsmnxAddons(unittest.TestCase):
     def test_simplify_buildings(self):
         """Tests the function simplify_buildings"""
 
-        # TODO: still fails for tolerance = 40 => size = 1
-        tolerances = [1, 20]
-        sizes_gdf_expected = [5, 4]
+        tolerances = [20, 40, 1]
+        sizes_gdf_expected = [4, 1, 5]
 
         network = DemoNetwork()
         gdf_buildings = network.build_gdf_buildings()
 
         for tolerance, size_gdf_expected in zip(tolerances, sizes_gdf_expected):
             gdf_buildings_simplified = ox_a.simplify_buildings(gdf_buildings, tolerance=tolerance)
-
             self.assertEqual(len(gdf_buildings_simplified), size_gdf_expected)
 
 
