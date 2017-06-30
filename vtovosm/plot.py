@@ -8,54 +8,43 @@ import numpy as np
 import osmnx as ox
 
 
-# TODO: define figure and axis?
-
-def show():
-    """Shows the figure(s)"""
-
-    plt.show()
-
-
 def setup(figsize=(8, 5)):
     """Sets up plotting"""
 
     plt.rcParams["figure.figsize"] = figsize
-
+    plt.rcParams["savefig.bbox"] = 'tight'
 
 def plot_streets_and_buildings(streets, buildings=None, show=True, dpi=300, path=None, overwrite=False):
     """ Plots streets and buildings"""
 
-    # TODO: street width!
-    # TODO: bug when plotting buildings, inner area not empty!
+    # TODO: add ruler so length can be read?
+    # TODO: bug when plotting buildings, inner area not empty! (e.g. Stiftskaserne Wien Neubau)
     fig, axi = ox.plot_graph(
         streets, show=False, close=False, node_size=0, dpi=dpi, edge_color='#333333')
 
     if buildings is not None:
-        ox.plot_buildings(buildings, fig=fig, ax=axi,
-                          show=False, close=False, dpi=dpi, color='#999999')
+        ox.plot_buildings(buildings, fig=fig, ax=axi, set_bounds=False, show=False, close=False, dpi=dpi,
+                          color='#999999')
 
     if path is not None:
         if overwrite or not os.path.isfile(path):
-            plt.savefig(path)
+            fig.savefig(path)
 
     if show:
-        plt.show()
+        fig.show()
 
     return fig, axi
 
+
 def plot_vehs(streets, buildings, vehicles, show=True, path=None, overwrite=False):
-    """ Plots vehicles"""
+    """Plots vehicles"""
 
     # Plot streets and buildings
     fig, axi = plot_streets_and_buildings(
         streets, buildings, show=False, dpi=300)
 
     # Plot vehicles with propagation conditions
-    plt.scatter(vehicles.get()[:, 0], vehicles.get()[:, 1])
-
-    # Add additional information to plot
-    plt.xlabel('X coordinate [m]')
-    plt.ylabel('Y coordinate [m]')
+    axi.scatter(vehicles.get()[:, 0], vehicles.get()[:, 1])
 
     if path is not None:
         if overwrite or not os.path.isfile(path):
@@ -65,6 +54,7 @@ def plot_vehs(streets, buildings, vehicles, show=True, path=None, overwrite=Fals
         plt.show()
 
     return fig, axi
+
 
 def plot_prop_cond(streets, buildings, vehicles, show=True, path=None, overwrite=False):
     """ Plots vehicles and their respective propagation condition (LOS/OLOS/NLOS parallel/NLOS
@@ -75,28 +65,26 @@ def plot_prop_cond(streets, buildings, vehicles, show=True, path=None, overwrite
         streets, buildings, show=False, dpi=300)
 
     # Plot vehicles with propagation conditions
-    plt.scatter(vehicles.get('center')[0], vehicles.get('center')[1], label='Own',
+    axi.scatter(vehicles.get('center')[0], vehicles.get('center')[1], label='Own',
                 marker='x', zorder=10, s=2 * plt.rcParams['lines.markersize'] ** 2, c='black')
-    plt.scatter(vehicles.get('los')[:, 0], vehicles.get('los')[:, 1], label='LOS',
+    axi.scatter(vehicles.get('los')[:, 0], vehicles.get('los')[:, 1], label='LOS',
                 zorder=9, alpha=0.75)
-    plt.scatter(vehicles.get('olos')[:, 0], vehicles.get('olos')[:, 1],
+    axi.scatter(vehicles.get('olos')[:, 0], vehicles.get('olos')[:, 1],
                 label='OLOS', zorder=8, alpha=0.75)
-    plt.scatter(vehicles.get('ort')[:, 0], vehicles.get('ort')[:, 1],
+    axi.scatter(vehicles.get('ort')[:, 0], vehicles.get('ort')[:, 1],
                 label='NLOS orth', zorder=5, alpha=0.5)
-    plt.scatter(vehicles.get('par')[:, 0], vehicles.get('par')[:, 1],
+    axi.scatter(vehicles.get('par')[:, 0], vehicles.get('par')[:, 1],
                 label='NLOS par', zorder=5, alpha=0.5)
 
     # Add additional information to plot
-    plt.legend()
-    plt.xlabel('X coordinate [m]')
-    plt.ylabel('Y coordinate [m]')
+    axi.legend().set_visible(True)
 
     if path is not None:
         if overwrite or not os.path.isfile(path):
-            plt.savefig(path)
+            fig.savefig(path)
 
     if show:
-        plt.show()
+        fig.show()
 
     return fig, axi
 
@@ -112,19 +100,17 @@ def plot_pathloss(streets, buildings, vehicles, show=True, path=None, overwrite=
     pathlosses = vehicles.get_pathlosses('other')
     index_wo_inf = pathlosses != np.Infinity
     index_inf = np.invert(index_wo_inf)
-    plt.scatter(vehicles.get('center')[0], vehicles.get('center')[1], label='Own',
+    axi.scatter(vehicles.get('center')[0], vehicles.get('center')[1], label='Own',
                 c='black', marker='x', s=2 * plt.rcParams['lines.markersize'] ** 2)
     cax = plt.scatter(vehicles.get('other')[index_wo_inf][:, 0],
                       vehicles.get('other')[index_wo_inf][:, 1], marker='o',
                       c=pathlosses[index_wo_inf], cmap=plt.cm.magma, label='Finite PL')
-    plt.scatter(vehicles.get('other')[index_inf][:, 0],
+    axi.scatter(vehicles.get('other')[index_inf][:, 0],
                 vehicles.get('other')[index_inf][:, 1], marker='.', c='y',
                 label='Infinite PL', alpha=0.5)
 
     # Add additional information to plot
-    plt.xlabel('X coordinate [m]')
-    plt.ylabel('Y coordinate [m]')
-    plt.legend()
+    axi.legend().set_visible(True)
 
     # Plot color map
     pl_min = np.min(pathlosses[index_wo_inf])
@@ -145,7 +131,7 @@ def plot_pathloss(streets, buildings, vehicles, show=True, path=None, overwrite=
     if show:
         plt.show()
 
-    return fig, axi
+    return fig, axi, cax
 
 
 def plot_con_status(streets, buildings, vehicles, show=True, path=None, overwrite=False):
@@ -156,25 +142,22 @@ def plot_con_status(streets, buildings, vehicles, show=True, path=None, overwrit
         streets, buildings, show=False, dpi=300)
 
     # Plot vehicles with connection status
-    plt.scatter(vehicles.get('center')[0], vehicles.get('center')[1], label='Own',
+    axi.scatter(vehicles.get('center')[0], vehicles.get('center')[1], label='Own',
                 c='black', marker='x', s=2 * plt.rcParams['lines.markersize'] ** 2, zorder=3)
-    plt.scatter(vehicles.get('in_range')[:, 0], vehicles.get('in_range')[:, 1],
+    axi.scatter(vehicles.get('in_range')[:, 0], vehicles.get('in_range')[:, 1],
                 label='In range', marker='o', zorder=2)
-    plt.scatter(vehicles.get('out_range')[:, 0], vehicles.get('out_range')[:, 1],
+    axi.scatter(vehicles.get('out_range')[:, 0], vehicles.get('out_range')[:, 1],
                 label='Out of range', marker='o', alpha=0.75, zorder=1)
 
     # Add additional information to plot
-
-    plt.xlabel('X coordinate [m]')
-    plt.ylabel('Y coordinate [m]')
-    plt.legend()
+    axi.legend().set_visible(True)
 
     if path is not None:
         if overwrite or not os.path.isfile(path):
-            plt.savefig(path)
+            fig.savefig(path)
 
     if show:
-        plt.show()
+        fig.show()
 
     return fig, axi
 
@@ -187,25 +170,22 @@ def plot_cluster_max(streets, buildings, vehicles, show=True, path=None, overwri
         streets, buildings, show=False, dpi=300)
 
     # Plot vehicles with connection status
-    plt.scatter(vehicles.get('cluster_max')[:, 0],
+    axi.scatter(vehicles.get('cluster_max')[:, 0],
                 vehicles.get('cluster_max')[:, 1],
                 label='Biggest cluster', marker='o', zorder=2)
-    plt.scatter(vehicles.get('not_cluster_max')[:, 0],
+    axi.scatter(vehicles.get('not_cluster_max')[:, 0],
                 vehicles.get('not_cluster_max')[:, 1],
                 label='Other vehicles', marker='o', alpha=0.75, zorder=1)
 
     # Add additional information to plot
-
-    plt.xlabel('X coordinate [m]')
-    plt.ylabel('Y coordinate [m]')
-    plt.legend()
+    axi.legend().set_visible(True)
 
     if path is not None:
         if overwrite or not os.path.isfile(path):
-            plt.savefig(path)
+            fig.savefig(path)
 
     if show:
-        plt.show()
+        fig.show()
 
     return fig, axi
 
@@ -219,14 +199,14 @@ def plot_veh_traces_animation(traces, streets, buildings=None, show=True, path=N
         line.set_data([traces[timestep]['x'], traces[timestep]['y']])
         return line,
 
-    fig, _ = plot_streets_and_buildings(
+    fig, axi = plot_streets_and_buildings(
         streets, buildings=buildings, show=False)
-    line, = plt.plot([], [], linewidth=0, marker='o')
+    line, = axi.plot([], [], linewidth=0, marker='o')
 
     line_anim = animation.FuncAnimation(fig, update_line, len(traces), fargs=(traces, line),
                                         interval=25, blit=True)
     if show:
-        plt.show()
+        fig.show()
 
     if path is not None:
         if overwrite or not os.path.isfile(path):

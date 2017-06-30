@@ -497,7 +497,6 @@ def main(conf_path=None, scenario=None):
         time_start = utils.debug(None, 'Plotting')
 
         if config['simulation_mode'] == 'demo':
-            # TODO: too much white border in PDFs and map cut on right and top!
 
             # Plot propagation conditions
             path = os.path.join(plot_dir, 'prop_cond.pdf')

@@ -16,7 +16,6 @@ from . import utils
 def setup():
     """Sets up OSMnx"""
 
-    # TODO: still outputs all and not only >= loglevel!
     logger = logging.getLogger()
     ox.config(log_console=False, log_file=os.devnull, log_name=logger.name, use_cache=True)
 
