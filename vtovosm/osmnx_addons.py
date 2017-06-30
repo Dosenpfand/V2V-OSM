@@ -301,7 +301,7 @@ def merge_polygons_by_fill(polygon1, polygon2):
     points1 = [geom.Point(coord) for coord in coords1.T][:-1]
     points2 = [geom.Point(coord) for coord in coords2.T][:-1]
 
-    # TODO: speedup, only one loop?
+    # Find pair of closest edges
     min_dist_1 = np.inf
     min_idx1_1 = None
     min_idx2_1 = None
@@ -313,15 +313,15 @@ def merge_polygons_by_fill(polygon1, polygon2):
                 min_idx1_1 = idx1
                 min_idx2_1 = idx2
 
+    # Find pair of 2nd closest edges
     min_dist_2 = np.inf
     min_idx1_2 = None
     min_idx2_2 = None
     for idx1, point1 in enumerate(points1):
-        # TODO: "or" really necessary?
-        if (idx1 == min_idx1_1) or (list(point1.coords) == list(points1[min_idx1_1].coords)):
+        if (idx1 == min_idx1_1) or point1.almost_equals(points1[min_idx1_1]):
             continue
         for idx2, point2 in enumerate(points2):
-            if (idx2 == min_idx2_1) or (list(point2.coords) == list(points2[min_idx2_1].coords)):
+            if (idx2 == min_idx2_1) or point2.almost_equals(points2[min_idx2_1]):
                 continue
             cur_dist = point1.distance(point2)
             if cur_dist < min_dist_2:
@@ -329,6 +329,7 @@ def merge_polygons_by_fill(polygon1, polygon2):
                 min_idx1_2 = idx1
                 min_idx2_2 = idx2
 
+    # Generate fill square
     points_fill = [points1[min_idx1_1], points2[min_idx2_1], points2[min_idx2_2], points1[min_idx1_2]]
     points_fill_idxs = [(0,1,2,3), (1,0,2,3), (0,2,1,3)]
 
@@ -340,10 +341,7 @@ def merge_polygons_by_fill(polygon1, polygon2):
         if poly_fill.is_valid:
             break
 
-    if not poly_fill.is_valid:
-        # TODO: !
-        raise RuntimeError('TODO!')
-
+    # Build union of 3 polygons
     geom_union = ops.unary_union([polygon1, poly_fill, polygon2]).simplify(0)
     return geom_union
 
