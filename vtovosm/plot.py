@@ -14,10 +14,11 @@ def setup(figsize=(8, 5)):
     plt.rcParams["figure.figsize"] = figsize
     plt.rcParams["savefig.bbox"] = 'tight'
 
-def plot_streets_and_buildings(streets, buildings=None, show=True, dpi=300, path=None, overwrite=False):
+
+def plot_streets_and_buildings(streets, buildings=None, show=True, dpi=300, path=None, overwrite=False, ruler=True,
+                               axes=False):
     """ Plots streets and buildings"""
 
-    # TODO: add ruler so length can be read?
     # TODO: bug when plotting buildings, inner area not empty! (e.g. Stiftskaserne Wien Neubau)
     fig, axi = ox.plot_graph(
         streets, show=False, close=False, node_size=0, dpi=dpi, edge_color='#333333')
@@ -25,6 +26,23 @@ def plot_streets_and_buildings(streets, buildings=None, show=True, dpi=300, path
     if buildings is not None:
         ox.plot_buildings(buildings, fig=fig, ax=axi, set_bounds=False, show=False, close=False, dpi=dpi,
                           color='#999999')
+
+    # Reset axes parameters to default
+    if axes:
+        axes_color = '#999999'
+        axi.axis('on')
+        axi.margins(0.05)
+        axi.tick_params(which='both', direction='out', colors=axes_color)
+        axi.set_xlabel('X coordinate [m]', color=axes_color)
+        axi.set_ylabel('Y coordinate [m]', color=axes_color)
+        axi.spines['right'].set_color('none')
+        axi.spines['top'].set_color('none')
+        axi.spines['left'].set_color(axes_color)
+        axi.spines['bottom'].set_color(axes_color)
+        fig.canvas.draw()
+
+    if ruler:
+        plot_ruler(axi)
 
     if path is not None:
         if overwrite or not os.path.isfile(path):
@@ -220,3 +238,19 @@ def plot_veh_traces_animation(traces, streets, buildings=None, show=True, path=N
                 raise RuntimeError('File extension not supported')
 
             line_anim.save(path, writer=writer_inst)
+
+
+def plot_ruler(axi, length=1000, coord=None, linewidth=3, color='#999999'):
+    """Plots a ruler"""
+
+    if coord is None:
+        xlim = axi.get_xlim()
+        ylim = axi.get_ylim()
+        coord = (xlim[0] + 10, ylim[0] - 40)
+
+    axi.plot([coord[0], coord[0] + length], [coord[1], coord[1]], color=color, linewidth=linewidth)
+
+    axi.text(coord[0] + length / 2, coord[1] + 1, '{:d} m'.format(length), horizontalalignment='center',
+             verticalalignment='bottom', color=color)
+
+    axi.autoscale()
