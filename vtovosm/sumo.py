@@ -29,7 +29,8 @@ def simple_wrapper(place,
                    coordinate_tls=True,
                    directory='sumo_data/',
                    skip_if_exists=True,
-                   veh_class='passenger'):
+                   veh_class='passenger',
+                   veh_rate_factor=None):
     """Generates and downloads all necessary files, runs a generic SUMO simulation
     and returns the vehicle traces."""
 
@@ -75,11 +76,10 @@ def simple_wrapper(place,
     if not (skip_if_exists and os.path.isfile(path_trips)):
         logging.info('Generating trips')
         if count_veh is not None:
-            # Generate double the trips than needed because validation will throw
-            # some away
-            # TODO: check if necessary => yes it is, depending on place (area?) it might even need a bigger value
-            # Determine value dynamically? try with 2, if still discarding -> 3, ...
-            veh_rate = duration / count_veh / 4
+            # Generate more trips than needed because validation will throw some away
+            if veh_rate_factor is None:
+                veh_rate_factor = 0.5
+            veh_rate = duration / count_veh * veh_rate_factor
         else:
             veh_rate = 1
 

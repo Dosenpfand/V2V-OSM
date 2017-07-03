@@ -19,10 +19,10 @@ def plot_streets_and_buildings(streets, buildings=None, show=True, dpi=300, path
                                axes=False):
     """ Plots streets and buildings"""
 
-    # TODO: bug when plotting buildings, inner area not empty! (e.g. Stiftskaserne Wien Neubau)
     fig, axi = ox.plot_graph(
         streets, show=False, close=False, node_size=0, dpi=dpi, edge_color='#333333')
 
+    # TODO: bug when plotting buildings, inner area not empty! (e.g. Stiftskaserne Wien Neubau)
     if buildings is not None:
         ox.plot_buildings(buildings, fig=fig, ax=axi, set_bounds=False, show=False, close=False, dpi=dpi,
                           color='#999999')
