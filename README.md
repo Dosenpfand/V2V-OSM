@@ -46,15 +46,22 @@ To get started on Debian 8 follow these steps.
 7. Download and install pip
 
         wget https://bootstrap.pypa.io/get-pip.py
-        python 3 get-pip.py
+        python3 get-pip.py
 
-8. Optional: Install the package
+8. Either
+    * Install the package
 
-        pip install .
+            pip install .
         
-   or via symlinks
+        or via symlinks
         
-        pip install -e .
+            pip install -e .
+            
+    Or
+        
+    * Install only the dependencies
+    
+            pip install -r requirements.txt
 
 9. Run an exemplary simulation
 
