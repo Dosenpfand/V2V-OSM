@@ -611,13 +611,16 @@ class TestConnectionAnalysis(unittest.TestCase):
         edges = [(0, 1), (0, 2), (0, 3), (0, 4),
                  (5, 6), (5, 7), (5, 8)]
         net_connectivity_expected = 5 / 9
+        node_cut_expected = None
+        count_cluster_expected = 2
 
         graph = nx.Graph()
         graph.add_edges_from(edges)
         net_connectivity_generated = con_ana.calc_net_connectivity(graph)
 
-        # TODO: also test other result of named tuple!
         self.assertAlmostEqual(net_connectivity_generated.net_connectivity, net_connectivity_expected)
+        self.assertEqual(net_connectivity_generated.min_node_cut, node_cut_expected)
+        self.assertEqual(net_connectivity_generated.count_cluster, count_cluster_expected)
 
     def test_gen_connection_graph(self):
         """Tests the function gen_connection_graph"""

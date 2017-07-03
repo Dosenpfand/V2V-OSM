@@ -227,8 +227,6 @@ def analyze_single(filepath_res, filepath_ana, config_analysis, multiprocess=Fal
         else:
             net_connectivities = con_ana.calc_net_connectivities(graphs_cons)
 
-        # TODO: save coordinates of seperator set?
-
         analysis_result['net_connectivities'] = net_connectivities
 
     # Determine path redundancies
