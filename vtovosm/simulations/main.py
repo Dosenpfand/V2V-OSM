@@ -484,7 +484,6 @@ def main(conf_path=None, scenario=None):
     if config['send_mail']:
         utils.send_mail_finish(config['mail_to'], time_start=time_start_total)
 
-    # TODO: when to call plot_cluster_max?
     if config['save_plot']:
         if config['plot_dir'] is None:
             plot_dir = 'images'
