@@ -74,7 +74,7 @@
                 "cycle_time": 45,
                 "yellow_time": 2
             },
-            "max_speed": 15,
+            "max_speed": 10,
             "intermediate_points": 100,
             "skip_sumo": false,
             "abort_after_sumo": false,
@@ -168,7 +168,7 @@
                 "cycle_time": 45,
                 "yellow_time": 2
             },
-            "max_speed": 15,
+            "max_speed": 10,
             "intermediate_points": 5,
             "skip_sumo": false,
             "abort_after_sumo": true
@@ -198,7 +198,7 @@
                 "cycle_time": 45,
                 "yellow_time": 2
             },
-            "max_speed": 15,
+            "max_speed": 10,
             "intermediate_points": 5,
             "skip_sumo": false,
             "abort_after_sumo": true

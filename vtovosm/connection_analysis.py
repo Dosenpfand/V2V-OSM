@@ -360,14 +360,16 @@ def calc_link_durations(graphs_cons):
 def calc_link_durations_multiprocess(graphs_cons, processes=None, chunk_length=None):
     """Determines the link durations using multiple processes. See also: calc_link_durations"""
 
-    # TODO: optionally return 1st and last con/discon matrix to speed up merge in multiprocessing case?
+    # TODO: optionally return 1st and last con/discon matrix to speed up merge in multiprocessing case? also applies to
+    # calc_connection_durations_multiprocess
 
     # Process chunks in parallel
     with mp.Pool(processes=processes) as pool:
         # Determine optimal chunk size
         if chunk_length is None:
             # NOTE: _processes() should not be used, but no obvious alternative
-            # TODO: maybe use smaller chunks to use less memory at any given time?
+            # TODO: maybe use smaller chunks to use less memory at any given time? also applies to
+            # calc_connection_durations_multiprocess
             chunk_length = int(np.ceil(len(graphs_cons) / pool._processes))
 
         # Split the graphs list in chunks
@@ -390,8 +392,6 @@ ConnectionDurations = namedtuple('ConnectionDurations',
 def calc_connection_durations(graphs_cons):
     """Determines the connection durations (continuous time period during which 2 nodes have a path between them)
     and rehealing times (lengths of disconnected periods)"""
-
-    # TODO: optionally return 1st and last con/discon matrix to speed up merge in multiprocessing case?
 
     # Assumes that all graphs have the same number of nodes
     count_nodes = graphs_cons[0].number_of_nodes()
@@ -469,7 +469,6 @@ def calc_connection_durations_multiprocess(graphs_cons, processes=None, chunk_le
         # Determine optimal chunk size
         if chunk_length is None:
             # NOTE: _processes() should not be used, but no obvious alternative
-            # TODO: maybe use smaller chunks to use less memory at any given time?
             chunk_length = int(np.ceil(len(graphs_cons) / pool._processes))
 
         # Split the graphs list in chunks
@@ -571,9 +570,9 @@ def merge_connection_durations(connection_chunks, graphs_cons, chunk_length):
     durations_discon = [item for sublist in durations_matrix_discon.tolist() for item in sublist]
 
     connection_durations = LinkDurations(durations_con=durations_con,
-                                   durations_discon=durations_discon,
-                                   durations_matrix_con=durations_matrix_con,
-                                   durations_matrix_discon=durations_matrix_discon)
+                                         durations_discon=durations_discon,
+                                         durations_matrix_con=durations_matrix_con,
+                                         durations_matrix_discon=durations_matrix_discon)
 
     return connection_durations
 

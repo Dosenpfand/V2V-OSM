@@ -33,8 +33,9 @@
                 "cycle_time": 45,
                 "yellow_time": 2
             },
-            "max_speed": 15,
-            "intermediate_points": 100
+            "max_speed": 10,
+            "intermediate_points": 50,
+            "veh_rate_factor": 0.25
         },
         "results_file_dir": "results/viriyasitavat_comparison_london",
         "results_file_prefix": "result",
