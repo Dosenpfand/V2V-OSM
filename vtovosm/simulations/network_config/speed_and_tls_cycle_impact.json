@@ -24,7 +24,8 @@
             "sim_duration": 3000,
             "warmup_duration": 1000,
             "fringe_factor": 1,
-            "intermediate_points": 100,
+            "intermediate_points": 50,
+            "veh_rate_factor": 0.25,
             "skip_sumo": false,
             "abort_after_sumo": false
         },
@@ -67,5 +68,16 @@
             "directory": "sumo_data/45s10mps/"
         },
         "results_file_prefix": "result_45s10mps"
+    },
+    "45s15mps": {
+        "sumo": {
+            "tls_settings": {
+                "cycle_time": 45,
+                "yellow_time": 2
+            },
+            "max_speed": 15,
+            "directory": "sumo_data/45s15mps/"
+        },
+        "results_file_prefix": "result_45s15mps"
     }
 }

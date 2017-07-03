@@ -212,9 +212,10 @@ def calc_net_connectivity(graph_cons, vehs=None, cut_only_fully_connected=True):
     count_veh_max = cluster_max.order()
     net_connectivity = count_veh_max / count_veh
     if vehs is not None:
-        vehs.add_key('cluster_max', count_veh_max)
+        cluster_nodes = cluster_max.nodes()
+        vehs.add_key('cluster_max', cluster_nodes)
         not_cluster_max_nodes = np.arange(count_veh)[~np.in1d(
-            np.arange(count_veh), cluster_max.nodes())]
+            np.arange(count_veh), cluster_nodes)]
         vehs.add_key('not_cluster_max', not_cluster_max_nodes)
 
     # Find the minimum node cut
