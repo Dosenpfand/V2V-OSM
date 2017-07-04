@@ -1,0 +1,50 @@
+{
+    "global": {
+        "scenario": "max_from_mean",
+        "mail_to": "mgasser@nt.tuwien.ac.at",
+        "send_mail": true,
+        "loglevel": "INFO",
+        "place": "Upper West Side - New York - USA",
+        "which_result": null,
+        "distribution_veh": "uniform",
+        "density_type": "area",
+        "densities_veh": [
+            {
+                "start": 10e-6,
+                "stop": 80e-6,
+                "num": 8
+            },
+            {
+                "start": 120e-6,
+                "stop": 160e-6,
+                "num": 2
+            }
+        ],
+        "connection_metric": "pathloss",
+        "iterations": 500,
+        "results_file_dir": "results/viriyasitavat_comparison_uniform_pathloss",
+
+        "analyze_results": [
+            "net_connectivities"
+        ],
+        "building_tolerance": 1,
+        "overwrite_result": false,
+        "simulation_mode": "parallel"
+    },
+    "max_from_mean": {
+        "max_connection_metric": 109.71,
+        "results_file_prefix": "result_max_from_mean"
+    },
+    "max_from_nlos": {
+        "max_connection_metric": 133.60,
+        "results_file_prefix": "result_max_from_nlos"
+    },
+    "max_from_olos": {
+        "max_connection_metric": 102.37,
+        "results_file_prefix": "result_max_from_olos"
+    },
+    "max_from_los": {
+        "max_connection_metric": 93.16,
+        "results_file_prefix": "result_max_from_los"
+    }
+}
