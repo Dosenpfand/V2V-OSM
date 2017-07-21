@@ -1,0 +1,58 @@
+{
+    "global": {
+        "scenario": "default",
+        "mail_to": "mgasser@nt.tuwien.ac.at",
+        "send_mail": true,
+        "loglevel": "INFO",
+        "place": "Linz - Austria",
+        "which_result": null,
+        "distribution_veh": "SUMO",
+        "density_type": "length",
+        "densities_veh": [
+            10e-3,
+            20e-3,
+            50e-3
+        ],
+        "connection_metric": "distance",
+        "max_connection_metric": {
+            "olos_los": 350,
+            "nlos": 100
+        },
+        "sumo": {
+            "sim_duration": 3000,
+            "warmup_duration": 1000,
+            "fringe_factor": 1,
+            "tls_settings": {
+                "cycle_time": 45,
+                "yellow_time": 2
+            },
+            "max_speed": 10,
+            "intermediate_points": 50,
+            "veh_rate_factor": 0.25
+        },
+        "results_file_dir": "results/graz_cost_paper",
+        "results_file_prefix": "result",
+        "analyze_results": null,
+        "building_tolerance": 1,
+        "overwrite_result": false,
+        "simulation_mode": "parallel"
+    },
+    "default": {
+        "sumo": {
+            "skip_sumo": false,
+            "abort_after_sumo": false
+        }
+    },
+    "only_sumo": {
+        "sumo": {
+            "skip_sumo": false,
+            "abort_after_sumo": true
+        }
+    },
+    "only_connection": {
+        "sumo": {
+            "skip_sumo": true,
+            "abort_after_sumo": false
+        }
+    }
+}
