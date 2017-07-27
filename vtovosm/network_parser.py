@@ -148,6 +148,8 @@ def check_fill_config(config):
             config['sumo']['directory'] = 'sumo_data/'
         if 'veh_rate_factor' not in config['sumo']:
             config['sumo']['veh_rate_factor'] = None
+        if 'coordinate_tls' not in config['sumo']:
+            config['sumo']['coordinate_tls'] = True
 
     # Convert densities
     config['densities_veh'] = convert_densities(config['densities_veh'])

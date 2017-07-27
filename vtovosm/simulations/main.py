@@ -279,6 +279,7 @@ def main(conf_path=None, scenario=None):
                     tls_settings=config['sumo']['tls_settings'],
                     fringe_factor=config['sumo']['fringe_factor'],
                     intermediate_points=config['sumo']['intermediate_points'],
+                    coordinate_tls=config['sumo']['coordinate_tls'],
                     directory=config['sumo']['directory'],
                     veh_rate_factor=config['sumo']['veh_rate_factor'])
                 utils.debug(time_start)
