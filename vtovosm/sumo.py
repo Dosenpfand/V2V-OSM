@@ -695,8 +695,9 @@ def get_coordinates_offset(filename):
 def search_tool_dir():
     """Searches for the SUMO tools directory"""
 
-    paths = ['/usr/lib/sumo/tools',
-             'sumo/sumo/tools']
+    paths = ['sumo/sumo/tools',         # Local installation
+             '/usr/lib/sumo/tools',     # Arch Linux default location
+             '/usr/share/sumo/tools']   # Debian default location
     for path in paths:
         if os.path.isdir(path):
             return path
