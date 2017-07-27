@@ -55,7 +55,7 @@
                 "yellow_time": 2
             },
             "max_speed": 10,
-            "intermediate_points": 50,
+            "intermediate_points": 100,
             "veh_rate_factor": 0.25,
             "coordinate_tls": true,
             "skip_sumo": false,

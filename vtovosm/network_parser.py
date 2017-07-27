@@ -120,7 +120,7 @@ def check_fill_config(config):
 
     if 'analyze_results' not in config:
         config['analyze_results'] = None
-    elif not isinstance(config['analyze_results'], (list, tuple)):
+    elif not isinstance(config['analyze_results'], (list, tuple, type(None))):
         config['analyze_results'] = [config['analyze_results']]
 
     if (config['simulation_mode'] == 'parallel') and ('processes' not in config):
