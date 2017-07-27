@@ -7,11 +7,8 @@ from collections import namedtuple
 import networkx as nx
 import numpy as np
 import scipy.spatial.distance as sp_dist
-from networkx.algorithms.approximation.connectivity import \
-    local_node_connectivity as nx_local_node_connectivity
-from networkx.algorithms.connectivity import \
-    local_edge_connectivity as nx_local_edge_connectivity
-
+import networkx.algorithms.connectivity as nx_con
+import networkx.algorithms.approximation.connectivity as nx_con_approx
 from . import geometry as geom_o
 from . import pathloss
 from . import propagation as prop
@@ -276,6 +273,29 @@ def calc_center_path_redundancy(graph_cons, vehs):
     return path_redundancy
 
 
+def calc_path_redundancies(graph, vehs):
+    """Determines the path redundancies (number of node disjoint paths) for all pairs of nodes."""
+    # NOTE: we calculate the minimum number of node independent paths as an approximation (and not
+    # the maximum)
+
+    time_start = utils.debug(None, 'Determining path redundancies')
+
+    distances = sp_dist.pdist(vehs.coordinates)
+    count_nodes = graph.number_of_nodes()
+    node_cons = nx_con_approx.all_pairs_node_connectivity(graph)
+    node_cons_dist = {}
+
+    for u, vals in node_cons.items():
+        node_cons_dist[u] = {}
+        for v, val in vals.items():
+            idx_cond = utils.square_to_condensed(u, v, count_nodes)
+            node_cons_dist[u][v] = {'node_con': val, 'dist': distances[idx_cond]}
+
+    utils.debug(time_start)
+
+    return node_cons_dist
+
+
 def calc_path_redundancy(graph, node, distances):
     """Determines the path redundancy (number of node/edge disjoint paths)
     from one specific node to all other nodes"""
@@ -296,9 +316,9 @@ def calc_path_redundancy(graph, node, distances):
             node, node_iter_veh, count_nodes)
         path_redundancy[iter_veh]['distance'] = distances[idx_cond]
 
-        path_redundancy[iter_veh]['count_node_disjoint_paths'] = nx_local_node_connectivity(
+        path_redundancy[iter_veh]['count_node_disjoint_paths'] = nx_con_approx.local_node_connectivity(
             graph, source=node, target=node_iter_veh)
-        path_redundancy[iter_veh]['count_edge_disjoint_paths'] = nx_local_edge_connectivity(
+        path_redundancy[iter_veh]['count_edge_disjoint_paths'] = nx_con.local_edge_connectivity(
             graph, node, node_iter_veh)
         iter_veh += 1
 

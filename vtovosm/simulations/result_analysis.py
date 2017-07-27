@@ -193,7 +193,7 @@ def analyze_single(filepath_res, filepath_ana, config_analysis, multiprocess=Fal
         return
 
     all_analysis = ['net_connectivities',
-                    'path_redundancies',
+                    'path_redundancies_all',
                     'link_durations',
                     'connection_durations']
 
@@ -229,11 +229,9 @@ def analyze_single(filepath_res, filepath_ana, config_analysis, multiprocess=Fal
 
         analysis_result['net_connectivities'] = net_connectivities
 
-    # Determine path redundancies
-    # TODO: calculates only the center path redundancy and is thus highly dependant on the geometry (of the center) of
-    # the street network
-    if 'path_redundancies' in config_analysis:
-        logging.info('Determining path redundancies')
+    # Determine path redundancies for center vehicle (node disjoint and path disjoint)
+    if 'path_redundancies_center' in config_analysis:
+        logging.info('Determining center path redundancies')
 
         if multiprocess:
             with mp.Pool(processes=processes) as pool:
@@ -242,7 +240,22 @@ def analyze_single(filepath_res, filepath_ana, config_analysis, multiprocess=Fal
         else:
             path_redundancies = con_ana.calc_center_path_redundancies(graphs_cons, vehs)
 
-        analysis_result['path_redundancies'] = path_redundancies
+        analysis_result['path_redundancies_center'] = path_redundancies
+
+    # Determine path redundancies for all pairs (only node disjoint)
+    if 'path_redundancies_all' in config_analysis:
+        logging.info('Determining all path redundancies')
+
+        if multiprocess:
+            with mp.Pool(processes=processes) as pool:
+                path_redundancies = pool.starmap(con_ana.calc_path_redundancies, zip(graphs_cons, vehs))
+        else:
+            path_redundancies = []
+            for graph, vehs_current in zip(graphs_cons, vehs):
+                path_redundancies_current = con_ana.calc_path_redundancies(graph, vehs_current)
+                path_redundancies.append(path_redundancies_current)
+
+        analysis_result['path_redundancies_all'] = path_redundancies
 
     # Determine link durations
     if 'link_durations' in config_analysis:
