@@ -42,6 +42,26 @@
             "abort_after_sumo": false
         }
     },
+    "innerelinz_sumo": {
+        "place": "Innere Stadt - Linz - Austria",
+        "distribution_veh": "SUMO",
+        "results_file_prefix": "result_innerelinz_sumo",
+        "sumo": {
+            "sim_duration": 3000,
+            "warmup_duration": 1000,
+            "fringe_factor": 1,
+            "tls_settings": {
+                "cycle_time": 45,
+                "yellow_time": 2
+            },
+            "max_speed": 10,
+            "intermediate_points": 100,
+            "veh_rate_factor": 0.5,
+            "coordinate_tls": false,
+            "skip_sumo": false,
+            "abort_after_sumo": false
+        }
+    },
     "upperwestside_sumo": {
         "place": "Upper West Side - New York - USA",
         "distribution_veh": "SUMO",
@@ -56,7 +76,7 @@
             },
             "max_speed": 10,
             "intermediate_points": 100,
-            "veh_rate_factor": 0.25,
+            "veh_rate_factor": 0.5,
             "coordinate_tls": true,
             "skip_sumo": false,
             "abort_after_sumo": false
