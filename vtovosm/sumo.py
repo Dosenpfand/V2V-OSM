@@ -623,8 +623,13 @@ def clean_veh_traces(veh_traces, delete_first_n=0, count_veh=None):
             if snapshot.size != count_veh:
                 retain_mask[idx] = False
                 logging.warning(
-                    'Vehicle traces snapshot {:d} has wrong size, discarding'.format(idx))
+                    'Vehicle traces snapshot {:d} has wrong size ({:d} instead of {:d}), discarding'.format(idx,
+                                                                                                            snapshot.size,
+                                                                                                            count_veh))
         veh_traces = veh_traces[retain_mask]
+        count_discarded = veh_traces.size - np.sum(retain_mask)
+        if count_discarded > 0:
+            logging.warning('Discarded {:d} out of {:d} snapshots'.format(count_discarded, veh_traces.size))
 
     return veh_traces
 
