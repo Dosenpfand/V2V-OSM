@@ -498,6 +498,10 @@ def main(conf_path=None, scenario=None):
         time_start = utils.debug(None, 'Plotting')
 
         if config['simulation_mode'] == 'demo':
+            # Plot the vehicles
+            path = os.path.join(plot_dir, 'vehicles.pdf')
+            plot.plot_vehs(net['graph_streets'], net['gdf_buildings'], net['vehs'],
+                           show=False, path=path, overwrite=config['overwrite_result'])
 
             # Plot propagation conditions
             path = os.path.join(plot_dir, 'prop_cond.pdf')

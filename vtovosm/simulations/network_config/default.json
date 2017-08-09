@@ -95,9 +95,9 @@
         "which_result": null,
         "distribution_veh": "uniform",
         "density_type": "absolute",
-        "densities_veh": 300,
+        "densities_veh": 250,
         "connection_metric": "pathloss",
-        "max_connection_metric": 150,
+        "max_connection_metric": 120,
         "simulation_mode": "demo",
         "save_plot": true,
         "plot_dir": "images/demo_neubau"
@@ -107,9 +107,9 @@
         "which_result": null,
         "distribution_veh": "uniform",
         "density_type": "absolute",
-        "densities_veh": 300,
+        "densities_veh": 250,
         "connection_metric": "pathloss",
-        "max_connection_metric": 150,
+        "max_connection_metric": 120,
         "simulation_mode": "demo",
         "save_plot": true,
         "plot_dir": "images/demo_upperwestside"
@@ -119,9 +119,7 @@
         "which_result": null,
         "distribution_veh": "SUMO",
         "density_type": "absolute",
-        "densities_veh": [
-            100
-        ],
+        "densities_veh": 250,
         "connection_metric": "distance",
         "max_connection_metric": {
             "olos_los": 250,
@@ -149,9 +147,7 @@
         "which_result": null,
         "distribution_veh": "SUMO",
         "density_type": "absolute",
-        "densities_veh": [
-            200
-        ],
+        "densities_veh": 250,
         "connection_metric": "distance",
         "max_connection_metric": {
             "olos_los": 250,
