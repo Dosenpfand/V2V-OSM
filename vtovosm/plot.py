@@ -119,13 +119,13 @@ def plot_pathloss(streets, buildings, vehicles, show=True, path=None, overwrite=
     index_wo_inf = pathlosses != np.Infinity
     index_inf = np.invert(index_wo_inf)
     axi.scatter(vehicles.get('center')[0], vehicles.get('center')[1], label='Own',
-                c='black', marker='x', s=2 * plt.rcParams['lines.markersize'] ** 2)
+                c='black', marker='x', s=2 * plt.rcParams['lines.markersize'] ** 2, zorder=3)
     cax = plt.scatter(vehicles.get('other')[index_wo_inf][:, 0],
                       vehicles.get('other')[index_wo_inf][:, 1], marker='o',
-                      c=pathlosses[index_wo_inf], cmap=plt.cm.magma, label='Finite PL')
+                      c=pathlosses[index_wo_inf], cmap=plt.cm.magma, label='Finite PL', zorder=2)
     axi.scatter(vehicles.get('other')[index_inf][:, 0],
                 vehicles.get('other')[index_inf][:, 1], marker='.', c='y',
-                label='Infinite PL', alpha=0.5)
+                label='Infinite PL', alpha=0.5, zorder=1)
 
     # Add additional information to plot
     axi.legend().set_visible(True)
