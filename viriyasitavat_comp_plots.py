@@ -15,12 +15,10 @@ def main():
     plt.rc('font', **{'family': 'serif', 'serif': ['Palatino']})
     plt.style.use('ggplot')
     densities = [10, 20, 30, 40, 50, 60, 70, 80, 120, 160]
-    density_veh = 70  # veh/km^2
     count_veh = 337  # from results_all.keys() = [48, 96, 145, 193, 241, 289, 337, 386, 578, 771]
     count_veh_neubau = 112  # from results_neubau.keys() = [16, 32, 48, 64, 80, 96, 112, 129, 193, 257]
     dir_out = os.path.join('images', 'viriyasitavat_comparison')
-    overwrite = True
-    show_titles = False
+    overwrite = False
 
     # Setup
     logger = logging.getLogger()
@@ -49,15 +47,14 @@ def main():
 
         plt.figure()
         plt.plot(densities, mean_net_connectivities[:, 1], label='Upper West Side - SUMO')
-        plt.plot(densities, mean_net_connectivities_neubau[:, 1], label='Neubau - SUMO')
+        # TODO: leave out?
+        # plt.plot(densities, mean_net_connectivities_neubau[:, 1], label='Neubau - SUMO')
         plt.plot(densities, mean_net_connectivities_unif[:, 1], label='Upper West Side - Uniform')
         plt.plot(densities, mean_net_connectivities_paper, label='Manhattan grid - CA')
         plt.xlim((min(densities), max(densities)))
         plt.grid(True)
         plt.xlabel(r'Vehicle density $[1/km^2]$')
         plt.ylabel('Average network connectivity $\overline{NC}$')
-        if show_titles:
-            plt.title('Network Connectivity')
         plt.legend()
         plt.tight_layout(pad=0.25)
         plt.savefig(path_out)
@@ -79,14 +76,12 @@ def main():
 
         plt.figure()
         hist_manh = plt.hist(link_durations, bins=bins, normed=True, alpha=0.6, label='Upper West Side')
-        hist_neubau = plt.hist(link_durations_neubau, bins=bins_neubau, normed=True, alpha=0.6, label='Neubau')
+        # hist_neubau = plt.hist(link_durations_neubau, bins=bins_neubau, normed=True, alpha=0.6, label='Neubau')
         plt.xlim((0, 100))
         plt.grid(True)
         plt.xlabel('Unique link duration $T_{l,u}$ [s]')
         plt.ylabel('Distribution $p(T_{l,u})$')
-        if show_titles:
-            plt.title('Link Duration Distribution')
-        plt.legend()
+        # plt.legend()
         plt.tight_layout(pad=0.25)
         plt.savefig(path_out)
         plt.close()
@@ -123,8 +118,6 @@ def main():
         plt.grid(True)
         plt.xlabel('Total link duration $T_{l,t}$ [s]')
         plt.ylabel('Distribution $p(T_{l,t})$')
-        if show_titles:
-            plt.title('Link Duration Distribution - Weighted 1')
         plt.legend()
         plt.tight_layout(pad=0.25)
         plt.savefig(path_out)
@@ -160,8 +153,6 @@ def main():
         plt.grid(True)
         plt.xlabel('Residual link duration $T_{l,r}$ [s]')
         plt.ylabel('Distribution $p(T_{l,r})$')
-        if show_titles:
-            plt.title('Link Duration Distribution - Weighted 2')
         plt.legend()
         plt.tight_layout(pad=0.25)
         plt.savefig(path_out)
@@ -193,14 +184,11 @@ def main():
 
         plt.figure()
         plt.plot(densities, mean_link_durations[:, 1], label='$T_{l,u}$ - Upper West Side')
-        plt.plot(densities, mean_link_durations_w[:, 1], label='$T_{l,t}$ - Upper West Side')
         plt.plot(densities, mean_link_durations_neubau[:, 1], label='$T_{l,u}$ - Neubau')
         plt.xlim((min(densities), max(densities)))
         plt.grid(True)
         plt.xlabel(r'Vehicle density $[1/km^2]$')
-        plt.ylabel('Average link durations $T_{l,x}$ [s]')
-        if show_titles:
-            plt.title('Link Duration')
+        plt.ylabel('Average link durations $T_{l,u}$ [s]')
         plt.legend()
         plt.tight_layout(pad=0.25)
         plt.savefig(path_out)
@@ -226,8 +214,6 @@ def main():
         plt.grid(True)
         plt.xlabel(r'Vehicle density $[1/km^2]$')
         plt.ylabel('Average connection periods $N_{CP}$')
-        if show_titles:
-            plt.title('Connection Periods')
         plt.legend()
         plt.tight_layout(pad=0.25)
         plt.savefig(path_out)
@@ -252,9 +238,7 @@ def main():
         plt.xlim((min(densities), max(densities)))
         plt.grid(True)
         plt.xlabel(r'Vehicle density $[1/km^2]$')
-        plt.ylabel('Average unique connection duration $T_{c,u}$ [s]')
-        if show_titles:
-            plt.title('Connection Duration')
+        plt.ylabel('Average connection duration $T_{c,u}$ [s]')
         plt.legend()
         filename = 'con_dur_vs_veh_dens.' + format
         plt.tight_layout(pad=0.25)
@@ -281,8 +265,6 @@ def main():
         plt.grid(True)
         plt.xlabel(r'Vehicle density $[1/km^2]$')
         plt.ylabel('Average rehealing time $T_{r,u}$ [s]')
-        if show_titles:
-            plt.title('Reahaling Time')
         plt.legend()
         plt.tight_layout(pad=0.25)
         plt.savefig(path_out)
@@ -304,14 +286,13 @@ def main():
 
         plt.figure()
         hist = plt.hist(con_durations, bins=bins, normed=True, alpha=0.6, label='Upper West Side')
-        hist_neubau = plt.hist(con_durations_neubau, bins=bins_neubau, normed=True, alpha=0.6, label='Neubau')
+        # TODO: reactivate?
+        # hist_neubau = plt.hist(con_durations_neubau, bins=bins_neubau, normed=True, alpha=0.6, label='Neubau')
         plt.xlim((0, 100))
         plt.grid(True)
         plt.xlabel('Unique connection duration $T_{c,u}$ [s]')
         plt.ylabel('Distribution $p(T_{c,u})$')
-        if show_titles:
-            plt.title('Connection Duration Distribution - Weighted 2')
-        plt.legend()
+        # plt.legend()
         plt.tight_layout(pad=0.25)
         plt.savefig(path_out)
         plt.close()
@@ -335,8 +316,6 @@ def main():
         plt.ylabel('Probability')
         plt.xlabel('Total connection duration $T_{c,t}$ [s]')
         plt.ylabel('Distribution $p(T_{c,u})$')
-        if show_titles:
-            plt.title('Connection Duration Distribution')
         plt.legend()
         plt.tight_layout(pad=0.25)
         plt.savefig(path_out)
@@ -372,8 +351,6 @@ def main():
         plt.grid(True)
         plt.xlabel('Unique connection duration $T_{c,r}$ [s]')
         plt.ylabel('Distribution $p(T_{c,r})$')
-        if show_titles:
-            plt.title('Connection Duration Distribution - Weighted 2')
         plt.legend()
         plt.tight_layout(pad=0.25)
         plt.savefig(path_out)
