@@ -6,11 +6,17 @@ import matplotlib.pyplot as plt
 import vtovosm as vtv
 
 # Config
-plt.rcParams["figure.figsize"] = (8, 5)
+format = 'pgf'
+plt.rcParams["figure.figsize"] = (5, 3)
+plt.rcParams['text.usetex'] = True
+# plt.rcParams['lines.linewidth'] = 3
+plt.rcParams['pgf.rcfonts'] = False
+plt.rc('font', **{'family': 'serif', 'serif': ['Palatino']})
+plt.style.use('ggplot')
+
 count_veh = 362  # from [121, 362, 241]
 dir_out = os.path.join('images', 'speed_and_tls_cycle_impact')
 overwrite = True
-show_titles = False
 
 # Setup
 logger = logging.getLogger()
@@ -23,7 +29,7 @@ res_45s_15mps = vtv.utils.load('results/speed_and_tls_cycle_impact/result_45s15m
 res_90s_15mps = vtv.utils.load('results/speed_and_tls_cycle_impact/result_90s15mps_analysis.pickle.xz')
 
 # Plot link duration pmf for one specific vehicle density and different maximum vehicle speeds
-filename = 'link_dur_pmf_speed_unweighted.pdf'
+filename = 'link_dur_pmf_speed_unweighted.' + format
 path_out = os.path.join(dir_out, filename)
 
 link_durations_45s_10mps = res_45s_10mps[count_veh]['link_durations'].durations_con
@@ -43,16 +49,15 @@ else:
                     label='10 m/s max. speed')
     plt.xlim((0, 100))
     plt.grid(True)
-    plt.xlabel('Link duration [s]')
-    plt.ylabel('Probability')
-    if show_titles:
-        plt.title('Unweighted Link Duration Distribution - Maximum Speed Impact')
+    plt.xlabel('Unique link duration $T_{l,u}$ [s]')
+    plt.ylabel('Distribution $p(T_{l,u})$')
     plt.legend()
+    plt.tight_layout(pad=0.25)
     plt.savefig(path_out)
     logging.info('Saved {}'.format(filename))
 
 # Plot link duration pmf for one specific vehicle density and different TLS cycle times
-filename = 'link_dur_pmf_tls_unweighted.pdf'
+filename = 'link_dur_pmf_tls_unweighted.' + format
 path_out = os.path.join(dir_out, filename)
 
 if os.path.isfile(path_out) and not overwrite:
@@ -65,16 +70,15 @@ else:
                     label='90 s TLS cycle time')
     plt.xlim((0, 100))
     plt.grid(True)
-    plt.xlabel('Link duration [s]')
-    plt.ylabel('Probability')
-    if show_titles:
-        plt.title('Unweighted Link Duration Distribution - TLS Cycle Time Impact')
+    plt.xlabel('Unique link duration $T_{l,u}$ [s]')
+    plt.ylabel('Distribution $p(T_{l,u})$')
     plt.legend()
+    plt.tight_layout(pad=0.25)
     plt.savefig(path_out)
     logging.info('Saved {}'.format(filename))
 
 # Plot weighted link duration pmf for one specific vehicle density and different maximum vehicle speeds
-filename = 'link_dur_pmf_speed_weighted.pdf'
+filename = 'link_dur_pmf_speed_weighted.' + format
 path_out = os.path.join(dir_out, filename)
 
 if os.path.isfile(path_out) and not overwrite:
@@ -87,16 +91,15 @@ else:
                     alpha=0.6, label='10 m/s max. speed')
     plt.xlim((0, 100))
     plt.grid(True)
-    plt.xlabel('Link duration [s]')
-    plt.ylabel('Probability')
-    if show_titles:
-        plt.title('Weighted Link Duration Distribution - Maximum Speed Impact')
+    plt.xlabel('Total link duration $T_{l,t}$ [s]')
+    plt.ylabel('Distribution $p(T_{l,t})$')
     plt.legend()
+    plt.tight_layout(pad=0.25)
     plt.savefig(path_out)
     logging.info('Saved {}'.format(filename))
 
 # Plot weighted link duration pmf for one specific vehicle density and different TLS cycle times
-filename = 'link_dur_pmf_tls_weighted.pdf'
+filename = 'link_dur_pmf_tls_weighted.' + format
 path_out = os.path.join(dir_out, filename)
 
 if os.path.isfile(path_out) and not overwrite:
@@ -109,10 +112,9 @@ else:
                     alpha=0.6, label='90 s TLS cycle time')
     plt.xlim((0, 100))
     plt.grid(True)
-    plt.xlabel('Link duration [s]')
-    plt.ylabel('Probability')
-    if show_titles:
-        plt.title('Weighted Link Duration Distribution - TLS Cycle Time Impact')
+    plt.xlabel('Unique link duration $T_{l,t}$ [s]')
+    plt.ylabel('Distribution $p(T_{l,t})$')
     plt.legend()
+    plt.tight_layout(pad=0.25)
     plt.savefig(path_out)
     logging.info('Saved {}'.format(filename))

@@ -14,6 +14,7 @@ def main():
     plt.rcParams['pgf.rcfonts'] = False
     plt.rc('font', **{'family': 'serif', 'serif': ['Palatino']})
     plt.style.use('ggplot')
+
     densities = [10, 20, 30, 40, 50, 60, 70, 80, 120, 160]
     count_veh = 337  # from results_all.keys() = [48, 96, 145, 193, 241, 289, 337, 386, 578, 771]
     count_veh_neubau = 112  # from results_neubau.keys() = [16, 32, 48, 64, 80, 96, 112, 129, 193, 257]
