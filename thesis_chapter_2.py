@@ -22,7 +22,7 @@ fig.savefig('images/framework/street_network_0.pdf')
 fig, axi = plt.subplots()
 nx.draw_networkx(G_pro, ax=axi, pos=nx.spring_layout(G_pro), node_color='#66ccff', edge_color='#999999')
 axi.set_axis_off()
-fig.tight_layout()
+fig.tight_layout(pad=0)
 fig.savefig('images/framework/street_network_1.pdf')
 
 # Building simplification
@@ -37,10 +37,10 @@ for place in places:
     build_simp = vtv.osmnx_addons.simplify_buildings(build_proj)
 
     fig, axi = ox.plot_buildings(build_proj, show=False)
-    fig.tight_layout()
+    fig.tight_layout(pad=0)
     fig.savefig('images/framework/simplify_buildings_0_' + place_filename + '.pdf')
     fig, axi = ox.plot_buildings(build_simp, show=False)
-    fig.tight_layout()
+    fig.tight_layout(pad=0)
     fig.savefig('images/framework/simplify_buildings_1_' + place_filename + '.pdf')
 
     edge_count_simp = 0

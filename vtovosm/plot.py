@@ -83,7 +83,7 @@ def plot_prop_cond(streets, buildings, vehicles, show=True, path=None, overwrite
         streets, buildings, show=False, dpi=300)
 
     # Plot vehicles with propagation conditions
-    axi.scatter(vehicles.get('center')[0], vehicles.get('center')[1], label='Own',
+    axi.scatter(vehicles.get('center')[0], vehicles.get('center')[1], label='Center',
                 marker='x', zorder=10, s=2 * plt.rcParams['lines.markersize'] ** 2, c='black')
     axi.scatter(vehicles.get('los')[:, 0], vehicles.get('los')[:, 1], label='LOS',
                 zorder=9, alpha=0.75)
@@ -118,7 +118,7 @@ def plot_pathloss(streets, buildings, vehicles, show=True, path=None, overwrite=
     pathlosses = vehicles.get_pathlosses('other')
     index_wo_inf = pathlosses != np.Infinity
     index_inf = np.invert(index_wo_inf)
-    axi.scatter(vehicles.get('center')[0], vehicles.get('center')[1], label='Own',
+    axi.scatter(vehicles.get('center')[0], vehicles.get('center')[1], label='Center',
                 c='black', marker='x', s=2 * plt.rcParams['lines.markersize'] ** 2, zorder=3)
     cax = plt.scatter(vehicles.get('other')[index_wo_inf][:, 0],
                       vehicles.get('other')[index_wo_inf][:, 1], marker='o',
@@ -160,7 +160,7 @@ def plot_con_status(streets, buildings, vehicles, show=True, path=None, overwrit
         streets, buildings, show=False, dpi=300)
 
     # Plot vehicles with connection status
-    axi.scatter(vehicles.get('center')[0], vehicles.get('center')[1], label='Own',
+    axi.scatter(vehicles.get('center')[0], vehicles.get('center')[1], label='Center',
                 c='black', marker='x', s=2 * plt.rcParams['lines.markersize'] ** 2, zorder=3)
     axi.scatter(vehicles.get('in_range')[:, 0], vehicles.get('in_range')[:, 1],
                 label='In range', marker='o', zorder=2)
