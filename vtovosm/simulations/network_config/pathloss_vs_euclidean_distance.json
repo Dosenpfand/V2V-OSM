@@ -1,0 +1,45 @@
+{
+    "global": {
+        "scenario": "euclidean",
+        "mail_to": "mgasser@nt.tuwien.ac.at",
+        "send_mail": true,
+        "loglevel": "INFO",
+        "place": "Upper West Side - New York - USA",
+        "which_result": null,
+        "distribution_veh": "uniform",
+        "density_type": "area",
+        "densities_veh": [
+            {
+                "start": 10e-6,
+                "stop": 80e-6,
+                "num": 8
+            },
+            {
+                "start": 120e-6,
+                "stop": 160e-6,
+                "num": 2
+            }
+        ],
+        "iterations": 100,
+        "results_file_dir": "results/pathloss_vs_euclidean_distance",
+        "analyze_results": [
+            "net_connectivities"
+        ],
+        "building_tolerance": 1,
+        "overwrite_result": false,
+        "simulation_mode": "parallel"
+    },
+    "pathloss": {
+        "connection_metric": "pathloss",
+        "max_connection_metric": 100,
+        "results_file_prefix": "result_pathloss"
+    },
+    "euclidean": {
+        "connection_metric": "distance",
+        "max_connection_metric": {
+            "olos_los": 250,
+            "nlos": 140
+        },
+        "results_file_prefix": "result_distance"
+    }
+}
