@@ -37,8 +37,8 @@
     "euclidean": {
         "connection_metric": "distance",
         "max_connection_metric": {
-            "olos_los": 250,
-            "nlos": 140
+            "olos_los": 434.33,
+            "nlos": 40.72
         },
         "results_file_prefix": "result_distance"
     }
