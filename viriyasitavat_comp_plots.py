@@ -7,7 +7,7 @@ import vtovosm as vtv
 
 def main():
     # Config
-    format = 'pgf'
+    file_format = 'pgf'
     plt.rcParams["figure.figsize"] = (5, 3)
     plt.rcParams['text.usetex'] = True
     # plt.rcParams['lines.linewidth'] = 3
@@ -32,7 +32,7 @@ def main():
     results_neubau = vtv.utils.load('results/viriyasitavat_comparison_neubau/result_analysis.pickle.xz')
 
     # Plot average network connectivites vs. vehicle densities
-    filename = 'net_con_vs_veh_dens.' + format
+    filename = 'net_con_vs_veh_dens.' + file_format
     path_out = os.path.join(dir_out, filename)
 
     if os.path.isfile(path_out) and not overwrite:
@@ -63,7 +63,7 @@ def main():
         logging.info('Saved {}'.format(filename))
 
     # Plot link duration pmf for one specific vehicle density
-    filename = 'link_dur_pmf_unweighted.' + format
+    filename = 'link_dur_pmf_unweighted.' + file_format
     path_out = os.path.join(dir_out, filename)
 
     link_durations = results_all[count_veh]['link_durations']
@@ -97,13 +97,13 @@ def main():
         # plt.xlabel('Unique link duration $T_{l,u}$ [s]')
         # plt.ylabel('$\mathit{ECDF}(T_{l,u})$')
         # plt.tight_layout(pad=0.25)
-        # filename = 'link_dur_ecdf_unweighted.pdf' #+ format
+        # filename = 'link_dur_ecdf_unweighted.pdf' #+ file_format
         # path_out = os.path.join(dir_out, filename)
         # plt.savefig(path_out)
         # plt.close()
 
     # Plot weighted link duration (1) pmf for one specific vehicle density
-    filename = 'link_dur_pmf_weighted_1.' + format
+    filename = 'link_dur_pmf_weighted_1.' + file_format
     path_out = os.path.join(dir_out, filename)
 
     if os.path.isfile(path_out) and not overwrite:
@@ -126,7 +126,7 @@ def main():
         logging.info('Saved {}'.format(filename))
 
     # Plot weighted link duration (2) pmf for one specific vehicle density
-    filename = 'link_dur_pmf_weighted_2.' + format
+    filename = 'link_dur_pmf_weighted_2.' + file_format
     path_out = os.path.join(dir_out, filename)
 
     if os.path.isfile(path_out) and not overwrite:
@@ -161,7 +161,7 @@ def main():
         logging.info('Saved {}'.format(filename))
 
     # Plot average link durations (weighted and unweighted) vs. vehicle densities
-    filename = 'link_dur_vs_veh_dens.' + format
+    filename = 'link_dur_vs_veh_dens.' + file_format
     path_out = os.path.join(dir_out, filename)
 
     if os.path.isfile(path_out) and not overwrite:
@@ -197,7 +197,7 @@ def main():
         logging.info('Saved {}'.format(filename))
 
     # Plot average number of connection periods vs. vehicle densities
-    filename = 'con_per_vs_veh_dens.' + format
+    filename = 'con_per_vs_veh_dens.' + file_format
     path_out = os.path.join(dir_out, filename)
 
     if os.path.isfile(path_out) and not overwrite:
@@ -222,7 +222,7 @@ def main():
         logging.info('Saved {}'.format(filename))
 
     # Plot average connection durations vs. vehicle densities
-    filename = 'con_dur_vs_veh_dens.' + format
+    filename = 'con_dur_vs_veh_dens.' + file_format
     path_out = os.path.join(dir_out, filename)
 
     if os.path.isfile(path_out) and not overwrite:
@@ -241,14 +241,14 @@ def main():
         plt.xlabel(r'Vehicle density $[1/km^2]$')
         plt.ylabel('Average connection duration $T_{c,u}$ [s]')
         plt.legend()
-        filename = 'con_dur_vs_veh_dens.' + format
+        filename = 'con_dur_vs_veh_dens.' + file_format
         plt.tight_layout(pad=0.25)
         plt.savefig(path_out)
         plt.close()
         logging.info('Saved {}'.format(filename))
 
     # Plot average rehealing time vs. vehicle densities
-    filename = 'reheal_time_vs_veh_dens.' + format
+    filename = 'reheal_time_vs_veh_dens.' + file_format
     path_out = os.path.join(dir_out, filename)
 
     if os.path.isfile(path_out) and not overwrite:
@@ -273,7 +273,7 @@ def main():
         logging.info('Saved {}'.format(filename))
 
     # Plot connection duration pmf for ones specific vehicle density
-    filename = 'con_dur_pmf_unweighted.' + format
+    filename = 'con_dur_pmf_unweighted.' + file_format
     path_out = os.path.join(dir_out, filename)
 
     con_durations = results_all[count_veh]['connection_durations']
@@ -300,7 +300,7 @@ def main():
         logging.info('Saved {}'.format(filename))
 
     # Plot weighted (1) connection duration pmf for ones specific vehicle density
-    filename = 'con_dur_pmf_weighted_1.' + format
+    filename = 'con_dur_pmf_weighted_1.' + file_format
     path_out = os.path.join(dir_out, filename)
 
     if os.path.isfile(path_out) and not overwrite:
@@ -324,7 +324,7 @@ def main():
         logging.info('Saved {}'.format(filename))
 
     # Plot weighted (2) connection duration pmf for ones specific vehicle density
-    filename = 'con_dur_pmf_weighted_2.' + format
+    filename = 'con_dur_pmf_weighted_2.' + file_format
     path_out = os.path.join(dir_out, filename)
 
     if os.path.isfile(path_out) and not overwrite:

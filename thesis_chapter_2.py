@@ -3,7 +3,13 @@ import networkx as nx
 import matplotlib.pyplot as plt
 import vtovosm as vtv
 
-plt.rcParams["figure.figsize"] = (8, 5)
+file_format = 'pdf'
+plt.rcParams["figure.figsize"] = (4, 4)
+plt.rcParams['text.usetex'] = True
+# plt.rcParams['lines.linewidth'] = 3
+plt.rcParams['pgf.rcfonts'] = False
+plt.rc('font', **{'family': 'serif', 'serif': ['Palatino']})
+plt.style.use('ggplot')
 
 # Street network an graph generation
 place = 'Salmannsdorf - Vienna - Austria'
@@ -15,15 +21,15 @@ buildings = ox.create_buildings_gdf(polygon)
 G_ren = nx.convert_node_labels_to_integers(G)
 G_pro = ox.project_graph(G_ren)
 
-fig, axi = ox.plot_graph(G_pro, annotate=True, show=False)
-fig.tight_layout()
-fig.savefig('images/framework/street_network_0.pdf')
+fig, axi = ox.plot_graph(G_pro, node_color='#66ccff', edge_color='#999999', node_size=120, annotate=True, show=False)
+fig.tight_layout(pad=0)
+fig.savefig('images/framework/street_network_0.{}'.format(file_format))
 
 fig, axi = plt.subplots()
-nx.draw_networkx(G_pro, ax=axi, pos=nx.spring_layout(G_pro), node_color='#66ccff', edge_color='#999999')
+nx.draw_networkx(G_pro, ax=axi, pos=nx.spring_layout(G_pro), node_color='#66ccff', edge_color='#999999', node_size=200)
 axi.set_axis_off()
 fig.tight_layout(pad=0)
-fig.savefig('images/framework/street_network_1.pdf')
+fig.savefig('images/framework/street_network_1.{}'.format(file_format))
 
 # Building simplification
 places = ['Salmannsdorf - Vienna - Austria', 'Neubau - Vienna - Austria', 'Upper West Side - New York - USA']
@@ -38,10 +44,10 @@ for place in places:
 
     fig, axi = ox.plot_buildings(build_proj, show=False)
     fig.tight_layout(pad=0)
-    fig.savefig('images/framework/simplify_buildings_0_' + place_filename + '.pdf')
+    fig.savefig('images/framework/simplify_buildings_0_' + place_filename + '.{}'.format(file_format))
     fig, axi = ox.plot_buildings(build_simp, show=False)
     fig.tight_layout(pad=0)
-    fig.savefig('images/framework/simplify_buildings_1_' + place_filename + '.pdf')
+    fig.savefig('images/framework/simplify_buildings_1_' + place_filename + '.{}'.format(file_format))
 
     edge_count_simp = 0
     for geom in build_simp.geometry:
