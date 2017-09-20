@@ -14,13 +14,16 @@ def setup(figsize=(8, 5)):
     plt.rcParams["figure.figsize"] = figsize
     plt.rcParams["savefig.bbox"] = 'tight'
 
+    plt.rcParams['text.usetex'] = True
+    plt.rc('font', **{'family': 'serif', 'serif': ['Palatino']})
+
 
 def plot_streets_and_buildings(streets, buildings=None, show=True, dpi=300, path=None, overwrite=False, ruler=True,
                                axes=False):
     """ Plots streets and buildings"""
 
     fig, axi = ox.plot_graph(
-        streets, show=False, close=False, node_size=0, dpi=dpi, edge_color='#333333')
+        streets, show=False, close=False, node_size=0, dpi=dpi, edge_color='#333333', fig_height=6)
 
     # TODO: bug when plotting buildings, inner area not empty! (e.g. Stiftskaserne Wien Neubau)
     if buildings is not None:
@@ -246,7 +249,7 @@ def plot_ruler(axi, length=1000, coord=None, linewidth=3, color='#999999'):
     if coord is None:
         xlim = axi.get_xlim()
         ylim = axi.get_ylim()
-        coord = (xlim[0] + 10, ylim[0] - 40)
+        coord = (xlim[0] + 10, ylim[0] - 50)
 
     axi.plot([coord[0], coord[0] + length], [coord[1], coord[1]], color=color, linewidth=linewidth)
 
