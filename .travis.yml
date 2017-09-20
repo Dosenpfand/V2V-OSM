@@ -33,9 +33,8 @@ addons:
     - sumo
 cache: pip
 branches:
-  except:
-  - travis
-  - dev
+  only:
+  - master
 # Configure a headless display to test plot generation
 before_script:
   - "export DISPLAY=:99.0"
