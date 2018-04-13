@@ -12,12 +12,12 @@ before_install:
   - sudo add-apt-repository ppa:sumo/stable -y
   - sudo add-apt-repository ppa:jonathonf/ffmpeg-3 -y
   - sudo apt-get update -q
-  - sudo apt-get install sumo sumo-tools ffmpeg
+  - sudo apt-get install sumo ffmpeg
 install:
   - pip install --upgrade pip
   - pip install -r requirements-test.txt
   # Clone SUMO to get newer tools than in the repository
-  - git clone --depth 1 https://github.com/planetsumo/sumo.git $TRAVIS_BUILD_DIR/sumo
+  - git clone --depth 1 https://github.com/eclipse/sumo.git $TRAVIS_BUILD_DIR/sumo
   - pip install .
 addons:
   apt:
