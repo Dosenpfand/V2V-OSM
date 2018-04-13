@@ -6,7 +6,7 @@ python:
   - "3.6"
 env:
 # Has to be set so that the TLS coordinator script works
-  - SUMO_HOME=$TRAVIS_BUILD_DIR/sumo/sumo
+  - SUMO_HOME=$TRAVIS_BUILD_DIR/sumo
 # SUMO ppa can not be added with the apt addon because it is not whitelisted
 before_install:
   - sudo add-apt-repository ppa:sumo/stable -y
