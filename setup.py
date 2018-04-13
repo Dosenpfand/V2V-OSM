@@ -15,6 +15,6 @@ setup(name='vtovosm',
                         'osmnx>=0.5.1,<0.6',
                         'requests>=2.14.2',
                         'scipy>=0.19.0',
-                        'Shapely>=1.6b4'],
+                        'Shapely>=1.6.4'],
       test_suite='nose.collector',
       tests_require=['nose'])
