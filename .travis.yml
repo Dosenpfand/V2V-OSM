@@ -2,7 +2,8 @@ dist: trusty
 sudo: required
 language: python
 python:
-  - "3.4"
+  # Temporarily disabled because of https://github.com/pypa/pip/issues/5230
+  # - "3.4"
   - "3.6"
 env:
 # Has to be set so that the TLS coordinator script works
